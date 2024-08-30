@@ -1,0 +1,46 @@
+# Start SSH Agent
+#----------------------------
+
+SSH_ENV="$HOME/.ssh/environment"
+
+# aliases
+alias o="cd ../"
+alias oo="cd ../../"
+alias ooo="cd ../../../"
+alias oooo="cd ../../../../"
+alias ooooo="cd ../../../../../"
+alias oooooo="cd ../../../../../../"
+alias ooooooo="cd ../../../../../../../"
+# copy folder with contents
+alias cpfd="cp -R"
+
+function run_ssh_env {
+  . "${SSH_ENV}" > /dev/null
+}
+
+function start_ssh_agent {
+  echo "Initializing new SSH agent..."
+  ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"
+  echo "succeeded"
+  chmod 600 "${SSH_ENV}"
+
+  run_ssh_env;
+
+  ssh-add ~/.ssh/github;
+}
+
+if [ -f "${SSH_ENV}" ]; then
+  run_ssh_env;
+  ps -ef | grep ${SSH_AGENT_PID} | grep ssh-agent$ > /dev/null || {
+    start_ssh_agent;
+  }
+else
+  start_ssh_agent;
+fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+export STARSHIP_CONFIG=~/.config/starship.toml
+
+eval "$(starship init bash)"
