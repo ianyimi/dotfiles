@@ -4,15 +4,16 @@
 SSH_ENV="$HOME/.ssh/environment"
 
 # aliases
-alias o="cd ../"
-alias oo="cd ../../"
-alias ooo="cd ../../../"
-alias oooo="cd ../../../../"
-alias ooooo="cd ../../../../../"
-alias oooooo="cd ../../../../../../"
-alias ooooooo="cd ../../../../../../../"
+alias .="cd ../"
+alias ..="cd ../../"
+alias ...="cd ../../../"
+alias ....="cd ../../../../"
+alias .....="cd ../../../../../"
+alias ......="cd ../../../../../../"
+alias .......="cd ../../../../../../../"
 # copy folder with contents
 alias cpfd="cp -R"
+alias cm="chezmoi"
 
 function run_ssh_env {
   . "${SSH_ENV}" > /dev/null
