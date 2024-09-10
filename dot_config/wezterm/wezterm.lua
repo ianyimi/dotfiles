@@ -8,7 +8,7 @@ config = {
 	window_close_confirmation = "NeverPrompt",
 	window_decorations = "RESIZE",
 	default_cursor_style = "BlinkingBar",
-	color_scheme = "Catppuccin Macchiato",
+	-- color_scheme = "Catppuccin Macchiato",
 	font = wezterm.font("Cascadia Code", { weight = "Regular", stretch = "Normal", style = "Normal" }),
 	font_size = 14,
 	background = {
@@ -49,6 +49,18 @@ if wezterm.target_triple == "x86_64-pc-windows-msvc" then
 end
 config.launch_menu = launch_menu
 
+-- color schemes
+local catPMacchiato = wezterm.color.get_builtin_schemes()["Catppuccin Macchiato"]
+local default = wezterm.color.get_default_colors()
+config.color_schemes = {
+	["Catppuccin Macchiato"] = catPMacchiato,
+	["Default"] = default,
+}
+-- additional color overrides
+config.window_frame = {
+	active_titlebar_bg = "#ff0000",
+}
+
 -- tmux like navigation
 config.leader = { key = "z", mods = "ALT", timeout_milliseconds = 2000 }
 config.keys = {
@@ -61,6 +73,11 @@ config.keys = {
 		mods = "LEADER",
 		key = "x",
 		action = wezterm.action.CloseCurrentPane({ confirm = true }),
+	},
+	{
+		mods = "LEADER",
+		key = "q",
+		action = wezterm.action.QuitApplication,
 	},
 	-- {
 	-- 	mods = "LEADER",
