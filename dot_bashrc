@@ -13,36 +13,48 @@ alias ......="cd ../../../../../../"
 alias .......="cd ../../../../../../../"
 # copy folder with contents
 alias cpfd="cp -R"
+
 alias cm="chezmoi"
 alias nv="nvim ."
+alias lg="lazygit"
+
+alias cdNvim="cd ~/AppData/Local/nvim"
+alias editNvim="nvim ~/AppData/Local/nvim"
+alias lgNvim="lazygit ~/AppData/Local/nvim"
+
+alias cdBash="cd ~/.bashrc"
+alias editBash="nvim ~/.bashrc"
+
+alias cdScripts="cd ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
+alias editScripts="nvim ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
 
 function run_ssh_env {
-  . "${SSH_ENV}" > /dev/null
+  . "${SSH_ENV}" >/dev/null
 }
 
 function start_ssh_agent {
   echo "Initializing new SSH agent..."
-  ssh-agent | sed 's/^echo/#echo/' > "${SSH_ENV}"
+  ssh-agent | sed 's/^echo/#echo/' >"${SSH_ENV}"
   echo "succeeded"
   chmod 600 "${SSH_ENV}"
 
-  run_ssh_env;
+  run_ssh_env
 
-  ssh-add ~/.ssh/github;
+  ssh-add ~/.ssh/github
 }
 
 if [ -f "${SSH_ENV}" ]; then
-  run_ssh_env;
-  ps -ef | grep ${SSH_AGENT_PID} | grep ssh-agent$ > /dev/null || {
-    start_ssh_agent;
+  run_ssh_env
+  ps -ef | grep ${SSH_AGENT_PID} | grep ssh-agent$ >/dev/null || {
+    start_ssh_agent
   }
 else
-  start_ssh_agent;
+  start_ssh_agent
 fi
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 export STARSHIP_CONFIG=~/.config/starship.toml
 
 eval "$(starship init bash)"
