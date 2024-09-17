@@ -1,0 +1,62 @@
+eval "$(starship init zsh)"
+export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+
+# aliases
+alias .="cd ../"
+alias ..="cd ../../"
+alias ...="cd ../../../"
+alias ....="cd ../../../../"
+alias .....="cd ../../../../../"
+alias ......="cd ../../../../../../"
+alias .......="cd ../../../../../../../"
+
+alias cpfd="cp -R"
+alias cm="chezmoi"
+alias nv="nvim ."
+alias lg="lazygit"
+
+alias lgcm="lazygit -p ~/.local/share/chezmoi"
+
+alias cdNvim="cd ~/.config/nvim"
+alias nvNvim="nvim ~/.config/nvim"
+alias lgNvim="lazygit -p ~/.config/nvim"
+
+alias cdEdapt="cd ~/Desktop/webapp-rebuild"
+alias nvEdapt="nvim ~/Desktop/webapp-rebuild"
+alias lgEdapt="lazygit -p ~/Desktop/webapp-rebuild"
+
+alias cdPortfolio="cd ~/Desktop/Portfolio24"
+alias nvPortfolio="nvim ~/Desktop/Portfolio24"
+alias lgPortfolio="lazygit -p ~/Desktop/Portfolio24"
+
+alias cdHome="cd ~/"
+alias nvZsh="nvim ~/.zshrc"
+# alias cm update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
+# alias cm update --view="chezmoi git pull -- --autostash --rebase && chezmoi diff"
+# alias chezmoi update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
+# alias chezmoi update --view="chezmoi git pull -- --autostash --rebase && chezmoi diff"
+alias cdScripts="cd ~/Documents/The\ Lab/System/Assets/Scripts/"
+alias editScripts="nvim ~/Documents/The\ Lab/System/Assets/Scripts/"
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+# pnpm
+export PNPM_HOME="/Users/zay/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
+PATH=~/.console-ninja/.bin:$PATH
+
+# autocomplete & syntax highlighting
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# fnm
+FNM_PATH="/Users/zay/Library/Application Support/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="/Users/zay/Library/Application Support/fnm:$PATH"
+  eval "`fnm env`"
+fi
