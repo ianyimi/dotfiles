@@ -18,15 +18,21 @@ alias cm="chezmoi"
 alias nv="nvim ."
 alias lg="lazygit"
 
+alias lgcm="lazygit -p ~/.local/share/chezmoi"
+
+alias cdCog="cd ~/Desktop/cognitive-core"
+alias nvCog="nvim ~/Desktop/cognitive-core"
+alias lgCog="lazygit -p ~/Desktop/cognitive-core"
+
 alias cdNvim="cd ~/AppData/Local/nvim"
-alias editNvim="nvim ~/AppData/Local/nvim"
-alias lgNvim="lazygit ~/AppData/Local/nvim"
+alias nvNvim="nvim ~/AppData/Local/nvim"
+alias lgNvim="lazygit -p ~/AppData/Local/nvim"
 
 alias cdBash="cd ~/.bashrc"
-alias editBash="nvim ~/.bashrc"
+alias nvBash="nvim ~/.bashrc"
 
 alias cdScripts="cd ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
-alias editScripts="nvim ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
+alias nvScripts="nvim ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
 
 function run_ssh_env {
   . "${SSH_ENV}" >/dev/null
