@@ -17,6 +17,8 @@ alias lg="lazygit"
 
 alias lgcm="lazygit -p ~/.local/share/chezmoi"
 
+alias cdDesktop="cd ~/Desktop"
+
 alias cdNvim="cd ~/.config/nvim"
 alias nvNvim="nvim ~/.config/nvim"
 alias lgNvim="lazygit -p ~/.config/nvim"
@@ -36,7 +38,7 @@ alias nvZsh="nvim ~/.zshrc"
 # alias chezmoi update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
 # alias chezmoi update --view="chezmoi git pull -- --autostash --rebase && chezmoi diff"
 alias cdScripts="cd ~/Documents/The\ Lab/System/Assets/Scripts/"
-alias editScripts="nvim ~/Documents/The\ Lab/System/Assets/Scripts/"
+alias nvScripts="nvim ~/Documents/The\ Lab/System/Assets/Scripts/"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
