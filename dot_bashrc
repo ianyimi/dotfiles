@@ -38,8 +38,8 @@ alias cdNvim="cd ~/AppData/Local/nvim"
 alias nvNvim="nvim ~/AppData/Local/nvim"
 alias lgNvim="lazygit -p ~/AppData/Local/nvim"
 
-alias cdBash="cd ~/.bashrc"
 alias nvBash="nvim ~/.bashrc"
+alias cdDesktop="cd ~/Desktop"
 
 alias cdScripts="cd ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
 alias nvScripts="nvim ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
