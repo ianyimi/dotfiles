@@ -15,9 +15,14 @@ alias cm="chezmoi"
 alias nv="nvim ."
 alias lg="lazygit"
 
-alias lgcm="lazygit -p ~/.local/share/chezmoi"
-
 alias cdDesktop="cd ~/Desktop"
+
+alias cdChezmoi="chezmoi cd"
+alias lgChezmoi="lazygit -p ~/.local/share/chezmoi"
+
+alias cdCog="cd ~/Desktop/Projects/Zoic/cognitive-core"
+alias nvCog="nvim ~/Desktop/Projects/Zoic/cognitive-core"
+alias lgCog="lg ~/Desktop/Projects/Zoic/cognitive-core"
 
 alias cdNvim="cd ~/.config/nvim"
 alias nvNvim="nvim ~/.config/nvim"
