@@ -26,8 +26,8 @@ alias lgCog="lazygit -p ~/Desktop/cognitive-core"
 alias startCog="docker-compose -f ~/Desktop/cognitive-core/docker-compose.dev.yml up --remove-orphans"
 alias stopCog="docker-compose -f ~/Desktop/cognitive-core/docker-compose.dev.yml down --remove-orphans"
 
-alias cdEdapt="cd ~/Desktop/webapp-rebuild/edapt-webapp-v2"
-alias nvEdapt="nvim ~/Desktop/webapp-rebuild/edapt-webapp-v2"
+alias cdEdapt="cd ~/Desktop/webapp-rebuild"
+alias nvEdapt="nvim ~/Desktop/webapp-rebuild"
 alias lgEdapt="lazygit -p ~/Desktop/webapp-rebuild"
 
 alias cdPortfolio="cd ~/Desktop/Portfolio24/"
@@ -43,6 +43,15 @@ alias cdDesktop="cd ~/Desktop"
 
 alias cdScripts="cd ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
 alias nvScripts="nvim ~/Documents/Obsidian/The\ Lab/System/Assets/Scripts"
+
+alias cdPlugins="cd ~/Documents/Obsidian/The\ Lab/.obsidian/plugins"
+alias nvPlugins="nvim ~/Documents/Obsidian/The\ Lab/.obsidian/plugins"
+
+alias cdDaily="cd ~/Documents/Obsidian/The\ Lab/Logs/Daily"
+alias nvDaily="nvim ~/Documents/Obsidian/The\ Lab/Logs/Daily"
+
+alias cdVault="cd ~/Documents/Obsidian/The\ Lab/"
+alias nvVault="nvim ~/Documents/Obsidian/The\ Lab/"
 
 function run_ssh_env {
   . "${SSH_ENV}" >/dev/null
