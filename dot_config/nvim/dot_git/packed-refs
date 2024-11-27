@@ -1,0 +1,8 @@
+# pack-refs with: peeled fully-peeled sorted 
+2f5fefe12a420519543354b8dd61bfa8e63520fd refs/remotes/origin/lastConfInit
+a53329a4ec59230d828bca592cc86c72a09f5e51 refs/remotes/origin/lazyConf
+6ec66bf84bf3ef33bfe28337cba2108a1906f0ee refs/remotes/origin/leanConf
+369e62f10497f33563b0811f561028a486c6c0cf refs/remotes/origin/leanNVConf
+96cf824a0029f104b07139321021829eed2aca33 refs/remotes/origin/master
+b86ec16d4165a38cfe151f82e6f686646ece3a7f refs/remotes/origin/newConf
+4e461bb60704ba9dfd13d56896bf8e4eeff89ca0 refs/remotes/origin/strictConf
