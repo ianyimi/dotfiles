@@ -57,12 +57,12 @@ local function addWorkspaceItem(workspaceName, monitorId, isSelected)
 				padding_left = 10,
 				padding_right = 2,
 				color = colors.grey,
-				highlight_color = colors.yellow,
+				highlight_color = colors.purple,
 			},
 			label = {
 				padding_right = 12,
 				color = colors.grey,
-				highlight_color = colors.yellow,
+				highlight_color = colors.purple,
 				font = "sketchybar-app-font:Regular:12.0",
 				y_offset = -1,
 			},
@@ -148,7 +148,6 @@ end)
 space_window_observer:subscribe("space_windows_change", function()
 	drawSpaces()
 end)
-
 
 
 --[[

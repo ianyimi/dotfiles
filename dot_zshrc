@@ -38,6 +38,8 @@ alias lgPortfolio="lazygit -p ~/Desktop/Portfolio24"
 
 alias cdHome="cd ~/"
 alias nvZsh="nvim ~/.zshrc"
+
+alias nvAero="nvim ~/.aerospace.toml"
 # alias cm update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
 # alias cm update --view="chezmoi git pull -- --autostash --rebase && chezmoi diff"
 # alias chezmoi update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
