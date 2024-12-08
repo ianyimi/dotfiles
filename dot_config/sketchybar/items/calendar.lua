@@ -29,11 +29,8 @@ local cal = sbar.add("item", {
 cal:subscribe({ "forced", "routine", "system_woke" }, function(env)
 	-- see (https://www.lua.org/pil/22.1.html) for lua os date format string codes
 	cal:set({
-		size = 12.0,
 		icon = os.date(" %a. %d %b. %Y  |"),
 		label = os.date("  %I:%M:%S %p"),
-		-- padding_right = -9
-		-- position = "right"
 	})
 end)
 

@@ -6,7 +6,8 @@ local app_icons = require("helpers.app_icons")
 local LIST_ALL = "aerospace list-workspaces --all"
 local LIST_CURRENT = "aerospace list-workspaces --focused"
 local LIST_MONITORS = "aerospace list-monitors | awk '{print $1}'"
-local LIST_WORKSPACES = "aerospace list-workspaces --empty no --monitor all"
+local LIST_WORKSPACES = "aerospace list-workspaces --monitor %s"
+local LIST_WORKSPACES_OCCUPIED = "aerospace list-workspaces --empty no --monitor %s"
 local LIST_APPS = "aerospace list-windows --workspace %s | awk -F'|' '{gsub(/^ *| *$/, \"\", $2); print $2}'"
 
 local spaces = {}
@@ -119,7 +120,7 @@ local function drawSpaces()
 
 			-- Iterate through monitors and workspaces
 			for monitorId in monitorsOutput:gmatch("[^\r\n]+") do
-				sbar.exec(LIST_WORKSPACES:format(monitorId), function(workspacesOutput)
+				sbar.exec(LIST_WORKSPACES_OCCUPIED:format(monitorId), function(workspacesOutput)
 					for workspaceName in workspacesOutput:gmatch("[^\r\n]+") do
 						local isSelected = workspaceName == focusedWorkspace
 						addWorkspaceItem(workspaceName, monitorId, isSelected)
