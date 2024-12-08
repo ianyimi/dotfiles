@@ -4,28 +4,29 @@ return {
 	dependencies = {
 		-- LSP Support
 		{ "neovim/nvim-lspconfig" }, -- Required
-		{ -- Optional
+		{                          -- Optional
 			"williamboman/mason.nvim",
 			build = function()
 				pcall(vim.cmd, "MasonUpdate")
 			end,
 		},
 		{ "williamboman/mason-lspconfig.nvim" }, -- Optional
-		{ "j-hui/fidget.nvim", opts = {} },
+		{ "j-hui/fidget.nvim",                  opts = {} },
 
 		-- Tailwind Tools
 		{ "luckasRanarison/tailwind-tools.nvim" },
 		{ "onsails/lspkind-nvim" },
 
 		-- Autocompletion
-		{ "hrsh7th/nvim-cmp" }, -- Required
+		{ "hrsh7th/nvim-cmp" },   -- Required
 		{ "hrsh7th/cmp-nvim-lsp" }, -- Required
-		{ "L3MON4D3/LuaSnip" }, -- Required
+		{ "L3MON4D3/LuaSnip" },   -- Required
 		{ "rafamadriz/friendly-snippets" },
 		{ "hrsh7th/cmp-buffer" },
 		{ "hrsh7th/cmp-path" },
 		{ "hrsh7th/cmp-cmdline" },
 		{ "saadparwaiz1/cmp_luasnip" },
+		{ 'dmmulroy/ts-error-translator.nvim' },
 	},
 	config = function()
 		local lsp = require("lsp-zero")
@@ -50,6 +51,10 @@ return {
 
 			-- Highlight references
 			if client.supports_method("textDocument/documentHighlight") then
+				vim.lsp.handlers["textDocument/publishDiagnostics"] = function(err, result, ctx)
+					require("ts-error-translator").translate_diagnostics(err, result, ctx)
+					vim.lsp.diagnostic.on_publish_diagnostics(err, result, ctx)
+				end
 				local highlight_augroup = vim.api.nvim_create_augroup("lsp_document_highlight", { clear = true })
 				vim.api.nvim_clear_autocmds({ group = highlight_augroup, buffer = bufnr })
 				vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
@@ -126,10 +131,10 @@ return {
 				end,
 			},
 			sources = {
-				{ name = "nvim_lsp" },
-				{ name = "luasnip", keyword_length = 2 },
-				{ name = "buffer", keyword_length = 3 },
-				{ name = "path" },
+				{ name = "nvim_lsp", keyword_length = 0 },
+				{ name = "luasnip",  keyword_length = 2 },
+				{ name = "buffer",   keyword_length = 3 },
+				{ name = "path",     keyword_length = 3 },
 			},
 			formatting = {
 				format = require("lspkind").cmp_format({

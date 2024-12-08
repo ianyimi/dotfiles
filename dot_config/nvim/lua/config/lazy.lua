@@ -29,6 +29,7 @@ require("lazy").setup({
 		{ import = "plugins.coding" },
 		{ import = "plugins.ui" },
 		{ import = "plugins.util" },
+		{ import = "plugins.ai" },
 	},
 	-- Configure any other settings here. See the documentation for more details.
 	-- colorscheme that will be used when installing plugins.
