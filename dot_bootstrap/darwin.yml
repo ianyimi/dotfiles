@@ -1,0 +1,108 @@
+---
+- name: Machine setup (Darwin OS)
+  hosts: localhost
+  become: true
+  connection: local
+  gather_facts: true
+  vars:
+    flyctl_version: "0.1.130"
+    pulumi_version: "v3.94.2"
+
+  tasks:
+    - name: Get my user
+      ansible.builtin.set_fact:
+        remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
+
+    # - name: Install packages
+    #   ansible.builtin.dnf:
+    #     name:
+    #       - git
+    #       - vim
+    #       - gh
+    #       - gcc
+    #       - go-task
+    #       - ripgrep
+    #       - zsh
+    #       - fzf
+    #       - tmux
+    #       - ffmpeg-free
+    #       - make
+    #       - sqlite
+    #       - luarocks
+    #       - gcc-c++
+    #     state: present
+
+    - name: Change shell to zsh
+      ansible.builtin.user:
+        name: "{{ remote_regular_user }}"
+        shell: /usr/bin/zsh
+
+    - name: Install DNF plugins core
+      ansible.builtin.dnf:
+        name: dnf-plugins-core
+        state: present
+
+    # - name: Add Docker repo
+    #   ansible.builtin.yum_repository:
+    #     name: docker
+    #     description: Docker repo
+    #     baseurl: "https://download.docker.com/linux/fedora/{{ ansible_distribution_major_version }}/{{ ansible_architecture }}/stable"
+    #     gpgkey: "https://download.docker.com/linux/fedora/gpg"
+    #     gpgcheck: true
+    #     enabled: true
+    #
+    # - name: Install Docker
+    #   ansible.builtin.dnf:
+    #     name:
+    #       - docker-ce
+    #       - docker-ce-cli
+    #       - containerd.io
+    #       - docker-buildx-plugin
+    #       - docker-compose-plugin
+    #     state: present
+    #
+    # - name: Add Docker group
+    #   ansible.builtin.group:
+    #     name: docker
+    #     state: present
+    #
+    # - name: Add user to docker group
+    #   ansible.builtin.user:
+    #     name: "{{ remote_regular_user }}"
+    #     groups: docker
+    #     append: true
+    #
+    # - name: Add rtx config manager
+    #   ansible.builtin.yum_repository:
+    #     name: rtx
+    #     description: RTX Repo
+    #     baseurl: https://rtx.pub/rpm
+    #     gpgkey: https://rtx.pub/gpg-key.pub
+    #     gpgcheck: true
+    #     enabled: true
+    #
+    # - name: Install RTX
+    #   ansible.builtin.dnf:
+    #     name: rtx
+    #     state: present
+    #
+    # - name: Install Flatpak packages
+    #   community.general.flatpak:
+    #     name:
+    #       - com.obsproject.Studio
+    #       - org.videolan.VLC
+    #       - org.tenacityaudio.Tenacity
+    #       - md.obsidian.Obsidian
+    #       - org.gimp.GIMP
+    #       - rest.insomnia.Insomnia
+    #       - com.github.johnfactotum.Foliate
+    #       - org.gnome.meld
+    #       - org.sqlitebrowser.sqlitebrowser
+    #     state: present
+    #
+    # - name: Ensure fonts directory
+    #   ansible.builtin.file:
+    #     path: "~{{ remote_regular_user }}/.fonts"
+    #     state: directory
+    #     mode: "0755"
+    #     owner: "{{ remote_regular_user }}"

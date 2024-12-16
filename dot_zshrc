@@ -12,10 +12,13 @@ alias .......="cd ../../../../../../../"
 
 alias cpfd="cp -R"
 alias cm="chezmoi"
+alias tm="tmux"
+alias ta="tmux attach"
 alias nv="nvim ."
 alias lg="lazygit"
 
 alias cdDesktop="cd ~/Desktop"
+alias cdDownloads="cd ~/Downloads"
 
 alias cdChezmoi="chezmoi cd"
 alias lgChezmoi="lazygit -p ~/.local/share/chezmoi"

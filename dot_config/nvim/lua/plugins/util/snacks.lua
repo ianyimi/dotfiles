@@ -13,6 +13,7 @@ return {
 		statuscolumn = { enabled = false },
 		words = { enabled = true },
 		dashboard = {
+			enabled = true,
 			sections = {
 				{ section = "header", icon = " ", title = "Keymaps", indent = 2, padding = 1 },
 				{

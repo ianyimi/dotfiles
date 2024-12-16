@@ -1,5 +1,8 @@
 local wezterm = require("wezterm")
 local getOS = require("zaye.getOS")
+local hasTmux = require("zaye.hasTmux").hasTmux
+
+
 
 config = wezterm.config_builder()
 
@@ -62,7 +65,9 @@ config.window_frame = {
 }
 
 -- tmux like navigation
+-- if not hasTmux() then
 config.leader = { key = "z", mods = "ALT", timeout_milliseconds = 2000 }
+-- end
 config.keys = {
 	{
 		mods = "LEADER",
@@ -78,6 +83,11 @@ config.keys = {
 		mods = "LEADER",
 		key = "q",
 		action = wezterm.action.QuitApplication,
+	},
+	{
+		mods = 'LEADER',
+		key = 'r',
+		action = wezterm.action.ReloadConfiguration,
 	},
 	-- {
 	-- 	mods = "LEADER",
