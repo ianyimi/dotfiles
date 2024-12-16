@@ -49,6 +49,7 @@
           - slack
           - arc
           - keymapp
+          - aerospace
         state: present
 
     # - name: Add Docker repo
