@@ -1,7 +1,0 @@
-2f5fefe12a420519543354b8dd61bfa8e63520fd		branch 'lastConfInit' of github.com:ianyimi/kickstart.nvim
-a53329a4ec59230d828bca592cc86c72a09f5e51	not-for-merge	branch 'lazyConf' of github.com:ianyimi/kickstart.nvim
-6ec66bf84bf3ef33bfe28337cba2108a1906f0ee	not-for-merge	branch 'leanConf' of github.com:ianyimi/kickstart.nvim
-369e62f10497f33563b0811f561028a486c6c0cf	not-for-merge	branch 'leanNVConf' of github.com:ianyimi/kickstart.nvim
-96cf824a0029f104b07139321021829eed2aca33	not-for-merge	branch 'master' of github.com:ianyimi/kickstart.nvim
-b86ec16d4165a38cfe151f82e6f686646ece3a7f	not-for-merge	branch 'newConf' of github.com:ianyimi/kickstart.nvim
-4e461bb60704ba9dfd13d56896bf8e4eeff89ca0	not-for-merge	branch 'strictConf' of github.com:ianyimi/kickstart.nvim

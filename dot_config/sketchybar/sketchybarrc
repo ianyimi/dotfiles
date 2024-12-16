@@ -1,0 +1,5 @@
+#!/opt/homebrew/bin/lua
+
+-- Load the sketchybar-package & prep helper binaries
+require("helpers")
+require("init")

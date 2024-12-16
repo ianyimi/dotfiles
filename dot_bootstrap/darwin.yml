@@ -91,13 +91,22 @@
         name: obsidian
         state: present
 
-    - name: Check Install - Cascadia Code
+    - name: Check Install - Cascadia Code Font
       become: false
       environment:
         HOMEBREW_NO_ANALYTICS: "1"
       community.general.homebrew_cask:
         name: 
           - font-cascadia-code
+        state: present
+
+    - name: Check Install - Hack Nerd Font (SketchyBar)
+      become: false
+      environment:
+        HOMEBREW_NO_ANALYTICS: "1"
+      community.general.homebrew_cask:
+        name: 
+          - font-hack-nerd-font
         state: present
 
     - name: Check Install - Aerospace
@@ -132,4 +141,16 @@
       community.general.homebrew:
         name: sketchybar
         state: present
+
+    - name: Check if SketchyBar is running
+      become: false
+      shell: "pgrep -x sketchybar"
+      register: sketchybar_status
+      failed_when: false
+      changed_when: false
+
+    - name: Start SketchyBar if not running
+      become: false
+      shell: "sketchybar --restart"
+      when: sketchybar_status.rc != 0
 
