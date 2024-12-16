@@ -52,6 +52,7 @@
           - wezterm
           - slack
           - arc
+          - chezmoi
         state: present
 
     # - name: Add Docker repo
