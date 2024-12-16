@@ -53,7 +53,7 @@
           - wezterm
           - slack
           - arc
-          - chezmoi
+          - keymapp
         state: present
 
     # - name: Add Docker repo
