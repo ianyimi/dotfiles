@@ -37,11 +37,6 @@
         name: "{{ remote_regular_user }}"
         shell: /usr/bin/zsh
 
-    - name: Install DNF plugins core
-      ansible.builtin.dnf:
-        name: dnf-plugins-core
-        state: present
-
     - name: Install Brew Packages
       community.general.homebrew:
         name: 
