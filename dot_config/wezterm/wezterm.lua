@@ -2,8 +2,6 @@ local wezterm = require("wezterm")
 local getOS = require("zaye.getOS")
 local hasTmux = require("zaye.hasTmux").hasTmux
 
-
-
 config = wezterm.config_builder()
 
 config = {
