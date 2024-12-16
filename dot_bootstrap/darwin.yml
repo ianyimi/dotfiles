@@ -49,6 +49,9 @@
           - neovim
           - spotify
           - tmux
+          - wezterm
+          - slack
+          - arc
         state: present
 
     # - name: Add Docker repo
