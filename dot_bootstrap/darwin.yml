@@ -42,6 +42,13 @@
         name: dnf-plugins-core
         state: present
 
+    - name: Install Brew Packages
+      community.general.homebrew:
+        name: 
+          - git
+          - neovim
+        state: present
+
     # - name: Add Docker repo
     #   ansible.builtin.yum_repository:
     #     name: docker
