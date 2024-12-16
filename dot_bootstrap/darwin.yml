@@ -47,6 +47,8 @@
         name: 
           - git
           - neovim
+          - spotify
+          - tmux
         state: present
 
     # - name: Add Docker repo
