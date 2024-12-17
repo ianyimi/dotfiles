@@ -3,7 +3,6 @@
   hosts: localhost
   become: true
   connection: local
-  gather_facts: true
   vars:
     flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
@@ -30,40 +29,16 @@
         shell: "{{ zsh_path.stdout }}"
       when: zsh_path.stdout != ""
 
-- name: Brew Install
+- name: Brew Install (Apps)
   hosts: localhost
   become: false
+  gather_facts: false
   environment:
     HOMEBREW_NO_ANALYTICS: "1"
   tasks:
-    - name: Check Install - Git
-      community.general.homebrew:
-        name: git
-        state: present
-
-    - name: Check Install - Pnpm
-      community.general.homebrew:
-        name: pnpm
-        state: present
-
-    - name: Check Install - GitHub CLI
-      community.general.homebrew:
-        name: gh
-        state: present
-
-    - name: Check Install - Neovim
-      community.general.homebrew:
-        name: neovim
-        state: present
-
     - name: Check Install - Spotify
       community.general.homebrew:
         name: spotify
-        state: present
-
-    - name: Check Install - Tmux
-      community.general.homebrew:
-        name: tmux
         state: present
 
     - name: Check Install - WezTerm
@@ -81,42 +56,64 @@
         name: keymapp
         state: present
 
-    - name: Check Install - Node.js
+    - name: Check Install - Obsidian
+      community.general.homebrew:
+        name: obsidian
+        state: present
+
+- name: Brew Install (CLI)
+  hosts: localhost
+  become: false
+  environment:
+    HOMEBREW_NO_ANALYTICS: "1"
+    tasks:
+    - name: Check Install - Git
+      community.general.homebrew:
+        name: git
+        state: present
+
+    - name: Check Install - Corepack
+      community.general.homebrew:
+        name: corepack
+        state: present
+
+    - name: Check Install - Pnpm
+      community.general.homebrew:
+        name: pnpm
+        state: present
+
+    - name: Check Install - Neovim
+      community.general.homebrew:
+        name: neovim
+        state: present
+
+    - name: Check Install - node.js
       community.general.homebrew:
         name: node
+        state: present
+
+    - name: Check Install - GitHub CLI
+      community.general.homebrew:
+        name: gh
+        state: present
+
+    - name: Check Install - Tmux
+      community.general.homebrew:
+        name: tmux
+        state: present
+
+    - name: Check Install - curl
+      community.general.homebrew:
+        name: npm
         state: present
 
     - name: Check Install - npm
       community.general.homebrew:
         name: npm
         state: present
-
-    - name: Check Install - Obsidian
-      community.general.homebrew:
-        name: obsidian
-        state: present
-
     - name: Check Install - RipGrep
       community.general.homebrew:
         name: ripgrep
-        state: present
-
-    - name: Check Install - Cascadia Code Font
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
-      community.general.homebrew_cask:
-        name: 
-          - font-cascadia-code
-        state: present
-
-    - name: Check Install - Hack Nerd Font (SketchyBar)
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
-      community.general.homebrew_cask:
-        name: 
-          - font-hack-nerd-font
         state: present
 
     - name: Check Install - Aerospace
@@ -164,9 +161,35 @@
       shell: "sketchybar --restart"
       when: sketchybar_status.rc != 0
 
+- name: Brew Install (Fonts)
+  hosts: localhost
+  become: false
+  gather_facts: false
+  environment:
+    HOMEBREW_NO_ANALYTICS: "1"
+    tasks:
+    - name: Check Install - Cascadia Code Font
+      become: false
+      environment:
+        HOMEBREW_NO_ANALYTICS: "1"
+      community.general.homebrew_cask:
+        name: 
+          - font-cascadia-code
+        state: present
+
+    - name: Check Install - Hack Nerd Font (SketchyBar)
+      become: false
+      environment:
+        HOMEBREW_NO_ANALYTICS: "1"
+      community.general.homebrew_cask:
+        name: 
+          - font-hack-nerd-font
+        state: present
+
 - name: GitHub SSH Key Setup
   hosts: localhost
   become: false
+  gather_facts: false
   tasks:
     - name: Check if Git user name is configured
       ansible.builtin.command: "git config --global --get user.name"
