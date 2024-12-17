@@ -96,6 +96,11 @@
         name: obsidian
         state: present
 
+    - name: Check Install - RipGrep
+      community.general.homebrew:
+        name: ripgrep
+        state: present
+
     - name: Check Install - Cascadia Code Font
       become: false
       environment:

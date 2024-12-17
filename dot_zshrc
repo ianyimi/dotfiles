@@ -16,6 +16,9 @@ alias tm="tmux"
 alias ta="tmux attach"
 alias nv="nvim ."
 alias lg="lazygit"
+alias ap="ansible-playbook"
+
+alias apConfig="ansible-playbook ~/.bootstrap/darwin.yml --ask-become-pass"
 
 alias cdConfig="cd ~/.config"
 alias cdDesktop="cd ~/Desktop"
