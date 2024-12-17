@@ -19,6 +19,7 @@ alias lg="lazygit"
 
 alias cdDesktop="cd ~/Desktop"
 alias cdDownloads="cd ~/Downloads"
+alias cdDocuments="cd ~/Documents"
 
 alias cdChezmoi="chezmoi cd"
 alias lgChezmoi="lazygit -p ~/.local/share/chezmoi"
@@ -31,9 +32,9 @@ alias cdNvim="cd ~/.config/nvim"
 alias nvNvim="nvim ~/.config/nvim"
 alias lgNvim="lazygit -p ~/.config/nvim"
 
-alias cdEdapt="cd ~/Desktop/webapp-rebuild"
-alias nvEdapt="nvim ~/Desktop/webapp-rebuild"
-alias lgEdapt="lazygit -p ~/Desktop/webapp-rebuild"
+alias cdEdapt="cd ~/Desktop/edapt/webapp-rebuild/dev"
+alias nvEdapt="nvim ~/Desktop/edapt/webapp-rebuild/dev"
+alias lgEdapt="lazygit -p ~/Desktop/edapt/webapp-rebuild/dev"
 
 alias cdPortfolio="cd ~/Desktop/Portfolio24"
 alias nvPortfolio="nvim ~/Desktop/Portfolio24"
