@@ -17,6 +17,7 @@ alias ta="tmux attach"
 alias nv="nvim ."
 alias lg="lazygit"
 
+alias cdConfig="cd ~/.config"
 alias cdDesktop="cd ~/Desktop"
 alias cdDownloads="cd ~/Downloads"
 alias cdDocuments="cd ~/Documents"
