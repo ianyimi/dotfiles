@@ -61,6 +61,15 @@
         name: obsidian
         state: present
 
+    - name: Check Install - Ghostty
+      become: false
+      environment:
+        HOMEBREW_NO_ANALYTICS: "1"
+      community.general.homebrew_cask:
+        name: 
+          - ghostty
+        state: present
+
 - name: Brew Install (CLI)
   hosts: localhost
   become: false
@@ -72,9 +81,24 @@
         name: git
         state: present
 
+    - name: Check Install - Zsh AutoSuggestions
+      community.general.homebrew:
+        name: zsh-autosuggestions
+        state: present
+
+    - name: Check Install - Zsh Syntax Highlighting
+      community.general.homebrew:
+        name: zsh-syntax-highlighting
+        state: present
+
     - name: Check Install - Corepack
       community.general.homebrew:
         name: corepack
+        state: present
+
+    - name: Check Install - Starship
+      community.general.homebrew:
+        name: starship
         state: present
 
     - name: Check Install - pnpm
@@ -188,6 +212,23 @@
       become: false
       shell: "sketchybar --restart"
       when: sketchybar_status.rc != 0
+
+- name: Brew Install (Languages)
+  hosts: localhost
+  become: false
+  gather_facts: false
+  environment:
+    HOMEBREW_NO_ANALYTICS: "1"
+  tasks:
+    - name: Check Install - Lua
+      community.general.homebrew:
+        name: lua
+        state: present
+
+    - name: Check Install - C
+      community.general.homebrew:
+        name: c
+        state: present
 
 - name: Brew Install (Fonts)
   hosts: localhost
