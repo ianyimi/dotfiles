@@ -1,0 +1,10 @@
+# /Users/zaye/.config/tmuxinator/rebuild.yml
+
+name: dotfiles
+root: ~/.local/share/chezmoi/
+
+windows:
+  - nvim:
+      layout: tiled
+      panes:
+        - nv

@@ -41,11 +41,6 @@
         name: spotify
         state: present
 
-    - name: Check Install - WezTerm
-      community.general.homebrew:
-        name: wezterm
-        state: present
-
     - name: Check Install - Arc Browser
       community.general.homebrew:
         name: arc
@@ -152,6 +147,16 @@
     - name: Check Install - Tmux
       community.general.homebrew:
         name: tmux
+        state: present
+
+    - name: Check Install - Tmuxinator
+      community.general.homebrew:
+        name: tmuxinator
+        state: present
+
+    - name: Check Install - Neofetch
+      community.general.homebrew:
+        name: neofetch
         state: present
 
     - name: Check Install - curl
