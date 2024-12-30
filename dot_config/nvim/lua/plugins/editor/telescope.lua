@@ -18,6 +18,7 @@ return {
 			end,
 		},
 		{ "nvim-telescope/telescope-ui-select.nvim" },
+		{ "danielpieper/telescope-tmuxinator.nvim" },
 
 		-- Useful for getting pretty icons, but requires a Nerd Font.
 		{ "nvim-tree/nvim-web-devicons",            enabled = vim.g.have_nerd_font },
@@ -127,6 +128,12 @@ return {
 					hidden = true,
 				},
 			},
+			extensions = {
+				tmuxinator = {
+					select_action = 'kill',
+					stop_action = 'kill',
+				}
+			}
 		}
 	end,
 	config = function(_, opts)
@@ -137,6 +144,7 @@ return {
 		pcall(require("telescope").load_extension, "ui-select")
 		pcall(require("telescope").load_extension, "git-worktree")
 		pcall(require("telescope").load_extension, "chezmoi")
+		pcall(require("telescope").load_extension, "tmuxinator")
 
 		-- Keymaps for Telescope functions
 		local builtin = require("telescope.builtin")
@@ -175,7 +183,10 @@ return {
 		vim.keymap.set("n", "<leader>ff", function()
 			find_files_with_escaped_paths()
 		end, { desc = "[F]ind [F]iles" })
-		vim.keymap.set("n", "<leader>fs", builtin.builtin, { desc = "[F]ind [S]elect Telescope" })
+		vim.keymap.set("n", "<leader>fst", builtin.builtin, { desc = "[F]ind [S]elect Telescope" })
+		vim.keymap.set("n", "<leader>fs",
+			require('telescope').extensions.tmuxinator.projects(require('telescope.themes').get_dropdown({})),
+			{ desc = "[F]ind [S]ession" })
 		vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "[F]ind [H]elp" })
 		vim.keymap.set("n", "<leader>fk", builtin.keymaps, { desc = "[F]ind [K]eymaps" })
 		vim.keymap.set("n", "<leader>gw", builtin.grep_string, { desc = "[G]rep current [W]ord" })
