@@ -5,7 +5,6 @@ root: ~/.local/share/chezmoi/
 
 windows:
   - nvim:
-      layout: even-horizontal
+      layout: tiled
       panes:
         - nv
-        - neofetch

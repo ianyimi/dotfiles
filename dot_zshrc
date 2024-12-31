@@ -20,6 +20,9 @@ alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
 
+alias tmks="tmux kill-session"
+alias tmkS="tmux kill-server"
+
 alias apConfig="ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass"
 
 alias cdConfig="cd ~/.config"
