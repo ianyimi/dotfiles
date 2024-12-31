@@ -1,5 +1,5 @@
 ---
-- name: Machine setup (Darwin OS)
+- name: Machine setup (MacOS)
   hosts: localhost
   become: true
   connection: local
@@ -74,6 +74,11 @@
     - name: Check Install - Git
       community.general.homebrew:
         name: git
+        state: present
+
+    - name: Check Install - Tailscale
+      community.general.homebrew:
+        name: tailscale
         state: present
 
     - name: Check Install - Zsh AutoSuggestions
