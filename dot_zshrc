@@ -20,7 +20,7 @@ alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
 
-alias apConfig="ansible-playbook ~/.bootstrap/darwin.yml --ask-become-pass"
+alias apConfig="ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass"
 
 alias cdConfig="cd ~/.config"
 alias cdDesktop="cd ~/Desktop"
