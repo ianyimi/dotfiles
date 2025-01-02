@@ -1,0 +1,10 @@
+# /Users/zaye/.config/tmuxinator/downloads.yml
+
+name: downloads
+root: ~/Downloads/
+
+windows:
+  - node:
+      layout: tiled
+      panes:
+        - nv

@@ -1,4 +1,4 @@
-# /Users/zaye/.config/tmuxinator/rebuild.yml
+# /Users/zaye/.config/tmuxinator/dotfiles.yml
 
 name: dotfiles
 root: ~/.local/share/chezmoi/
