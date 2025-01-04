@@ -91,6 +91,11 @@
         name: zsh-syntax-highlighting
         state: present
 
+    - name: Check Install - fzf
+      community.general.homebrew:
+        name: fzf
+        state: present
+
     - name: Check Install - Corepack
       community.general.homebrew:
         name: corepack
@@ -100,6 +105,14 @@
       community.general.homebrew:
         name: starship
         state: present
+
+    - name: Check Install - Luarocks
+      community.general.homebrew:
+        name: luarocks
+        state: present
+
+    - name: Check Install - Lunajson
+      ansible.builtin.command: luarocks install lunajson
 
     - name: Check Install - pnpm
       block:
