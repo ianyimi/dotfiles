@@ -20,6 +20,8 @@ alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
 
+alias skr="brew services restart sketchybar"
+
 alias tmks="tmux kill-session"
 alias tmkS="tmux kill-server"
 
@@ -41,9 +43,9 @@ alias cdNvim="cd ~/.config/nvim"
 alias nvNvim="nvim ~/.config/nvim"
 alias lgNvim="lazygit -p ~/.config/nvim"
 
-alias cdEdapt="cd ~/Desktop/edapt/webapp-rebuild.git/dev"
-alias nvEdapt="nvim ~/Desktop/edapt/webapp-rebuild.git/dev"
-alias lgEdapt="lazygit -p ~/Desktop/edapt/webapp-rebuild.git/dev"
+alias cdEdapt="cd ~/Desktop/Edapt/rebuild"
+alias nvEdapt="nvim ~/Desktop/Edapt/rebuild"
+alias lgEdapt="lazygit -p ~/Desktop/Edapt/rebuild"
 
 alias cdPortfolio="cd ~/Desktop/Portfolio24"
 alias nvPortfolio="nvim ~/Desktop/Portfolio24"

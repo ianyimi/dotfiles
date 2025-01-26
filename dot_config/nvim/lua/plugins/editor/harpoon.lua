@@ -16,7 +16,7 @@ return {
 		-- basic telescope configuration
 		local keys = {
 			{
-				"<leader>a",
+				"<leader>s",
 				function()
 					harpoon:list():add()
 					vim.cmd(":do User")

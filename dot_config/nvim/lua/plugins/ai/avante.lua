@@ -5,6 +5,14 @@ return {
 	version = false, -- set this if you want to always pull the latest change
 	opts = {
 		-- add any opts here
+		provider = "openai",
+		openai = {
+			endpoint = "https://api.openai.com/v1",
+			model = "o1-mini",
+			timeout = 30000,
+			temperature = 0,
+			max_tokens = 65536,
+		},
 	},
 	-- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
 	build = "make",
@@ -22,6 +30,14 @@ return {
 			"HakonHarnes/img-clip.nvim",
 			event = "VeryLazy",
 			opts = {
+				provider = "openai",
+				openai = {
+					endpoint = "https://api.openai.com/v1",
+					model = "gpt-4o",
+					timeout = 30000,
+					temperature = 0,
+					max_tokens = 16384,
+				},
 				-- recommended settings
 				default = {
 					embed_image_as_base64 = false,
@@ -42,13 +58,13 @@ return {
 
 				-- default config
 				---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
-				provider = "claude",              -- Recommend using Claude
-				auto_suggestions_provider = "claude", -- Since auto-suggestions are a high-frequency operation and therefore expensive, it is recommended to specify an inexpensive provider or even a free provider: copilot
-				claude = {
-					endpoint = "https://api.anthropic.com",
-					model = "claude-3-5-sonnet-20241022",
+				provider = "openai",
+				openai = {
+					endpoint = "https://api.openai.com/v1",
+					model = "gpt-4o",
+					timeout = 30000,
 					temperature = 0,
-					max_tokens = 4096,
+					max_tokens = 16384,
 				},
 				---Specify the special dual_boost mode
 				---1. enabled: Whether to enable dual_boost mode. Default to false.
@@ -61,8 +77,8 @@ return {
 				---Note: This is an experimental feature and may not work as expected.
 				dual_boost = {
 					enabled = false,
-					first_provider = "openai",
-					second_provider = "claude",
+					first_provider = "claude",
+					second_provider = "openai",
 					prompt =
 					"Based on the two reference outputs below, generate a response that incorporates elements from both but reflects your own judgment and unique perspective. Do not provide any explanation, just give the response directly. Reference Output 1: [{{provider1_output}}], Reference Output 2: [{{provider2_output}}]",
 					timeout = 60000, -- Timeout in milliseconds

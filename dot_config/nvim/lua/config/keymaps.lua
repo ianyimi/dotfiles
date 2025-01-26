@@ -23,7 +23,7 @@ keymap.set("n", "<S-j>", "mz<S-j>`z", { desc = "Upshift line below" })
 -- pane controls
 keymap.set("n", "<leader>v", "<C-w>v", { desc = "Split window right" })
 keymap.set("n", "<leader>b", "<C-w>s", { desc = "Split window below" })
-keymap.set("n", "<leader>se", "<C-w>=", { desc = "Make splits equal size" })
+keymap.set("n", "<leader>es", "<C-w>=", { desc = "Make [E]qual [S]plits" })
 keymap.set("n", "<leader>x", "<cmd>close<CR>", { desc = "Close current split" })
 --  pane navigation
 keymap.set("n", "<leader>h", "<C-w><C-h>", { desc = "Move focus to the left pane" })

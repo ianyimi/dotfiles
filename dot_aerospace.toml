@@ -265,5 +265,9 @@ alt-shift-l = ['join-with right', 'mode main']
 # run = "move-node-to-workspace t"
 
 [[on-window-detected]]
+if.app-name-regex-substring = 'system preferences'
+run = 'layout floating'
+
+[[on-window-detected]]
 if.app-name-regex-substring = 'finder'
 run = 'layout floating'
