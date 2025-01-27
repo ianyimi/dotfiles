@@ -1,7 +1,7 @@
 # /Users/zaye/.config/tmuxinator/rebuild.yml
 
 name: rebuild
-root: ~/Desktop/Edapt/webapp-rebuild.git/dev/
+root: ~/Desktop/Edapt/webapp-v2/
 
 windows:
   - node:

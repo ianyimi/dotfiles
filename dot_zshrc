@@ -43,9 +43,9 @@ alias cdNvim="cd ~/.config/nvim"
 alias nvNvim="nvim ~/.config/nvim"
 alias lgNvim="lazygit -p ~/.config/nvim"
 
-alias cdEdapt="cd ~/Desktop/Edapt/rebuild"
-alias nvEdapt="nvim ~/Desktop/Edapt/rebuild"
-alias lgEdapt="lazygit -p ~/Desktop/Edapt/rebuild"
+alias cdEdapt="cd ~/Desktop/Edapt/webapp-v2"
+alias nvEdapt="nvim ~/Desktop/Edapt/webapp-v2"
+alias lgEdapt="lazygit -p ~/Desktop/Edapt/webapp-v2"
 
 alias cdPortfolio="cd ~/Desktop/Portfolio24"
 alias nvPortfolio="nvim ~/Desktop/Portfolio24"
