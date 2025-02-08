@@ -55,6 +55,10 @@ on-focus-changed = [
 	# 'exec-and-forget sketchybar --trigger send_message MESSAGE="Focus has changed"'
 ]
 
+[workspace-to-monitor-force-assignment]
+B = ['secondary', 'main']
+D = ['secondary', 'main']
+
 # Gaps between windows (inner-*) and between monitor edges (outer-*).
 # Possible values:
 # - Constant:     gaps.outer.top = 8
@@ -67,7 +71,7 @@ inner.horizontal = 10
 inner.vertical = 10
 outer.left = 0
 outer.bottom = 0
-outer.top = 8
+outer.top = [{ monitor.main = 8 }, { monitor.secondary = 40 }, 8]
 outer.right = 0
 
 # 'main' binding mode declaration

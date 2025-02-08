@@ -3,17 +3,32 @@ return {
 	event = "VeryLazy",
 	lazy = false,
 	version = false, -- set this if you want to always pull the latest change
+
+	-- OLLAMA DEEPSEEK R1:32B (BROKEN)
+	-- opts = {
+	-- 	provider = 'openai',
+	-- 	openai = {
+	-- 		endpoint = "http://localhost:11434",
+	-- 		model = "deepseek-r1:32b",
+	-- 		timeout = 30000,
+	-- 		temperature = 0,
+	-- 		max_tokens = 31744
+	-- 	}
+	-- },
+
+	-- -- OPENAI o1 mini
 	opts = {
 		-- add any opts here
 		provider = "openai",
 		openai = {
 			endpoint = "https://api.openai.com/v1",
-			model = "o1-mini",
+			model = "o3-mini",
 			timeout = 30000,
 			temperature = 0,
 			max_tokens = 65536,
 		},
 	},
+
 	-- if you want to build from source then do `make BUILD_FROM_SOURCE=true`
 	build = "make",
 	-- build = "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" -- for windows
