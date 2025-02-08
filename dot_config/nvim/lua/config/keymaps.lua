@@ -50,8 +50,8 @@ keymap.set("v", "<S-k>", ":m '<-2<CR>gv=gv", { desc = "Upshift selected code" })
 
 keymap.set("v", ">", ">gv", { desc = "Indent Selected Code" })
 keymap.set("v", "<", "<gv", { desc = "Un-Indent Selected Code" })
-keymap.set("x", ">", ">g", { desc = "Indent Selected Code" })
-keymap.set("x", "<", "<g", { desc = "Un-Indent Selected Code" })
+keymap.set("x", ">", ">gv", { desc = "Indent Selected Code" })
+keymap.set("x", "<", "<gv", { desc = "Un-Indent Selected Code" })
 
 -- lazygit
 keymap.set("n", "<leader>gg", function()
