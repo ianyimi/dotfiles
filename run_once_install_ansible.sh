@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if command -v ansible >/dev/null 2>&1; then
+    echo "Ansible is already installed, skipping installation."
+    exit 0
+fi
+
 install_on_fedora() {
     sudo dnf install -y ansible
 }
