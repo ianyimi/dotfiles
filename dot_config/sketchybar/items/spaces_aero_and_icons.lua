@@ -97,16 +97,24 @@ end
 
 local function drawSpaces()
 	sbar.exec(LIST_MONITORS, function(monitorsOutput)
+		local firstMonitor = monitorsOutput:match("[^\r\n]+")
 		sbar.exec(LIST_CURRENT, function(focusedWorkspaceOutput)
 			local focusedWorkspace = focusedWorkspaceOutput:match("[^\r\n]+")
-			for monitorId in monitorsOutput:gmatch("[^\r\n]+") do
-				sbar.exec(LIST_WORKSPACES_OCCUPIED:format(monitorId), function(workspacesOutput)
-					for workspaceName in workspacesOutput:gmatch("[^\r\n]+") do
-						local isSelected = workspaceName == focusedWorkspace
-						addWorkspaceItem(workspaceName, monitorId, isSelected)
-					end
-				end)
-			end
+			sbar.exec("aerospace workspace --monitor", function()
+				for monitorId in monitorsOutput:gmatch("[^\r\n]+") do
+					sbar.exec(LIST_WORKSPACES_OCCUPIED:format(monitorId), function(workspacesOutput)
+						local workspaces = {}
+						for workspaceName in workspacesOutput:gmatch("[^\r\n]+") do
+							workspaces[workspaceName] = true
+							local isSelected = workspaceName == focusedWorkspace
+							addWorkspaceItem(workspaceName, monitorId, isSelected)
+						end
+						if not workspaces[focusedWorkspace] then
+							addWorkspaceItem(focusedWorkspace, firstMonitor, true)
+						end
+					end)
+				end
+			end)
 			if lastFocusedWorkspace and lastFocusedWorkspace ~= focusedWorkspace then
 				for spaceId, _ in pairs(spaces) do
 					if spaceId ~= "workspace_" .. focusedWorkspace then
