@@ -128,12 +128,6 @@ return {
 					hidden = true,
 				},
 			},
-			extensions = {
-				tmuxinator = {
-					select_action = 'kill',
-					stop_action = 'kill',
-				}
-			}
 		}
 	end,
 	config = function(_, opts)
@@ -185,7 +179,7 @@ return {
 		end, { desc = "[F]ind [F]iles" })
 		vim.keymap.set("n", "<leader>fst", builtin.builtin, { desc = "[F]ind [S]elect Telescope" })
 		vim.keymap.set("n", "<leader>fs",
-			require('telescope').extensions.tmuxinator.projects(require('telescope.themes').get_dropdown({})),
+			function() extensions.tmuxinator.projects(require('telescope.themes').get_dropdown({})) end,
 			{ desc = "[F]ind [S]ession" })
 		vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "[F]ind [H]elp" })
 		vim.keymap.set("n", "<leader>fk", builtin.keymaps, { desc = "[F]ind [K]eymaps" })
