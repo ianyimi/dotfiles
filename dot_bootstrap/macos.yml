@@ -41,10 +41,15 @@
         name: spotify
         state: present
 
-    - name: Check Install - Arc Browser
-      community.general.homebrew:
-        name: arc
-        state: present
+    # - name: Check Install - Arc Browser
+    #   community.general.homebrew:
+    #     name: arc
+    #     state: present
+
+    # - name: Check Install - Zen Browser
+    #   community.general.homebrew_cask:
+    #     name: zen-browser
+    #     state: present
 
     - name: Check Install - Keymapp
       community.general.homebrew:
@@ -224,6 +229,12 @@
         name: sketchybar
         state: present
 
+    # - name: Check Install - SketchyBar App Font
+    #   become: false
+    #   community.general.homebrew_cask:
+    #     name: font-sketchybar-app-font
+    #     state: present
+
     - name: Check if SketchyBar is running
       become: false
       shell: "pgrep -x sketchybar"
@@ -235,6 +246,65 @@
       become: false
       shell: "sketchybar --restart"
       when: sketchybar_status.rc != 0
+
+- name: Clone SketchyBar App Font Repository
+  hosts: localhost
+  become: false
+  tasks:
+    - name: Ensure packages directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/packages"
+        state: directory
+        mode: '0755'
+    - name: Clone sketchybar-app-font repository
+      ansible.builtin.git:
+        repo: "https://github.com/kvndrsslr/sketchybar-app-font.git"
+        dest: "{{ ansible_env.HOME }}/packages/sketchybar-app-font"
+        version: "HEAD"
+        force: no
+
+- name: Update SketchyBar App Font
+  hosts: localhost
+  become: false
+  tasks:
+    - name: Update sketchybar-app-font dependencies
+      ansible.builtin.command: pnpm install
+      args:
+        chdir: "{{ ansible_env.HOME }}/packages/sketchybar-app-font"
+    - name: Ensure sketchybar scripts directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.config/sketchybar/scripts"
+        state: directory
+        mode: '0755'
+    - name: Ensure my-script.sh exists with icon map markers
+      ansible.builtin.copy:
+        dest: "{{ ansible_env.HOME }}/.config/sketchybar/scripts/my-script.sh"
+        content: |
+          ### START-OF-ICON-MAP
+          # Here be the function
+          ### END-OF-ICON-MAP
+        mode: '0755'
+    - name: Build and install latest sketchybar-app-font and update icon map script
+      ansible.builtin.command: pnpm run build:install "{{ ansible_env.HOME }}/.config/sketchybar/scripts/my-script.sh"
+      args:
+        chdir: "{{ ansible_env.HOME }}/packages/sketchybar-app-font"
+
+- name: Generate app_icons.lua file from icon_map.lua in dist folder
+  hosts: localhost
+  gather_facts: true
+  tasks:
+    - name: Ensure ~/.config/sketchybar/helpers directory exists
+      file:
+        path: "{{ ansible_env.HOME }}/.config/sketchybar/helpers"
+        state: directory
+        mode: "0755"
+    - name: Copy icon_map.lua to app_icons.lua in helpers folder
+      copy:
+        src: "{{ ansible_env.HOME }}/packages/sketchybar-app-font/dist/icon_map.lua"
+        dest: "{{ ansible_env.HOME }}/.config/sketchybar/helpers/app_icons.lua"
+        mode: '0644'
+    - name: Restart SketchyBar to apply new icon configurations
+      ansible.builtin.shell: "sketchybar --reload"
 
 - name: Brew Install (Languages)
   hosts: localhost

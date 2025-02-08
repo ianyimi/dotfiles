@@ -11,6 +11,7 @@ local LIST_WORKSPACES_OCCUPIED = "aerospace list-workspaces --empty no --monitor
 local LIST_APPS = "aerospace list-windows --workspace %s | awk -F'|' '{gsub(/^ *| *$/, \"\", $2); print $2}'"
 
 local spaces = {}
+local lastFocusedWorkspace = nil
 
 local function getIconForApp(appName)
 	return app_icons[appName] or "?"
@@ -18,38 +19,23 @@ end
 
 local function updateSpaceIcons(spaceId, workspaceName)
 	local icon_strip = ""
-	local shouldDraw = false
-
 	sbar.exec(LIST_APPS:format(workspaceName), function(appsOutput)
 		local appFound = false
-
 		for app in appsOutput:gmatch("[^\r\n]+") do
 			local appName = app:match("^%s*(.-)%s*$") -- Trim whitespace
 			if appName and appName ~= "" then
 				icon_strip = icon_strip .. " " .. getIconForApp(appName)
 				appFound = true
-				shouldDraw = true
 			end
 		end
-
-		if not appFound then
-			shouldDraw = false
-		end
-
 		if spaces[spaceId] then
-			spaces[spaceId].item:set({
-				label = { string = icon_strip, drawing = shouldDraw }
-			})
-		else
-			print("Warning: Space ID '" .. spaceId .. "' not found when updating icons.")
+			spaces[spaceId].item:set({ label = { string = icon_strip, drawing = true } })
 		end
 	end)
 end
 
-
 local function addWorkspaceItem(workspaceName, monitorId, isSelected)
 	local spaceId = "workspace_" .. workspaceName
-
 	if not spaces[spaceId] then
 		local space_item = sbar.add("item", spaceId, {
 			icon = {
@@ -80,7 +66,6 @@ local function addWorkspaceItem(workspaceName, monitorId, isSelected)
 			display = monitorId,
 		})
 
-		-- Create bracket for double border effect
 		local space_bracket = sbar.add("bracket", { spaceId }, {
 			background = {
 				color = colors.transparent,
@@ -91,12 +76,10 @@ local function addWorkspaceItem(workspaceName, monitorId, isSelected)
 			}
 		})
 
-		-- Subscribe to mouse events for changing workspace
 		space_item:subscribe("mouse.clicked", function()
 			sbar.exec("aerospace workspace " .. workspaceName)
 		end)
 
-		-- Store both the item and its bracket in the spaces table
 		spaces[spaceId] = { item = space_item, bracket = space_bracket }
 	end
 
@@ -114,11 +97,8 @@ end
 
 local function drawSpaces()
 	sbar.exec(LIST_MONITORS, function(monitorsOutput)
-		-- Cache the focused workspace to avoid multiple `LIST_CURRENT` queries
 		sbar.exec(LIST_CURRENT, function(focusedWorkspaceOutput)
 			local focusedWorkspace = focusedWorkspaceOutput:match("[^\r\n]+")
-
-			-- Iterate through monitors and workspaces
 			for monitorId in monitorsOutput:gmatch("[^\r\n]+") do
 				sbar.exec(LIST_WORKSPACES_OCCUPIED:format(monitorId), function(workspacesOutput)
 					for workspaceName in workspacesOutput:gmatch("[^\r\n]+") do
@@ -127,6 +107,20 @@ local function drawSpaces()
 					end
 				end)
 			end
+			if lastFocusedWorkspace and lastFocusedWorkspace ~= focusedWorkspace then
+				for spaceId, _ in pairs(spaces) do
+					if spaceId ~= "workspace_" .. focusedWorkspace then
+						sbar.exec(LIST_APPS:format(spaceId:gsub("workspace_", "")), function(appsOutput)
+							if appsOutput == "" then
+								sbar.remove(spaces[spaceId].item)
+								sbar.remove(spaces[spaceId].bracket)
+								spaces[spaceId] = nil
+							end
+						end)
+					end
+				end
+			end
+			lastFocusedWorkspace = focusedWorkspace
 		end)
 	end)
 end
@@ -145,70 +139,3 @@ end)
 space_window_observer:subscribe("front_app_switched", function()
 	drawSpaces()
 end)
-
-space_window_observer:subscribe("space_windows_change", function()
-	drawSpaces()
-end)
-
-
---[[
--- Indicator for swapping menus and spaces
-local spaces_indicator = sbar.add("item", {
-    padding_left = -3,
-    padding_right = 3,
-    icon = {
-        padding_left = 8,
-        padding_right = 9,
-        color = colors.grey,
-        string = icons.switch.on,
-    },
-    label = {
-        width = 0,
-        padding_left = 0,
-        padding_right = 8,
-        string = "Spaces",
-        color = colors.bg1,
-    },
-    background = {
-        color = colors.with_alpha(colors.grey, 0.0),
-        border_color = colors.with_alpha(colors.bg1, 0.0),
-    }
-})
-
-spaces_indicator:subscribe("swap_menus_and_spaces", function(env)
-    local currently_on = spaces_indicator:query().icon.value == icons.switch.on
-    spaces_indicator:set({
-        icon = currently_on and icons.switch.off or icons.switch.on
-    })
-end)
-
-spaces_indicator:subscribe("mouse.entered", function(env)
-    sbar.animate("tanh", 30, function()
-        spaces_indicator:set({
-            background = {
-                color = { alpha = 1.0 },
-                border_color = { alpha = 0.5 },
-            },
-            icon = { color = colors.bg1 },
-            label = { width = "dynamic" }
-        })
-    end)
-end)
-
-spaces_indicator:subscribe("mouse.exited", function(env)
-    sbar.animate("tanh", 30, function()
-        spaces_indicator:set({
-            background = {
-                color = { alpha = 0.0 },
-                border_color = { alpha = 0.0 },
-            },
-            icon = { color = colors.grey },
-            label = { width = 0, }
-        })
-    end)
-end)
-
-spaces_indicator:subscribe("mouse.clicked", function(env)
-    sbar.trigger("swap_menus_and_spaces")
-end)
-]] --
