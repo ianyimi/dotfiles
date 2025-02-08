@@ -138,7 +138,7 @@ return {
 							local function escape_special_chars(str)
 								-- Escape Lua pattern special characters
 								local special_chars =
-									{ "(", ")", "[", "]", "%%", ".", "+", "-", "*", "?", "^", "$", "/" }
+								{ "(", ")", "[", "]", "%%", ".", "+", "-", "*", "?", "^", "$", "/" }
 								for _, char in ipairs(special_chars) do
 									str = str:gsub("%" .. char, "\\" .. char)
 								end
@@ -179,10 +179,6 @@ return {
 					},
 				},
 			})
-			-- open oil at current buffer
-			vim.keymap.set("n", "<leader>e", function()
-				require("oil").toggle_float()
-			end, { desc = "[E]xplore Files" })
 		end,
 	},
 }

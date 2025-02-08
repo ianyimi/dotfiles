@@ -20,10 +20,13 @@ keymap.set("n", "<C-y>", "gg<S-v><S-g>y", { desc = "[Y]ank All" })
 --  upshift line below
 keymap.set("n", "<S-j>", "mz<S-j>`z", { desc = "Upshift line below" })
 
+-- toggle file explorer
+keymap.set("n", "<leader>e", function() require("oil").toggle_float() end, { desc = "[E]xplore Files" })
+
 -- pane controls
 keymap.set("n", "<leader>v", "<C-w>v", { desc = "Split window right" })
 keymap.set("n", "<leader>b", "<C-w>s", { desc = "Split window below" })
-keymap.set("n", "<leader>es", "<C-w>=", { desc = "Make [E]qual [S]plits" })
+-- keymap.set("n", "<leader>es", "<C-w>=", { desc = "Make [E]qual [S]plits" })
 keymap.set("n", "<leader>x", "<cmd>close<CR>", { desc = "Close current split" })
 --  pane navigation
 keymap.set("n", "<leader>h", "<C-w><C-h>", { desc = "Move focus to the left pane" })
