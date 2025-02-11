@@ -58,6 +58,7 @@ on-focus-changed = [
 [workspace-to-monitor-force-assignment]
 B = ['secondary', 'main']
 D = ['secondary', 'main']
+O = ['secondary', 'main']
 
 # Gaps between windows (inner-*) and between monitor edges (outer-*).
 # Possible values:
