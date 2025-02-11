@@ -101,10 +101,10 @@
         name: fzf
         state: present
 
-    - name: Check Install - Corepack
-      community.general.homebrew:
-        name: corepack
-        state: present
+    # - name: Check Install - Corepack
+    #   community.general.homebrew:
+    #     name: corepack
+    #     state: present
 
     - name: Check Install - Starship
       community.general.homebrew:
@@ -167,6 +167,18 @@
         name: gh
         state: present
 
+    - name: Ensure GitHub Dash extension is installed
+      block:
+        - name: Check if GitHub Dash extension is installed
+          command: gh extension list --version
+          register: gh_dash_version
+          changed_when: false
+          ignore_errors: true
+
+        - name: Install GitHub Dash extension if not present
+          command: gh extension install dlvhdr/gh-dash
+          when: gh_dash_version.rc != 0
+
     - name: Check Install - Tmux
       community.general.homebrew:
         name: tmux
@@ -225,8 +237,10 @@
 
     - name: Check Install - SketchyBar
       become: false
+      ignore_errors: true
       community.general.homebrew:
         name: sketchybar
+        register: sketchybar_install
         state: present
 
     # - name: Check Install - SketchyBar App Font
