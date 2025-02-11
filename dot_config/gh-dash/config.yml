@@ -10,8 +10,8 @@ prSections:
   type: null
 
 issuesSections:
-- title: My Issues
-  filters: is:open involves:@me
+- title: webapp-v2 (Edapt)
+  filters: is:open org:edapt-schools repo:edapt-schools/webapp-v2
 - title: Assigned
   filters: is:open assignee:@me
 - title: Involved
@@ -27,7 +27,7 @@ defaults:
     width: 50
   prsLimit: 20
   issuesLimit: 20
-  view: prs
+  view: issues
   layout:
 
     prs:
@@ -49,6 +49,8 @@ defaults:
         width: 15
 
     issues:
+      labels:
+        width: 10
       updatedAt:
         width: 5
       createdAt:
@@ -69,7 +71,8 @@ keybindings:
   branches: []
 
 repoPaths: {
-  "webapp-v2": "~/Desktop/Edapt/webapp-v2"
+  "edapt-schools/*": "~/Desktop/Edapt/*",
+  "edapt-schools/webapp-v2": "~/Desktop/Edapt/webapp-v2"
 }
 
 theme:
