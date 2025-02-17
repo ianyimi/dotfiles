@@ -94,7 +94,7 @@ return {
 					end,
 				},
 				float = {
-					max_width = 95,
+					max_width = 120,
 				},
 				win_options = {
 					wrap = true,

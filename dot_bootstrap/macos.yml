@@ -206,10 +206,16 @@
         name: npm
         state: present
 
+    - name: Check Install - lazydocker
+      community.general.homebrew:
+        name: lazydocker
+        state: present
+
     - name: Check Install - npm
       community.general.homebrew:
         name: npm
         state: present
+
     - name: Check Install - RipGrep
       community.general.homebrew:
         name: ripgrep

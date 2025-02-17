@@ -1,0 +1,28 @@
+# /Users/zaye/.config/tmuxinator/webapp.yml
+
+name: vaults
+root: ~/Documents/Obsidian/
+windows:
+  - The Lab v2:
+      root: ~/Documents/Obsidian/Vaults/The Lab v2/
+      layout: 47ac,215x58,0,0{107x58,0,0,8,107x58,108,0,9}
+      panes:
+        - nv
+  - The Lab v2 (dev):
+      root: ~/Documents/Obsidian/Vaults
+      layout: 47ac,215x58,0,0{107x58,0,0,8,107x58,108,0,9}
+      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
+      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
+      # synchronize: after
+      panes:
+        - The Lab v2:
+          - cd ./The\ Lab\ v2/
+          - nv
+        - The Lab:
+          - cd ./The\ Lab/
+          - nv
+  - Plugin Forks:
+      root: ~/Documents/Obsidian/PluginForks/
+      layout: even-horizontal
+      panes:
+        - nv
