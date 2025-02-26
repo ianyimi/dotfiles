@@ -211,6 +211,21 @@
         name: lazydocker
         state: present
 
+    - name: Check Install - kubectl
+      community.general.homebrew:
+        name: kubectl
+        state: present
+
+    - name: Check Install - Azure CLI
+      community.general.homebrew:
+        name: azure-cli
+        state: present
+
+    - name: Check Install - k9s
+      community.general.homebrew:
+        name: k9s
+        state: present
+
     - name: Check Install - npm
       community.general.homebrew:
         name: npm

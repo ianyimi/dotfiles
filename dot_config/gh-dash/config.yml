@@ -6,16 +6,16 @@ prSections:
   filters: is:open review-requested:@me
   type: null
 - title: Involved
-  filters: is:open involves:@me -author:@me
+  filters: is:open involves:@me
   type: null
 
 issuesSections:
 - title: webapp-v2 (Edapt)
-  filters: is:open org:edapt-schools repo:edapt-schools/webapp-v2
+  filters: is:open repo:edapt-schools/webapp-v2
 - title: Assigned
   filters: is:open assignee:@me
 - title: Involved
-  filters: is:open involves:@me -author:@me
+  filters: is:open involves:@me org:edapt-schools
 
 repo:
   branchesRefetchIntervalSeconds: 30

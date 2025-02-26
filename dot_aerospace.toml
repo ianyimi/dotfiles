@@ -267,7 +267,7 @@ alt-shift-l = ['join-with right', 'mode main']
 #
 # [[on-window-detected]]
 # if.app-id = 'company.thebrowser.browser'
-# run = "move-node-to-workspace t"
+# run = "move-node-to-workspace b"
 
 [[on-window-detected]]
 if.app-name-regex-substring = 'system preferences'

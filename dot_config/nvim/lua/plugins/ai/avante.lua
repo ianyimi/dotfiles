@@ -3,6 +3,7 @@ return {
 	event = "VeryLazy",
 	lazy = false,
 	version = false, -- set this if you want to always pull the latest change
+	enabled = false,
 
 	-- OLLAMA DEEPSEEK R1:32B (BROKEN)
 	-- opts = {
@@ -109,11 +110,11 @@ return {
 				mappings = {
 					--- @class AvanteConflictMappings
 					diff = {
-						ours = "co",
-						theirs = "ct",
-						all_theirs = "ca",
-						both = "cb",
-						cursor = "cc",
+						ours = "<leader>co",
+						theirs = "<leader>ct",
+						all_theirs = "<leader>ca",
+						both = "<leader>cb",
+						cursor = "<leader>cc",
 						next = "]x",
 						prev = "[x",
 					},
