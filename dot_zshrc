@@ -21,6 +21,9 @@ alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
 
+alias nrd="npm run dev"
+alias nrb="npm run build"
+
 alias skr="brew services restart sketchybar"
 
 alias tmks="tmux kill-session"

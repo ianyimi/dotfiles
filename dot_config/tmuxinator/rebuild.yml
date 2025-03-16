@@ -17,3 +17,19 @@ windows:
       panes:
         - nv
         - neofetch
+  - claude:
+      layout: even-horizontal
+      panes:
+        claude
+  - gh dash:
+      layout: even-horizontal
+      panes:
+        gh dash
+  - lazydocker:
+      layout: even-horizontal
+      panes:
+        lazydocker
+  - k9s:
+      layout: even-horizontal
+      panes:
+        neofetch
