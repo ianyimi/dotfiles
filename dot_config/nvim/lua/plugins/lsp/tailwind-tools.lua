@@ -5,11 +5,21 @@ return {
 	dependencies = {
 		"nvim-treesitter/nvim-treesitter",
 		"nvim-telescope/telescope.nvim", -- optional
-		"neovim/nvim-lspconfig", -- optional
+		"neovim/nvim-lspconfig",       -- optional
 	},
 	opts = {
 		server = {
 			override = false,
+		},
+		filetypes = {
+			"astro",
+			"html",
+			"javascriptreact",
+			"typescriptreact",
+			"javascript",
+			"typescript",
+			"svelte",
+			"vue",
 		},
 		extension = {
 			patterns = {
@@ -19,6 +29,11 @@ return {
 					{ "clsx%(([^)]+)%)" },
 				},
 				typescript = {
+					{ "cva%(([^)]*)%)" },
+					{ "cx%(([^)]*)%)" },
+					{ "clsx%(([^)]+)%)" },
+				},
+				astro = {
 					{ "cva%(([^)]*)%)" },
 					{ "cx%(([^)]*)%)" },
 					{ "clsx%(([^)]+)%)" },

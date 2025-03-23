@@ -21,7 +21,7 @@ return {
 		auto_install = true,
 		highlight = { enable = true },
 		autotag = {
-			enabe = true,
+			enable = true,
 		},
 		-- indent = { enable = true },
 		ensure_installed = {
