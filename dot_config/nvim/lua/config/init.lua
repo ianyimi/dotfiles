@@ -8,9 +8,7 @@ LazyVim.config = M
 local defaults = {
 	-- colorscheme can be a string like `catppuccin` or a function that will load the colorscheme
 	---@type string|fun()
-	colorscheme = function()
-		require("tokyonight").load()
-	end,
+	colorscheme = "tokyonight",
 	-- load the default settings
 	defaults = {
 		-- autocmds = true, -- lazyvim.config.autocmds
@@ -25,75 +23,75 @@ local defaults = {
 		-- Same but for Neovim's news.txt
 		neovim = false,
 	},
-  -- icons used by other plugins
-  -- stylua: ignore
-  icons = {
-    misc = {
-      dots = "󰇘",
-    },
-    ft = {
-      octo = "",
-    },
-    dap = {
-      Stopped             = { "󰁕 ", "DiagnosticWarn", "DapStoppedLine" },
-      Breakpoint          = " ",
-      BreakpointCondition = " ",
-      BreakpointRejected  = { " ", "DiagnosticError" },
-      LogPoint            = ".>",
-    },
-    diagnostics = {
-      Error = " ",
-      Warn  = " ",
-      Hint  = " ",
-      Info  = " ",
-    },
-    git = {
-      added    = " ",
-      modified = " ",
-      removed  = " ",
-    },
-    kinds = {
-      Array         = " ",
-      Boolean       = "󰨙 ",
-      Class         = " ",
-      Codeium       = "󰘦 ",
-      Color         = " ",
-      Control       = " ",
-      Collapsed     = " ",
-      Constant      = "󰏿 ",
-      Constructor   = " ",
-      Copilot       = " ",
-      Enum          = " ",
-      EnumMember    = " ",
-      Event         = " ",
-      Field         = " ",
-      File          = " ",
-      Folder        = " ",
-      Function      = "󰊕 ",
-      Interface     = " ",
-      Key           = " ",
-      Keyword       = " ",
-      Method        = "󰊕 ",
-      Module        = " ",
-      Namespace     = "󰦮 ",
-      Null          = " ",
-      Number        = "󰎠 ",
-      Object        = " ",
-      Operator      = " ",
-      Package       = " ",
-      Property      = " ",
-      Reference     = " ",
-      Snippet       = " ",
-      String        = " ",
-      Struct        = "󰆼 ",
-      TabNine       = "󰏚 ",
-      Text          = " ",
-      TypeParameter = " ",
-      Unit          = " ",
-      Value         = " ",
-      Variable      = "󰀫 ",
-    },
-  },
+	-- icons used by other plugins
+	-- stylua: ignore
+	icons = {
+		misc = {
+			dots = "󰇘",
+		},
+		ft = {
+			octo = "",
+		},
+		dap = {
+			Stopped             = { "󰁕 ", "DiagnosticWarn", "DapStoppedLine" },
+			Breakpoint          = " ",
+			BreakpointCondition = " ",
+			BreakpointRejected  = { " ", "DiagnosticError" },
+			LogPoint            = ".>",
+		},
+		diagnostics = {
+			Error = " ",
+			Warn  = " ",
+			Hint  = " ",
+			Info  = " ",
+		},
+		git = {
+			added    = " ",
+			modified = " ",
+			removed  = " ",
+		},
+		kinds = {
+			Array         = " ",
+			Boolean       = "󰨙 ",
+			Class         = " ",
+			Codeium       = "󰘦 ",
+			Color         = " ",
+			Control       = " ",
+			Collapsed     = " ",
+			Constant      = "󰏿 ",
+			Constructor   = " ",
+			Copilot       = " ",
+			Enum          = " ",
+			EnumMember    = " ",
+			Event         = " ",
+			Field         = " ",
+			File          = " ",
+			Folder        = " ",
+			Function      = "󰊕 ",
+			Interface     = " ",
+			Key           = " ",
+			Keyword       = " ",
+			Method        = "󰊕 ",
+			Module        = " ",
+			Namespace     = "󰦮 ",
+			Null          = " ",
+			Number        = "󰎠 ",
+			Object        = " ",
+			Operator      = " ",
+			Package       = " ",
+			Property      = " ",
+			Reference     = " ",
+			Snippet       = " ",
+			String        = " ",
+			Struct        = "󰆼 ",
+			TabNine       = "󰏚 ",
+			Text          = " ",
+			TypeParameter = " ",
+			Unit          = " ",
+			Value         = " ",
+			Variable      = "󰀫 ",
+		},
+	},
 	---@type table<string, string[]|boolean>?
 	kind_filter = {
 		default = {
