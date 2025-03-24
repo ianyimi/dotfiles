@@ -1,2 +1,3 @@
 # dotfiles
-lazy configuration files
+macos configuration files
+- managed via chezmoi
