@@ -216,6 +216,11 @@
         name: kubectl
         state: present
 
+    - name: Check Install - Mongosh
+      community.general.homebrew:
+        name: mongosh
+        state: present
+
     - name: Check Install - Azure CLI
       community.general.homebrew:
         name: azure-cli
