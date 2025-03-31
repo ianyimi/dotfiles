@@ -1,7 +1,7 @@
-# /Users/zaye/.config/tmuxinator/webapp.yml
+# /Users/zaye/.config/tmuxinator/edapt-rebuild.yml
 
-name: webapp
-root: ~/Desktop/Edapt/webapp.git/dev/
+name: edapt-rebuild
+root: ~/Desktop/Edapt/webapp-v2/
 
 windows:
   - node:
@@ -17,3 +17,19 @@ windows:
       panes:
         - nv
         - neofetch
+  - claude:
+      layout: even-horizontal
+      panes:
+        claude
+  - gh dash:
+      layout: even-horizontal
+      panes:
+        gh dash
+  - lazydocker:
+      layout: even-horizontal
+      panes:
+        lazydocker
+  - k9s:
+      layout: even-horizontal
+      panes:
+        neofetch

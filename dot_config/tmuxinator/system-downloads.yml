@@ -1,6 +1,6 @@
-# /Users/zaye/.config/tmuxinator/downloads.yml
+# /Users/zaye/.config/tmuxinator/system-downloads.yml
 
-name: downloads
+name: system-downloads
 root: ~/Downloads/
 
 windows:

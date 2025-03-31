@@ -1,6 +1,6 @@
-# /Users/zaye/.config/tmuxinator/webapp.yml
+# /Users/zaye/.config/tmuxinator/zaye-vaults.yml
 
-name: vaults
+name: zaye-vaults
 root: ~/Documents/Obsidian/
 windows:
   - The Lab v2:

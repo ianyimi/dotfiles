@@ -1,6 +1,6 @@
-# /Users/zaye/.config/tmuxinator/dotfiles.yml
+# /Users/zaye/.config/tmuxinator/zaye-dotfiles.yml
 
-name: dotfiles
+name: zaye-dotfiles
 root: ~/.local/share/chezmoi/
 
 windows:

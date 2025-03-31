@@ -1,0 +1,10 @@
+# /Users/zaye/.config/tmuxinator/edapt-stream-processors.yml
+
+name: edapt-stream-processors
+root: ~/Desktop/Edapt/stream-processors/
+
+windows:
+  - nvim:
+      layout: tiled
+      panes:
+        - nv
