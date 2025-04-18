@@ -3,7 +3,7 @@ return {
 	event = "VeryLazy",
 	lazy = false,
 	version = false, -- set this if you want to always pull the latest change
-	enabled = false,
+	enabled = true,
 
 	-- OLLAMA DEEPSEEK R1:32B (BROKEN)
 	-- opts = {
@@ -23,10 +23,10 @@ return {
 		provider = "openai",
 		openai = {
 			endpoint = "https://api.openai.com/v1",
-			model = "o3-mini",
+			model = "gpt-4.1",
 			timeout = 30000,
 			temperature = 0,
-			max_tokens = 65536,
+			max_tokens = 32768,
 		},
 	},
 

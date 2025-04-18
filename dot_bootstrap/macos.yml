@@ -221,6 +221,11 @@
         name: mongosh
         state: present
 
+    - name: Check Install - Argon2
+      community.general.homebrew:
+        name: argon2
+        state: present
+
     - name: Check Install - Azure CLI
       community.general.homebrew:
         name: azure-cli

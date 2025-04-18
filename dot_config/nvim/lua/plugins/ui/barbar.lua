@@ -52,7 +52,7 @@ return {
 
 			for i = 1, list:length() do
 				local mark = list.items[i]
-				if mark == nil then
+				if mark == nil or mark.value == "" then
 					goto continue
 				end
 
