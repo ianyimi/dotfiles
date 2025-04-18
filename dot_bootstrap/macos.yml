@@ -162,7 +162,7 @@
     - name: Check Install - Neovim
       community.general.homebrew:
         name: neovim
-        state: present
+        state: latest
 
     - name: Check Install - node.js
       community.general.homebrew:
