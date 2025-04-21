@@ -261,13 +261,29 @@ alt-shift-j = ['join-with down', 'mode main']
 alt-shift-k = ['join-with up', 'mode main']
 alt-shift-l = ['join-with right', 'mode main']
 
-# [[on-window-detected]]
-# if.app-id = 'com.github.wez.wezterm'
-# run = "move-node-to-workspace t"
-#
-# [[on-window-detected]]
-# if.app-id = 'company.thebrowser.browser'
-# run = "move-node-to-workspace b"
+[[on-window-detected]]
+if.app-id = 'company.thebrowser.browser'
+run = "move-node-to-workspace b"
+
+[[on-window-detected]]
+if.app-id = 'com.figma.Desktop'
+run = "move-node-to-workspace d"
+
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'
+run = "move-node-to-workspace m"
+
+[[on-window-detected]]
+if.app-id = 'md.obsidian'
+run = "move-node-to-workspace o"
+
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = "move-node-to-workspace s"
+
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = "move-node-to-workspace t"
 
 [[on-window-detected]]
 if.app-name-regex-substring = 'system preferences'
