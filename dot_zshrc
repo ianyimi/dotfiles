@@ -23,6 +23,7 @@ alias mux="tmuxinator"
 
 alias nrd="npm run dev"
 alias nrb="npm run build"
+alias nrs="npm run start"
 
 alias skr="brew services restart sketchybar"
 

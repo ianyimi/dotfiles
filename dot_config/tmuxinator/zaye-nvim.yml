@@ -1,0 +1,14 @@
+# /Users/zaye/.config/tmuxinator/zaye-dotfiles.yml
+
+name: zaye-nvim
+root: ~/.local/share/chezmoi/dot_config/nvim/
+
+windows:
+  - nvim:
+      layout: tiled
+      panes:
+        - nv
+  - claude:
+      layout: tiled
+      panes:
+        - claude
