@@ -177,7 +177,7 @@ return {
 		vim.keymap.set("n", "<leader>ff", function()
 			find_files_with_escaped_paths()
 		end, { desc = "[F]ind [F]iles" })
-		vim.keymap.set("n", "<leader>fst", builtin.builtin, { desc = "[F]ind [S]elect Telescope" })
+		vim.keymap.set("n", "<leader>ft", builtin.builtin, { desc = "[F]ind [S]elect Telescope" })
 		vim.keymap.set("n", "<leader>fs",
 			function() extensions.tmuxinator.projects(require('telescope.themes').get_dropdown({})) end,
 			{ desc = "[F]ind [S]ession" })
