@@ -21,9 +21,11 @@ alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
 
+alias sz="source ~/.zshrc"
 alias nrd="npm run dev"
 alias nrb="npm run build"
 alias nrs="npm run start"
+alias nrt="npm run test"
 
 alias skr="brew services restart sketchybar"
 
