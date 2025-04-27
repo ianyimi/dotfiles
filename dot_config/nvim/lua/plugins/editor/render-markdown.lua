@@ -90,31 +90,6 @@ return {
 		callouts = {
 			enabled = true,
 		},
-		injections = {
-			markdown = {
-				enabled = true,
-				-- Custom TreeSitter query with more precise handling of code blocks
-				query = [[
-					;; Define special handling for anyblock code blocks
-					((fenced_code_block
-						(info_string) @_info
-						(code_fence_content) @obsidian)
-					(#match? @_info "^```anyblock")
-					(#set! injection.language "markdown")
-					(#set! injection.combined)
-					(#set! injection.self))
-					
-					;; Same for dataview, dataviewjs, tasks, calendar-nav
-					((fenced_code_block
-						(info_string) @_info
-						(code_fence_content) @obsidian)
-					(#match? @_info "^```(dataview|dataviewjs|tasks|calendar-nav)")
-					(#set! injection.language "markdown")
-					(#set! injection.combined)
-					(#set! injection.self))
-				]],
-			},
-		},
 		debug = true, -- Enable debug mode to see parsing issues in :messages
 	},
 }
