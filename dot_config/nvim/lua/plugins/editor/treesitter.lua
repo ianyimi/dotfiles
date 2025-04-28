@@ -4,7 +4,7 @@ return {
 	event = { "BufReadPost", "BufWritePost", "BufNewFile", "VeryLazy" },
 	dependencies = {
 		"windwp/nvim-ts-autotag",
-		opts = {},
+		options = {},
 	},
 	lazy = vim.fn.argc(-1) == 0, -- load treesitter early when opening a file from the cmdline
 	init = function(plugin)
