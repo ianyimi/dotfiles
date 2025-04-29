@@ -82,8 +82,6 @@ return {
 				"html",
 				"jsonls",
 				"lua_ls",
-				"markdown",
-				"markdown-inline",
 				"tailwindcss",
 				"taplo",
 				"vtsls",
