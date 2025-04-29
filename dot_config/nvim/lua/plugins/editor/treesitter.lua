@@ -4,7 +4,6 @@ return {
 	event = { "BufReadPost", "BufWritePost", "BufNewFile", "VeryLazy" },
 	dependencies = {
 		"windwp/nvim-ts-autotag",
-		options = {},
 	},
 	lazy = vim.fn.argc(-1) == 0, -- load treesitter early when opening a file from the cmdline
 	init = function(plugin)
@@ -20,9 +19,6 @@ return {
 	opts = {
 		auto_install = true,
 		highlight = { enable = true },
-		autotag = {
-			enable = true,
-		},
 		-- indent = { enable = true },
 		ensure_installed = {
 			"astro",
@@ -32,6 +28,7 @@ return {
 			"json",
 			"lua",
 			"markdown",
+			"markdown_inline",
 			"query",
 			"regex",
 			"toml",
@@ -47,5 +44,6 @@ return {
 			opts.ensure_installed = require("util").dedup(opts.ensure_installed)
 		end
 		require("nvim-treesitter.configs").setup(opts)
+		require("nvim-ts-autotag").setup()
 	end,
 }
