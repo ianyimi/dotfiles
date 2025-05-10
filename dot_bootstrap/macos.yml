@@ -40,11 +40,12 @@
       community.general.homebrew:
         name: spotify
         state: present
+      ignore_errors: true
 
-    - name: Check Install - Vivaldi
-      community.general.homebrew_cask:
-        name: vivaldi
-        state: present
+    # - name: Check Install - Vivaldi
+    #   community.general.homebrew_cask:
+    #     name: vivaldi
+    #     state: present
 
     # - name: Check Install - Arc Browser
     #   community.general.homebrew:
@@ -60,11 +61,13 @@
       community.general.homebrew:
         name: keymapp
         state: present
+      ignore_errors: true
 
     - name: Check Install - Obsidian
       community.general.homebrew:
         name: obsidian
         state: present
+      ignore_errors: true
 
     - name: Check Install - Ghostty
       become: false
@@ -74,6 +77,7 @@
         name: 
           - ghostty
         state: present
+      ignore_errors: true
 
 - name: Brew Install (CLI)
   hosts: localhost
@@ -253,7 +257,7 @@
       community.general.homebrew_cask:
         name: 
           - nikitabobko/tap/aerospace
-        state: present
+        state: latest
 
     - name: Check if Aerospace is running
       become: false
