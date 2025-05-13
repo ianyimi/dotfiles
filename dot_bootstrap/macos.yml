@@ -47,10 +47,10 @@
     #     name: vivaldi
     #     state: present
 
-    # - name: Check Install - Arc Browser
-    #   community.general.homebrew:
-    #     name: arc
-    #     state: present
+    - name: Check Install - Arc Browser
+      community.general.homebrew:
+        name: arc
+        state: present
 
     # - name: Check Install - Zen Browser
     #   community.general.homebrew_cask:
@@ -213,6 +213,11 @@
     - name: Check Install - lazydocker
       community.general.homebrew:
         name: lazydocker
+        state: present
+
+    - name: Check Install - lazygit
+      community.general.homebrew:
+        name: lazygit
         state: present
 
     - name: Check Install - kubectl
