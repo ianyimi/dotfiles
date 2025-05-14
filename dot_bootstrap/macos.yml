@@ -79,6 +79,16 @@
         state: present
       ignore_errors: true
 
+    - name: Check Install - Plex
+      community.general.homebrew_cask:
+        name: plex
+        state: present
+
+    - name: Check Install - Mouseless
+      community.general.homebrew_cask:
+        name: mouseless
+        state: latest
+
 - name: Brew Install (CLI)
   hosts: localhost
   become: false
