@@ -30,14 +30,10 @@ return {
 
 		-- Configure individual formatters
 		conform.formatters.prettier = {
-			arrowParens = "always",
-			printWidth = 80,
-			singleQuote = false,
-			jsxSingleQuote = false,
-			semi = true,
-			trailingComma = "all",
-			tabWidth = 2,
-			plugins = { "prettier-plugin-tailwindcss" },
+			-- Use project's prettier and config
+			command = "prettier",
+			args = { "--write", "$FILENAME" },
+			stdin = false,
 		}
 		conform.formatters.shfmt = {
 			prepend_args = { "-i", "4" },

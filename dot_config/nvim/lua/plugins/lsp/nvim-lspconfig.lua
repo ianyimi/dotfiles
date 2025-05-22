@@ -68,6 +68,17 @@ return {
 					callback = vim.lsp.buf.clear_references,
 				})
 			end
+
+			client.server_capabilities.documentFormattingProvider = true
+			vim.api.nvim_create_autocmd("BufWritePre", {
+				callback = function()
+					-- Skip formatting for bigfiles
+					if vim.bo.filetype == "bigfile" or vim.b.minianimate_disable then
+						return
+					end
+					vim.lsp.buf.format()
+				end
+			})
 		end)
 
 		require("mason").setup({})
