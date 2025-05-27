@@ -105,6 +105,11 @@
         name: tailscale
         state: present
 
+    - name: Check Install - Bat
+      community.general.homebrew:
+        name: bat
+        state: present
+
     - name: Check Install - Zsh AutoSuggestions
       community.general.homebrew:
         name: zsh-autosuggestions
