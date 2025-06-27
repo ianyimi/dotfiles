@@ -101,7 +101,7 @@
         state: present
 
     - name: Check Install - Tailscale
-      community.general.homebrew:
+      community.general.homebrew_cask:
         name: tailscale
         state: present
 
