@@ -423,6 +423,11 @@
         name: c
         state: present
 
+    - name: Check Install - Go
+      community.general.homebrew:
+        name: go
+        state: present
+
 - name: Brew Install (Fonts)
   hosts: localhost
   become: false
