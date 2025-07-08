@@ -272,6 +272,11 @@
         name: npm
         state: present
 
+    - name: Check Install - fnm
+      community.general.homebrew:
+        name: fnm
+        state: present
+
     - name: Check Install - RipGrep
       community.general.homebrew:
         name: ripgrep
