@@ -94,6 +94,15 @@
         name: docker-desktop
         state: present
 
+    - name: Check Install - LMStudio
+      become: false
+      environment:
+        HOMEBREW_NO_ANALYTICS: "1"
+      community.general.homebrew_cask:
+        name: 
+          - lm-studio
+        state: latest
+
 - name: Brew Install (CLI)
   hosts: localhost
   become: false
