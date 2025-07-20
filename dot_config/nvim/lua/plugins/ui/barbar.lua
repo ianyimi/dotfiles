@@ -1,5 +1,6 @@
 return {
 	"romgrk/barbar.nvim",
+	enabled = false,
 	dependencies = { "ThePrimeagen/harpoon" },
 	config = function()
 		local barbar = require("barbar")
@@ -46,14 +47,14 @@ return {
 			end
 		end
 
-			local function refresh_all_harpoon_tabs()
-				local ok, list = pcall(function()
-					return harpoon:list()
-				end)
-				if not ok or not list then
-					return
-				end
-				unpin_all()
+		local function refresh_all_harpoon_tabs()
+			local ok, list = pcall(function()
+				return harpoon:list()
+			end)
+			if not ok or not list then
+				return
+			end
+			unpin_all()
 
 			for i = 1, list:length() do
 				local mark = list.items[i]

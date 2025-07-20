@@ -1,7 +1,5 @@
-# /Users/zaye/.config/tmuxinator/project-astro-r3f.yml
-
-name: project-t3-x-payloadcms
-root: ~/Documents/Projects/t3-x-payloadcms/
+name: project-obsidian-mcp-macros
+root: ~/Documents/Projects/obsidian-mcp-macros/
 
 windows:
   - node:
