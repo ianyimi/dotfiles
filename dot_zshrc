@@ -2,6 +2,8 @@ eval "$(starship init zsh)"
 export EDITOR=nvim
 export PATH="$PATH:$HOME/go/bin"
 
+source "$HOME/.config/bash/owui.updown.sh"
+
 # aliases
 alias .="cd ../"
 alias ..="cd ../../"
@@ -46,6 +48,8 @@ alias nv="nvim ."
 alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
+
+alias mcp="mcphost -m ollama:Menlo/Jan-nano-gguf"
 
 alias sz="source ~/.zshrc"
 alias nrd="npm run dev"
@@ -149,12 +153,7 @@ export LIBRDKAFKA_ROOT="/opt/homebrew/opt/librdkafka"
 export CKJS_LINKING="dynamic"
 export BUILD_LIBRDKAFKA="0"
 
-bindkey -v
-
-# Added by Basic Memory installer
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.local/share/pnpm:$PATH"
 
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/zaye/.lmstudio/bin"
-# End of LM Studio CLI section
-
