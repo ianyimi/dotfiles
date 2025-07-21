@@ -16,10 +16,9 @@ windows:
       # synchronize: after
       panes:
         - The Lab v2:
-          - cd ./The\ Lab\ v2/
+          - cd ./obsidian-mcp-macros
           - nv
         - The Lab:
-          - cd ./The\ Lab/
           - nv
   - Plugin Forks:
       root: ~/Documents/Obsidian/PluginForks/
