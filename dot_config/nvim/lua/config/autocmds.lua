@@ -103,7 +103,7 @@ vim.filetype.add({
 						and path
 						and vim.fn.getfsize(path) > vim.g.bigfile_size
 						and "bigfile"
-					or nil
+						or nil
 			end,
 		},
 	},
@@ -132,6 +132,19 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 	end,
 })
 
+-- Prevent Neovim from creating built-in LSP gr* mappings
+vim.api.nvim_create_autocmd('User', {
+	pattern = 'VeryLazy',
+	callback = function()
+		pcall(vim.cmd.vunmap, 'gra')
+		pcall(vim.cmd.unmap, 'gra')
+		pcall(vim.cmd.unmap, 'gri')
+		pcall(vim.cmd.unmap, 'grn')
+		pcall(vim.cmd.unmap, 'grr')
+		pcall(vim.cmd.unmap, 'grt')
+	end
+})
+
 -- -- Autocommand to enable paste mode when exiting visual block mode
 -- vim.api.nvim_create_autocmd("VisualLeave", {
 --   group = augroup("PasteInVisualBlock"),
@@ -153,4 +166,3 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 --     vim.opt.paste = false
 --   end,
 -- })
-

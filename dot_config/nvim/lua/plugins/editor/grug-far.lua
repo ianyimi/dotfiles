@@ -34,7 +34,7 @@ return {
 				desc = "[F]ind and [R]eplace (cwd)",
 			},
 			{
-				"<leader>gw",
+				"<leader>fc",
 				function()
 					local ext = vim.bo.buftype == "" and vim.fn.expand("%:e")
 					grug.open({
@@ -45,7 +45,7 @@ return {
 					})
 				end,
 				mode = { "n", "v" },
-				desc = "Search and Replace",
+				desc = "[F]ind [C]urrent word",
 			},
 		}
 	end,
