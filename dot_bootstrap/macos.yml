@@ -94,6 +94,11 @@
         name: docker-desktop
         state: present
 
+    - name: Check Install - Syncthing
+      community.general.homebrew:
+        name: syncthing
+        state: present
+
     - name: Check Install - LMStudio
       become: false
       environment:

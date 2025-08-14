@@ -112,3 +112,6 @@ export CKJS_LINKING="dynamic"
 export BUILD_LIBRDKAFKA="0"
 
 bindkey -v
+
+# Added by Basic Memory installer
+export PATH="$HOME/.local/bin:$PATH"

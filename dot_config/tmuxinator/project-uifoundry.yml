@@ -1,5 +1,5 @@
-name: project-markitect
-root: ~/Documents/Projects/markitect/
+name: project-uifoundry
+root: ~/Documents/Projects/uifoundry.git/dev/
 
 windows:
   - node:

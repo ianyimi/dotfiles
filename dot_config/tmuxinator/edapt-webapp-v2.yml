@@ -1,7 +1,7 @@
 # /Users/zaye/.config/tmuxinator/edapt-webapp.yml
 
-name: edapt-webapp
-root: ~/Desktop/Edapt/webapp.git/dev/
+name: edapt-webapp-v2
+root: ~/Documents/Projects/Archive/webapp-v2/
 
 windows:
   - node:
