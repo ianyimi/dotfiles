@@ -14,8 +14,8 @@ windows:
       layout: 47ac,215x58,0,0{107x58,0,0,8,107x58,108,0,9}
       panes:
         - nv
-        - neofetch
-  - claude:
+        - neofetch && pnpm sso && pnpm sst dev
+  - opencode:
       layout: even-horizontal
       panes:
-        claude
+        - opencode

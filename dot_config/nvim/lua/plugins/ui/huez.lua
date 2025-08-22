@@ -7,6 +7,7 @@ return {
 	config = function()
 		require("huez").setup({
 			theme_config_module = "colorschemes",
+			fallback = "ghana-cozy", -- Set Ghana Cozy as default dark theme
 			exclude = {
 				"cyberdream",
 				"desert",

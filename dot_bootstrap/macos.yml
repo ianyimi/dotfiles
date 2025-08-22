@@ -6,7 +6,6 @@
   vars:
     flyctl_version: "0.1.130"
     pulumi_version: "v3.94.2"
-
   tasks:
     - name: Get my user
       ansible.builtin.set_fact:
@@ -74,7 +73,7 @@
       environment:
         HOMEBREW_NO_ANALYTICS: "1"
       community.general.homebrew_cask:
-        name: 
+        name:
           - ghostty
         state: present
       ignore_errors: true
@@ -104,7 +103,7 @@
       environment:
         HOMEBREW_NO_ANALYTICS: "1"
       community.general.homebrew_cask:
-        name: 
+        name:
           - lm-studio
         state: latest
 
@@ -113,7 +112,24 @@
   become: false
   environment:
     HOMEBREW_NO_ANALYTICS: "1"
+  vars:
+    brew_user: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
   tasks:
+    - name: Tap sst/tap (required for opencode)
+      become: true
+      become_user: "{{ brew_user }}"
+      community.general.homebrew_tap:
+        name: sst/tap
+        state: present
+
+    - name: Install opencode (from sst/tap)
+      become: true
+      become_user: "{{ brew_user }}"
+      community.general.homebrew:
+        name: sst/tap/opencode
+        state: present
+        update_homebrew: true
+
     - name: Check Install - Git
       community.general.homebrew:
         name: git
@@ -301,7 +317,7 @@
       environment:
         HOMEBREW_NO_ANALYTICS: "1"
       community.general.homebrew_cask:
-        name: 
+        name:
           - nikitabobko/tap/aerospace
         state: latest
 
@@ -356,7 +372,7 @@
       ansible.builtin.file:
         path: "{{ ansible_env.HOME }}/packages"
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Check if sketchybar-app-font repository exists
       ansible.builtin.stat:
@@ -388,7 +404,7 @@
       ansible.builtin.file:
         path: "{{ ansible_env.HOME }}/.config/sketchybar/scripts"
         state: directory
-        mode: '0755'
+        mode: "0755"
     - name: Ensure my-script.sh exists with icon map markers
       when: not sketchybar_app_font_stat.stat.exists
       ansible.builtin.copy:
@@ -397,7 +413,7 @@
           ### START-OF-ICON-MAP
           # Here be the function
           ### END-OF-ICON-MAP
-        mode: '0755'
+        mode: "0755"
     - name: Build and install latest sketchybar-app-font and update icon map script
       when: not sketchybar_app_font_stat.stat.exists
       ansible.builtin.command: pnpm run build:install "{{ ansible_env.HOME }}/.config/sketchybar/scripts/my-script.sh"
@@ -421,7 +437,7 @@
       copy:
         src: "{{ ansible_env.HOME }}/packages/sketchybar-app-font/dist/icon_map.lua"
         dest: "{{ ansible_env.HOME }}/.config/sketchybar/helpers/app_icons.lua"
-        mode: '0644'
+        mode: "0644"
     - name: Restart SketchyBar to apply new icon configurations
       ansible.builtin.shell: "sketchybar --reload"
 
@@ -454,32 +470,32 @@
   environment:
     HOMEBREW_NO_ANALYTICS: "1"
     tasks:
-    - name: Check Install - Cascadia Code Font
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
-      community.general.homebrew_cask:
-        name: 
-          - font-cascadia-code
-        state: present
+      - name: Check Install - Cascadia Code Font
+        become: false
+        environment:
+          HOMEBREW_NO_ANALYTICS: "1"
+        community.general.homebrew_cask:
+          name:
+            - font-cascadia-code
+          state: present
 
-    - name: Check Install - Hack Nerd Font (SketchyBar)
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
-      community.general.homebrew_cask:
-        name: 
-          - font-hack-nerd-font
-        state: present
+      - name: Check Install - Hack Nerd Font (SketchyBar)
+        become: false
+        environment:
+          HOMEBREW_NO_ANALYTICS: "1"
+        community.general.homebrew_cask:
+          name:
+            - font-hack-nerd-font
+          state: present
 
-    - name: Check Install - JetBrains Mono Nerd Font (SketchyBar)
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
-      community.general.homebrew_cask:
-        name: 
-          - font-jetbrains-mono-nerd-font
-        state: present
+      - name: Check Install - JetBrains Mono Nerd Font (SketchyBar)
+        become: false
+        environment:
+          HOMEBREW_NO_ANALYTICS: "1"
+        community.general.homebrew_cask:
+          name:
+            - font-jetbrains-mono-nerd-font
+          state: present
 
 - name: GitHub SSH Key Setup
   hosts: localhost
@@ -530,7 +546,7 @@
             msg: |
               Your new GitHub SSH public key is:
               {{ ssh_pub_key.stdout }}
-              
+
               Please copy this key and paste it into GitHub under:
               Settings > SSH and GPG Keys > New SSH Key.
 
@@ -550,7 +566,7 @@
             msg: |
               GitHub SSH Test Result:
               {{ github_test.stderr }}
-              
+
               If you see 'successfully authenticated' or similar, your SSH setup is complete!
 
     - name: Skip SSH setup if Git user is already configured

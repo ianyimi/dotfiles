@@ -8,7 +8,7 @@ windows:
       layout: tiled
       panes:
         - nv
-  - claude:
+  - opencode:
       layout: tiled
       panes:
-        - claude
+        - opencode
