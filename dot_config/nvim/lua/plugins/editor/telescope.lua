@@ -65,19 +65,7 @@ return {
 			require("telescope.builtin").find_files({ hidden = true, default_text = line })
 		end
 
-		local function find_command()
-			if vim.fn.executable("rg") == 1 then
-				return { "rg", "--files", "--color", "never", "-g", "!.git" }
-			elseif vim.fn.executable("fd") == 1 then
-				return { "fd", "--type", "f", "--color", "never", "-E", ".git" }
-			elseif vim.fn.executable("fdfind") == 1 then
-				return { "fdfind", "--type", "f", "--color", "never", "-E", ".git" }
-			elseif vim.fn.executable("find") == 1 and vim.fn.has("win32") == 0 then
-				return { "find", ".", "-type", "f" }
-			elseif vim.fn.executable("where") == 1 then
-				return { "where", "/r", ".", "*" }
-			end
-		end
+
 
 		return {
 			defaults = {
@@ -122,12 +110,7 @@ return {
 					},
 				},
 			},
-			pickers = {
-				find_files = {
-					find_command = find_command(),
-					hidden = true,
-				},
-			},
+			pickers = {},
 		}
 	end,
 	config = function(_, opts)
@@ -144,39 +127,140 @@ return {
 		local builtin = require("telescope.builtin")
 		local extensions = require("telescope").extensions
 
+		local function project_oldfiles(ofopts)
+			ofopts = ofopts or {}
+			local current_dir = vim.fn.getcwd()
+			ofopts.cwd_only = true
+			ofopts.cwd = current_dir
+			builtin.oldfiles(ofopts)
+		end
+
 		local function escape_special_chars(path)
 			return path:gsub("%(", "\\("):gsub("%)", "\\)"):gsub("%[", "\\["):gsub("%]", "\\]")
 		end
 
-		local function project_oldfiles(ofopts)
-			ofopts = ofopts or {}
-			local current_dir = vim.fn.getcwd()
-
-			ofopts.cwd_only = true
-			ofopts.cwd = current_dir
-
-			if ofopts.search_dirs then
-				for i, dir in ipairs(ofopts.search_dirs) do
-					ofopts.search_dirs[i] = escape_special_chars(dir)
-				end
-			end
-
-			builtin.oldfiles(ofopts)
-		end
-
 		local function find_files_with_escaped_paths(opts)
 			opts = opts or {}
+			opts.hidden = true
+			opts.no_ignore = true
+			opts.prompt_title = "Find Files"
+			
+			-- Track preview state per file
+			local env_preview_states = {}
+			
+			-- Custom previewer that hides content for .env files
+			opts.previewer = require('telescope.previewers').new_buffer_previewer({
+				title = "File Preview",
+				get_buffer_by_name = function(_, entry)
+					return entry.value
+				end,
+				define_preview = function(self, entry)
+					local filename = entry.value
+					local filepath = entry.path or entry.filename
+					
+					-- Handle .env files
+					if filename:match("%.env") then
+						local show_content = env_preview_states[filepath] or false
+						
+						if show_content then
+							-- Clear buffer first
+							vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
+							-- Show actual file contents
+							vim.fn.jobstart({'cat', filepath}, {
+								stdout_buffered = true,
+								on_stdout = function(_, data)
+									if data and #data > 0 then
+										-- Remove empty last line that cat often adds
+										if data[#data] == "" then
+											table.remove(data, #data)
+										end
+										vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, data)
+										vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', 'bash')
+									end
+								end
+							})
+						else
+							-- Show security message
+							vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {
+								"",
+								"  🔒 .env file preview hidden for security",
+								"",
+								"  Press <Tab> to show/hide preview",
+								"  Press <Enter> to open file",
+								"",
+							})
+							vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', 'text')
+						end
+					else
+						-- Use default preview for other files
+						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
+						vim.fn.jobstart({'cat', filepath}, {
+							stdout_buffered = true,
+							on_stdout = function(_, data)
+								if data and #data > 0 then
+									if data[#data] == "" then
+										table.remove(data, #data)
+									end
+									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, data)
+									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, vim.filetype.match({ filename = filename }) or 'text')
+								end
+							end
+						})
+					end
+				end
+			})
+			
+			-- Add custom keymaps
+			opts.attach_mappings = function(prompt_bufnr, map)
+				-- Toggle .env file preview with Tab
+				local toggle_env_preview = function()
+					local entry = require('telescope.actions.state').get_selected_entry()
+					if entry and entry.value:match("%.env") then
+						local filepath = entry.path or entry.filename
+						env_preview_states[filepath] = not (env_preview_states[filepath] or false)
+						
+						-- Force preview refresh by getting the picker and updating
+						local picker = require('telescope.actions.state').get_current_picker(prompt_bufnr)
+						picker.previewer.state.last_set_bufnr = nil -- Force refresh
+						picker:refresh_previewer()
+					else
+						-- Default Tab behavior for non-.env files
+						return false
+					end
+				end
+				
+				map("i", "<Tab>", toggle_env_preview)
+				map("n", "<Tab>", toggle_env_preview)
+				
+				return true
+			end
+			
+			-- Set find_command to show .env files and handle all finder tools
+			if vim.fn.executable("rg") == 1 then
+				opts.find_command = { "rg", "--files", "--color", "never", "--hidden", "--no-ignore", "-g", "!.git", "-g", "!node_modules" }
+			elseif vim.fn.executable("fd") == 1 then
+				opts.find_command = { "fd", "--type", "f", "--color", "never", "--hidden", "--no-ignore", "-E", ".git", "-E", "node_modules" }
+			elseif vim.fn.executable("fdfind") == 1 then
+				opts.find_command = { "fdfind", "--type", "f", "--color", "never", "--hidden", "--no-ignore", "-E", ".git", "-E", "node_modules" }
+			elseif vim.fn.executable("find") == 1 and vim.fn.has("win32") == 0 then
+				opts.find_command = { "find", ".", "-type", "f", "!", "-path", "*/.git/*", "!", "-path", "*/node_modules/*" }
+			end
+			
+			-- Handle escaped paths for directories with special characters
 			if opts.search_dirs then
 				for i, dir in ipairs(opts.search_dirs) do
 					opts.search_dirs[i] = escape_special_chars(dir)
 				end
 			end
+			
 			require("telescope.builtin").find_files(opts)
 		end
 
 		vim.keymap.set("n", "<leader>ff", function()
 			find_files_with_escaped_paths()
 		end, { desc = "[F]ind [F]iles" })
+
+
 		vim.keymap.set("n", "<leader>ft", builtin.builtin, { desc = "[F]ind [S]elect Telescope" })
 		vim.keymap.set("n", "<leader>fs",
 			function() extensions.tmuxinator.projects(require('telescope.themes').get_dropdown({})) end,
