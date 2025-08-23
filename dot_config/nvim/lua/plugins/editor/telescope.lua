@@ -144,10 +144,10 @@ return {
 			opts.hidden = true
 			opts.no_ignore = true
 			opts.prompt_title = "Find Files"
-			
+
 			-- Track preview state per file
 			local env_preview_states = {}
-			
+
 			-- Custom previewer that hides content for .env files
 			opts.previewer = require('telescope.previewers').new_buffer_previewer({
 				title = "File Preview",
@@ -157,16 +157,16 @@ return {
 				define_preview = function(self, entry)
 					local filename = entry.value
 					local filepath = entry.path or entry.filename
-					
+
 					-- Handle .env files
 					if filename:match("%.env") then
 						local show_content = env_preview_states[filepath] or false
-						
+
 						if show_content then
 							-- Clear buffer first
 							vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
 							-- Show actual file contents
-							vim.fn.jobstart({'cat', filepath}, {
+							vim.fn.jobstart({ 'cat', filepath }, {
 								stdout_buffered = true,
 								on_stdout = function(_, data)
 									if data and #data > 0 then
@@ -194,7 +194,7 @@ return {
 					else
 						-- Use default preview for other files
 						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
-						vim.fn.jobstart({'cat', filepath}, {
+						vim.fn.jobstart({ 'cat', filepath }, {
 							stdout_buffered = true,
 							on_stdout = function(_, data)
 								if data and #data > 0 then
@@ -202,14 +202,15 @@ return {
 										table.remove(data, #data)
 									end
 									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, data)
-									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, vim.filetype.match({ filename = filename }) or 'text')
+									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr,
+										vim.filetype.match({ filename = filename }) or 'text')
 								end
 							end
 						})
 					end
 				end
 			})
-			
+
 			-- Add custom keymaps
 			opts.attach_mappings = function(prompt_bufnr, map)
 				-- Toggle .env file preview with Tab
@@ -218,7 +219,7 @@ return {
 					if entry and entry.value:match("%.env") then
 						local filepath = entry.path or entry.filename
 						env_preview_states[filepath] = not (env_preview_states[filepath] or false)
-						
+
 						-- Force preview refresh by getting the picker and updating
 						local picker = require('telescope.actions.state').get_current_picker(prompt_bufnr)
 						picker.previewer.state.last_set_bufnr = nil -- Force refresh
@@ -228,31 +229,34 @@ return {
 						return false
 					end
 				end
-				
+
 				map("i", "<Tab>", toggle_env_preview)
 				map("n", "<Tab>", toggle_env_preview)
-				
+
 				return true
 			end
-			
+
 			-- Set find_command to show .env files and handle all finder tools
 			if vim.fn.executable("rg") == 1 then
-				opts.find_command = { "rg", "--files", "--color", "never", "--hidden", "--no-ignore", "-g", "!.git", "-g", "!node_modules" }
+				opts.find_command = { "rg", "--files", "--color", "never", "--hidden", "--no-ignore", "-g", "!.git", "-g",
+					"!node_modules" }
 			elseif vim.fn.executable("fd") == 1 then
-				opts.find_command = { "fd", "--type", "f", "--color", "never", "--hidden", "--no-ignore", "-E", ".git", "-E", "node_modules" }
+				opts.find_command = { "fd", "--type", "f", "--color", "never", "--hidden", "--no-ignore", "-E", ".git", "-E",
+					"node_modules" }
 			elseif vim.fn.executable("fdfind") == 1 then
-				opts.find_command = { "fdfind", "--type", "f", "--color", "never", "--hidden", "--no-ignore", "-E", ".git", "-E", "node_modules" }
+				opts.find_command = { "fdfind", "--type", "f", "--color", "never", "--hidden", "--no-ignore", "-E", ".git", "-E",
+					"node_modules" }
 			elseif vim.fn.executable("find") == 1 and vim.fn.has("win32") == 0 then
 				opts.find_command = { "find", ".", "-type", "f", "!", "-path", "*/.git/*", "!", "-path", "*/node_modules/*" }
 			end
-			
+
 			-- Handle escaped paths for directories with special characters
 			if opts.search_dirs then
 				for i, dir in ipairs(opts.search_dirs) do
 					opts.search_dirs[i] = escape_special_chars(dir)
 				end
 			end
-			
+
 			require("telescope.builtin").find_files(opts)
 		end
 
