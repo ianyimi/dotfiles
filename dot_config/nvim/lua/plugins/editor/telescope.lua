@@ -174,7 +174,16 @@ return {
 										if data[#data] == "" then
 											table.remove(data, #data)
 										end
-										vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, data)
+										-- Split any lines that contain newlines
+										local lines = {}
+										for _, line in ipairs(data) do
+											for split_line in line:gmatch("[^\n]*") do
+												if split_line ~= "" or #lines == 0 then
+													table.insert(lines, split_line)
+												end
+											end
+										end
+										vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
 										vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', 'bash')
 									end
 								end
@@ -201,7 +210,16 @@ return {
 									if data[#data] == "" then
 										table.remove(data, #data)
 									end
-									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, data)
+									-- Split any lines that contain newlines
+									local lines = {}
+									for _, line in ipairs(data) do
+										for split_line in line:gmatch("[^\n]*") do
+											if split_line ~= "" or #lines == 0 then
+												table.insert(lines, split_line)
+											end
+										end
+									end
+									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
 									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr,
 										vim.filetype.match({ filename = filename }) or 'text')
 								end
