@@ -1,12 +1,42 @@
 {
 	"$schema": "https://opencode.ai/config.json",
 	"mcp": {
+		"browsermcp": {
+			"type": "local",
+			"command": [
+				"npx",
+				"@browsermcp/mcp@latest"
+			],
+			"enabled": true
+		},
 		"context7": {
 			"type": "local",
 			"command": [
 				"npx",
 				"-y",
-				"@upstash/context7-mcp"
+				"@upstash/context7-mcp",
+				"--api-key",
+				"ctx7sk-2e20a38c-b4f2-4c47-a283-17592cbbb0d9"
+			],
+			"enabled": false
+		},
+		"ref": {
+			"type": "local",
+			"command": [
+				"npx",
+				"ref-tools-mcp@latest"
+			],
+			"environment": {
+				"REF_API_KEY": "ref-db9443a57d1de0697a0b"
+			},
+			"enabled": true
+		},
+		"sequential-thinking": {
+			"type": "local",
+			"command": [
+				"npx",
+				"-y",
+				"@modelcontextprotocol/server-sequential-thinking"
 			],
 			"enabled": true
 		}

@@ -13,6 +13,7 @@ alias .......="cd ../../../../../../../"
 
 alias cpfd="cp -R"
 alias cm="chezmoi"
+alias cma="chezmoi apply"
 alias tm="tmux"
 alias tma="tmux attach"
 alias tms="tmux kill-session -t"
@@ -28,6 +29,9 @@ alias nrs="npm run start"
 alias nrt="npm run test"
 
 alias skr="brew services restart sketchybar"
+
+alias spotify="source spotdl/bin/activate"
+alias spotifydl="spotify_dl -o ~/Downloads/ -s y -l"
 
 alias tmks="tmux kill-session"
 alias tmkS="tmux kill-server"
