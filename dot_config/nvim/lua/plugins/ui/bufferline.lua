@@ -2,6 +2,7 @@
 return {
 	"akinsho/bufferline.nvim",
 	event = "VeryLazy",
+	enabled = false,
 	dependencies = {
 		"ThePrimeagen/harpoon",
 	},
@@ -10,11 +11,16 @@ return {
 		{ "<leader>bP", "<Cmd>BufferLineGroupClose ungrouped<CR>", desc = "Delete Non‑Pinned Buffers" },
 		{ "<leader>br", "<Cmd>BufferLineCloseRight<CR>", desc = "Delete Buffers to the Right" },
 		{ "<leader>bl", "<Cmd>BufferLineCloseLeft<CR>", desc = "Delete Buffers to the Left" },
-		-- Buffer navigation handled in keymaps.lua
+		-- Buffer navigation keymaps moved from keymaps.lua
+		{ "<S-h>", "<cmd>BufferLineCyclePrev<cr>", desc = "Previous Buffer" },
+		{ "<S-l>", "<cmd>BufferLineCycleNext<cr>", desc = "Next Buffer" },
 		{ "[b", "<cmd>BufferLineCyclePrev<cr>", desc = "Prev Buffer" },
 		{ "]b", "<cmd>BufferLineCycleNext<cr>", desc = "Next Buffer" },
 		{ "[B", "<cmd>BufferLineMovePrev<cr>", desc = "Move buffer prev" },
 		{ "]B", "<cmd>BufferLineMoveNext<cr>", desc = "Move buffer next" },
+		-- Buffer movement keymaps moved from keymaps.lua
+		{ "<C-h>", "<cmd>BufferLineMovePrev<CR>", desc = "Move Buffer Left" },
+		{ "<C-l>", "<cmd>BufferLineMoveNext<CR>", desc = "Move Buffer Right" },
 	},
 	opts = {
 		options = {

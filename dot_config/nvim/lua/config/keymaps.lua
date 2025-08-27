@@ -44,16 +44,6 @@ keymap.set("n", "<a-l>", "<cmd>tabprev", { desc = "Split window below" })
 -- buffer controls
 keymap.set("n", "<S-x>", ":bd<CR>", { noremap = true, silent = true, desc = "Close Buffer" })
 keymap.set("n", "<C-S-x>", ":bd!<CR>", { noremap = true, silent = true, desc = "Close Buffer (Force)" })
--- buffer navigation
-keymap.set("n", "<S-h>", "<cmd>BufferLineCyclePrev<CR>", { noremap = true, silent = true, desc = "Previous Buffer" })
-keymap.set("n", "<S-l>", "<cmd>BufferLineCycleNext<CR>", { noremap = true, silent = true, desc = "Next Buffer" })
--- buffer movement using leader combinations (most reliable)
-keymap.set("n", "<leader>mh", "<cmd>BufferLineMovePrev<CR>", { noremap = true, silent = true, desc = "Move Buffer Left" })
-keymap.set("n", "<leader>ml", "<cmd>BufferLineMoveNext<CR>",
-	{ noremap = true, silent = true, desc = "Move Buffer Right" })
--- Use simple Ctrl+H/L for buffer movement (overrides vim defaults)
-keymap.set("n", "<C-h>", "<cmd>BufferLineMovePrev<CR>", { noremap = true, silent = true, desc = "Move Buffer Left" })
-keymap.set("n", "<C-l>", "<cmd>BufferLineMoveNext<CR>", { noremap = true, silent = true, desc = "Move Buffer Right" })
 
 keymap.set("v", "<S-j>", ":m '>+1<CR>gv=gv", { desc = "Downshift selected code" })
 keymap.set("v", "<S-k>", ":m '<-2<CR>gv=gv", { desc = "Upshift selected code" })

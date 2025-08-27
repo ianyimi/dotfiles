@@ -1,7 +1,24 @@
 return {
 	"romgrk/barbar.nvim",
-	enabled = false,
+	enabled = true,
+	event = "VeryLazy",
 	dependencies = { "ThePrimeagen/harpoon" },
+	keys = {
+		-- Buffer navigation keymaps (equivalent to bufferline keymaps)
+		{ "<S-h>",      "<Cmd>BufferPrevious<CR>",          desc = "Previous Buffer" },
+		{ "<S-l>",      "<Cmd>BufferNext<CR>",              desc = "Next Buffer" },
+		{ "[b",         "<Cmd>BufferPrevious<CR>",          desc = "Prev Buffer" },
+		{ "]b",         "<Cmd>BufferNext<CR>",              desc = "Next Buffer" },
+		{ "[B",         "<Cmd>BufferMovePrevious<CR>",      desc = "Move buffer prev" },
+		{ "]B",         "<Cmd>BufferMoveNext<CR>",          desc = "Move buffer next" },
+		-- Buffer movement keymaps (equivalent to bufferline keymaps)
+		{ "<C-h>",      "<Cmd>BufferMovePrevious<CR>",      desc = "Move Buffer Left" },
+		{ "<C-l>",      "<Cmd>BufferMoveNext<CR>",          desc = "Move Buffer Right" },
+		-- Additional barbar-specific keymaps for parity with bufferline
+		{ "<leader>bp", "<Cmd>BufferPin<CR>",               desc = "Toggle Pin" },
+		{ "<leader>C",  "<Cmd>BufferCloseBuffersRight<CR>", desc = "Delete Buffers to the Right" },
+		{ "<leader>X",  "<Cmd>BufferCloseBuffersLeft<CR>",  desc = "Delete Buffers to the Left" },
+	},
 	config = function()
 		local barbar = require("barbar")
 		local state = require("barbar.state")
