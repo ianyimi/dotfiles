@@ -2,7 +2,7 @@
 
 This repo contains the configuration to setup my machines. This is using [Chezmoi](https://chezmoi.io), the dotfile manager to setup the install.
 
-This automated setup is currently only configured for MacOS machines. Pretty much forked from https://github.com/logandonley/dotfiles, TY!
+This automated setup is currently only configured for MacOS machines. Pretty much forked from https://github.com/logandonley/dotfiles, as seen [here](https://www.youtube.com/watch?v=-RkANM9FfTM&t=9s) TY!
 
 ## How to run
 
