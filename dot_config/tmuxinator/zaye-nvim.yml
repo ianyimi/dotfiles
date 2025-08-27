@@ -7,7 +7,7 @@ windows:
   - nvim:
       layout: tiled
       panes:
-        - nv
+        - chezmoi edit --watch
   - opencode:
       layout: tiled
       panes:
