@@ -56,6 +56,11 @@
     #     name: zen-browser
     #     state: present
 
+    - name: Check Install - Docker Desktop
+      community.general.homebrew_cask:
+        name: docker-desktop
+        state: present
+
     - name: Check Install - Keymapp
       community.general.homebrew:
         name: keymapp
@@ -88,9 +93,9 @@
         name: mouseless
         state: latest
 
-    - name: Check Install - Docker Desktop
+    - name: Check Install - Responsively
       community.general.homebrew_cask:
-        name: docker-desktop
+        name: responsively
         state: present
 
     - name: Check Install - Syncthing
