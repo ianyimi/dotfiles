@@ -24,4 +24,4 @@ project_types:
     instructions: ~/.agent-os/project_types/astro/instructions
     standards: ~/.agent-os/project_types/astro/standards
 
-default_project_type: default
+default_project_type: payload-nextjs
