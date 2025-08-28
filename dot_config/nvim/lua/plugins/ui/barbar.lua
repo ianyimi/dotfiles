@@ -51,7 +51,7 @@ return {
 				pinned = { filename = true, buffer_index = true },
 				diagnostics = { { enabled = true } },
 			},
-			maximum_length = 30,  -- Allow longer names for unique paths
+			maximum_length = 30, -- Allow longer names for unique paths
 		})
 
 		local function unpin_all()
@@ -63,7 +63,15 @@ return {
 
 		local function get_buffer_by_mark(mark)
 			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-				local buffer_path = vim.api.nvim_buf_get_name(buf)
+				-- Skip invalid buffers
+				if not vim.api.nvim_buf_is_valid(buf) then
+					goto continue
+				end
+
+				local ok, buffer_path = pcall(vim.api.nvim_buf_get_name, buf)
+				if not ok then
+					goto continue
+				end
 
 				if buffer_path == "" or mark.value == "" then
 					goto continue
@@ -105,7 +113,16 @@ return {
 
 				local buf = get_buffer_by_mark(mark)
 				if buf == nil then
-					vim.cmd("badd " .. mark.value)
+					-- Use the path format from harpoon when creating buffer
+					local buffer_path = mark.value
+					-- If the harpoon path is relative and doesn't start with /, treat as relative
+					if not buffer_path:match("^/") then
+						-- Keep as relative path
+						vim.cmd("badd " .. vim.fn.fnameescape(buffer_path))
+					else
+						-- Use absolute path
+						vim.cmd("badd " .. vim.fn.fnameescape(buffer_path))
+					end
 					buf = get_buffer_by_mark(mark)
 				end
 				if buf ~= nil then
@@ -132,13 +149,20 @@ return {
 			-- Get current pinned buffers in order
 			local pinned_buffers = {}
 			for _, buf in ipairs(state.buffers) do
+				-- Skip invalid buffers
+				if not vim.api.nvim_buf_is_valid(buf) then
+					goto continue
+				end
+
 				local data = state.get_buffer_data(buf)
-				if data.pinned then
-					local buf_path = vim.api.nvim_buf_get_name(buf)
-					if buf_path ~= "" then
+				if data and data.pinned then
+					local ok, buf_path = pcall(vim.api.nvim_buf_get_name, buf)
+					if ok and buf_path ~= "" then
 						table.insert(pinned_buffers, buf_path)
 					end
 				end
+
+				::continue::
 			end
 
 			-- Update harpoon list to match pinned buffer order
@@ -163,33 +187,33 @@ return {
 		-- Function to create unique buffer names for duplicate filenames
 		local function get_unique_name(buf_path)
 			if buf_path == "" then return "[No Name]" end
-			
+
 			local filename = vim.fn.fnamemodify(buf_path, ":t")
-			
+
 			-- Get all loaded buffer paths with the same filename
 			local same_name_buffers = {}
 			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-				if vim.api.nvim_buf_is_loaded(buf) then
-					local other_path = vim.api.nvim_buf_get_name(buf)
-					if other_path ~= "" and vim.fn.fnamemodify(other_path, ":t") == filename then
+				if vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_is_valid(buf) then
+					local ok, other_path = pcall(vim.api.nvim_buf_get_name, buf)
+					if ok and other_path ~= "" and vim.fn.fnamemodify(other_path, ":t") == filename then
 						table.insert(same_name_buffers, other_path)
 					end
 				end
 			end
-			
+
 			-- If only one buffer with this filename, return just the filename
 			if #same_name_buffers <= 1 then
 				return filename
 			end
-			
+
 			-- Find the minimal distinguishing path
 			local path_parts = vim.split(vim.fn.fnamemodify(buf_path, ":p"), "/")
-			
+
 			-- Start with just filename, add parent directories until unique
 			for parts = 1, #path_parts do
 				local partial_path = table.concat(vim.list_slice(path_parts, -parts), "/")
 				local is_unique = true
-				
+
 				-- Check if this partial path is unique among same-name buffers
 				for _, other_path in ipairs(same_name_buffers) do
 					if other_path ~= buf_path then
@@ -201,16 +225,16 @@ return {
 						end
 					end
 				end
-				
+
 				if is_unique then
 					return partial_path
 				end
 			end
-			
+
 			-- Fallback to full path
 			return vim.fn.fnamemodify(buf_path, ":p")
 		end
-		
+
 		-- Set up autocmd to refresh unique names when buffers change
 		vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete", "BufEnter" }, {
 			callback = function()
@@ -220,26 +244,192 @@ return {
 				end)
 			end,
 		})
-		
+
 		-- Hook into barbar's state system to provide unique names
 		local original_get_buffer_data = state.get_buffer_data
 		state.get_buffer_data = function(buf)
+			-- Always call the original function first to get the expected data structure
 			local data = original_get_buffer_data(buf)
+
+			-- If buffer is invalid, return the original data (might be nil or empty table)
+			if not buf or not vim.api.nvim_buf_is_valid(buf) then
+				return data
+			end
+
+			-- Only enhance with unique names if we have valid data and buffer
 			if data and buf then
-				local buf_path = vim.api.nvim_buf_get_name(buf)
-				if buf_path and buf_path ~= "" then
+				-- Safely get buffer name with error handling
+				local ok, buf_path = pcall(vim.api.nvim_buf_get_name, buf)
+				if ok and buf_path and buf_path ~= "" then
 					-- Store the unique name for display
 					data.unique_name = get_unique_name(buf_path)
 				end
 			end
 			return data
 		end
-		
-		-- Make the update function globally accessible
+
+		-- Function to handle file deletions
+		local function handle_file_delete(deleted_path)
+			if not deleted_path then
+				return
+			end
+
+			local harpoon_list = harpoon:list()
+			local deleted_buffer = nil
+			local harpoon_index = nil
+
+			-- Find the deleted file's buffer
+			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+				if vim.api.nvim_buf_is_valid(buf) then
+					local ok, buf_path = pcall(vim.api.nvim_buf_get_name, buf)
+					if ok and buf_path == deleted_path then
+						deleted_buffer = buf
+						break
+					end
+				end
+			end
+
+			-- Find the deleted file in harpoon list
+			for i, item in ipairs(harpoon_list.items) do
+				if item and vim.fn.fnamemodify(item.value, ":p") == vim.fn.fnamemodify(deleted_path, ":p") then
+					harpoon_index = i
+					break
+				end
+			end
+
+			-- Remove from harpoon list
+			if harpoon_index then
+				table.remove(harpoon_list.items, harpoon_index)
+				harpoon_list._length = #harpoon_list.items
+			end
+
+			-- Delete the buffer
+			if deleted_buffer then
+				vim.api.nvim_buf_delete(deleted_buffer, { force = true })
+			end
+
+			-- Refresh barbar to reflect changes
+			vim.schedule(function()
+				render.update()
+			end)
+		end
+
+		-- Function to handle file renames
+		local function handle_file_rename(old_path, new_path)
+			if not old_path or not new_path or old_path == new_path then
+				return
+			end
+
+			local harpoon_list = harpoon:list()
+			local old_buffer = nil
+			local harpoon_index = nil
+
+			-- Find the old buffer and its position in harpoon
+			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+				if vim.api.nvim_buf_is_valid(buf) then
+					local ok, buf_path = pcall(vim.api.nvim_buf_get_name, buf)
+					if ok and buf_path == old_path then
+						old_buffer = buf
+						break
+					end
+				end
+			end
+
+			-- Find the old file in harpoon list
+			for i, item in ipairs(harpoon_list.items) do
+				if item and vim.fn.fnamemodify(item.value, ":p") == vim.fn.fnamemodify(old_path, ":p") then
+					harpoon_index = i
+					break
+				end
+			end
+
+			-- Close the old buffer if it exists and is empty/invalid
+			if old_buffer then
+				-- Check if buffer has unsaved changes
+				if not vim.api.nvim_buf_get_option(old_buffer, "modified") then
+					vim.api.nvim_buf_delete(old_buffer, { force = true })
+				end
+			end
+
+			-- Update harpoon list
+			if harpoon_index then
+				-- Always use relative paths to match the format of your other entries
+				-- This ensures consistency with items like "tests/example.spec.ts"
+				local new_harpoon_path = vim.fn.fnamemodify(new_path, ":.")
+
+				-- Replace the old path with new path in harpoon
+				harpoon_list.items[harpoon_index].value = new_harpoon_path
+			end
+
+			-- Don't call refresh_all_harpoon_tabs which might override our harpoon changes
+			-- Instead, just refresh barbar directly and create the buffer with the same format as harpoon
+			local new_buffer_path
+			if harpoon_index then
+				-- Use the path we just set in harpoon
+				new_buffer_path = harpoon_list.items[harpoon_index].value
+			else
+				-- Fallback to relative path
+				new_buffer_path = vim.fn.fnamemodify(new_path, ":.")
+			end
+
+			vim.cmd("badd " .. vim.fn.fnameescape(new_buffer_path))
+
+			-- Get the new buffer and pin it directly
+			local new_buf = get_buffer_by_mark(harpoon_list.items[harpoon_index])
+			if new_buf then
+				state.toggle_pin(new_buf)
+			end
+
+			-- Just update the render, don't refresh all harpoon tabs
+			vim.schedule(function()
+				render.update()
+			end)
+		end
+
+		-- Make functions globally accessible
 		_G.update_harpoon_from_buffer_order = update_harpoon_from_buffer_order
+		_G.handle_file_rename = handle_file_rename
 
 		vim.api.nvim_create_autocmd({ "BufEnter", "BufAdd", "BufLeave", "User" }, {
 			callback = refresh_all_harpoon_tabs,
+		})
+
+		-- Hook into Oil file operations
+		vim.api.nvim_create_autocmd("User", {
+			pattern = "OilActionsPost",
+			callback = function(event)
+				-- Check if operations succeeded
+				if event.data.err then
+					return -- Don't handle failed operations
+				end
+
+				-- Process all actions in the batch
+				for _, action in ipairs(event.data.actions) do
+					if action.type == "move" and action.entry_type == "file" then
+						local old_path = action.src_url
+						local new_path = action.dest_url
+
+						-- Convert oil:// URLs to file paths
+						if old_path:match("^oil://") then
+							old_path = old_path:gsub("^oil://", "")
+						end
+						if new_path:match("^oil://") then
+							new_path = new_path:gsub("^oil://", "")
+						end
+
+						handle_file_rename(old_path, new_path)
+					elseif action.type == "delete" and action.entry_type == "file" then
+						local deleted_path = action.url
+
+						-- Convert oil:// URLs to file paths
+						if deleted_path:match("^oil://") then
+							deleted_path = deleted_path:gsub("^oil://", "")
+						end
+						
+						handle_file_delete(deleted_path)
+					end
+				end
+			end,
 		})
 	end,
 }
