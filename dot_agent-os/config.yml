@@ -1,0 +1,27 @@
+# Agent OS Configuration
+
+# Refer to the official Agent OS documentation at:
+# https://buildermethods.com/agent-os
+
+agent_os_version: 1.4.1
+
+agents:
+  claude_code:
+    enabled: true
+  cursor:
+    enabled: false
+
+project_types:
+  default:
+    instructions: ~/.agent-os/instructions
+    standards: ~/.agent-os/standards
+
+  payload-nextjs:
+    instructions: ~/.agent-os/project_types/payload/instructions
+    standards: ~/.agent-os/project_types/payload/standards
+
+  astro-r3f:
+    instructions: ~/.agent-os/project_types/astro/instructions
+    standards: ~/.agent-os/project_types/astro/standards
+
+default_project_type: default
