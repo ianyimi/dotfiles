@@ -61,6 +61,11 @@
         name: docker-desktop
         state: present
 
+    - name: Check Install - Handbrake
+      community.general.homebrew_cask:
+        name: handbrake
+        state: latest
+
     - name: Check Install - Keymapp
       community.general.homebrew:
         name: keymapp
