@@ -375,9 +375,11 @@ return {
 			vim.cmd("badd " .. vim.fn.fnameescape(new_buffer_path))
 
 			-- Get the new buffer and pin it directly
-			local new_buf = get_buffer_by_mark(harpoon_list.items[harpoon_index])
-			if new_buf then
-				state.toggle_pin(new_buf)
+			if harpoon_index and harpoon_list.items[harpoon_index] then
+				local new_buf = get_buffer_by_mark(harpoon_list.items[harpoon_index])
+				if new_buf then
+					state.toggle_pin(new_buf)
+				end
 			end
 
 			-- Just update the render, don't refresh all harpoon tabs
