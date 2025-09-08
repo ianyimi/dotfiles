@@ -21,7 +21,9 @@ keymap.set("n", "<C-y>", "gg<S-v><S-g>y", { desc = "[Y]ank All" })
 keymap.set("n", "<S-j>", "mz<S-j>`z", { desc = "Upshift line below" })
 
 -- toggle file explorer
-keymap.set("n", "<leader>e", function() require("oil").toggle_float() end, { desc = "[E]xplore Files" })
+keymap.set("n", "<leader>e", function()
+	require("oil").toggle_float()
+end, { desc = "[E]xplore Files" })
 
 -- pane controls
 keymap.set("n", "<leader>v", "<C-w>v", { desc = "Split window right" })
@@ -43,24 +45,12 @@ keymap.set("n", "<a-l>", "<cmd>tabprev", { desc = "Split window below" })
 
 -- buffer controls with oil auto-open
 keymap.set("n", "<S-x>", function()
-	-- Use pcall to prevent errors from interfering plugins
-	local ok = pcall(vim.cmd, "bd")
-	if ok then
-		-- Check immediately if we should open oil
-		vim.schedule(function()
-			pcall(vim.cmd, "OpenOilIfEmpty")
-		end)
-	end
+	pcall(vim.cmd, "bd")
+	-- Oil auto-open is handled by the autocmd
 end, { noremap = true, silent = true, desc = "Close Buffer" })
 keymap.set("n", "<C-S-x>", function()
-	-- Use pcall to prevent errors from interfering plugins  
-	local ok = pcall(vim.cmd, "bd!")
-	if ok then
-		-- Check immediately if we should open oil
-		vim.schedule(function()
-			pcall(vim.cmd, "OpenOilIfEmpty")
-		end)
-	end
+	pcall(vim.cmd, "bd!")
+	-- Oil auto-open is handled by the autocmd
 end, { noremap = true, silent = true, desc = "Close Buffer (Force)" })
 
 keymap.set("v", "<S-j>", ":m '>+1<CR>gv=gv", { desc = "Downshift selected code" })

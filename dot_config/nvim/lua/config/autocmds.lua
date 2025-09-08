@@ -145,24 +145,36 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
--- Function to check if we should open oil
-local function should_open_oil()
+-- Shared buffer validation logic
+local function get_buffer_state()
 	local buffers = vim.api.nvim_list_bufs()
 	local valid_buffers = {}
+	local oil_buffers = {}
 	
 	for _, buf in ipairs(buffers) do
 		if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
 			local buftype = vim.api.nvim_get_option_value("buftype", { buf = buf })
 			local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
 			
-			if buftype == "" and filetype ~= "oil" then
-				table.insert(valid_buffers, buf)
+			if buftype == "" then
+				if filetype == "oil" then
+					table.insert(oil_buffers, buf)
+				else
+					table.insert(valid_buffers, buf)
+				end
 			end
 		end
 	end
 	
+	return valid_buffers, oil_buffers
+end
+
+-- Function to check if we should open oil
+local function should_open_oil()
+	local valid_buffers, oil_buffers = get_buffer_state()
+	
 	-- If we have exactly one valid buffer left and it's empty/unnamed
-	if #valid_buffers == 1 then
+	if #valid_buffers == 1 and #oil_buffers == 0 then
 		local remaining_buf = valid_buffers[1]
 		local buf_name = vim.api.nvim_buf_get_name(remaining_buf)
 		local line_count = vim.api.nvim_buf_line_count(remaining_buf)
@@ -184,28 +196,20 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 		vim.defer_fn(function()
 			local empty_buf = should_open_oil()
 			if empty_buf then
-				-- Check if oil is already open
-				local oil_already_open = false
-				for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-					if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
-						local ft = vim.api.nvim_get_option_value("filetype", { buf = buf })
-						if ft == "oil" then
-							oil_already_open = true
-							break
-						end
+				pcall(vim.api.nvim_buf_delete, empty_buf, { force = true })
+				pcall(require("oil").open)
+				-- Mark this oil instance as non-closable (after closing all buffers)
+				vim.schedule(function()
+					local oil_buf = vim.api.nvim_get_current_buf()
+					local ok, filetype = pcall(vim.api.nvim_get_option_value, "filetype", { buf = oil_buf })
+					if ok and filetype == "oil" then
+						vim.b[oil_buf].oil_allow_close = false
 					end
-				end
-				
-				if not oil_already_open then
-					pcall(vim.api.nvim_buf_delete, empty_buf, { force = true })
-					pcall(require("oil").open)
-					-- Refresh oil display to show directory name
-					vim.schedule(function()
-						if _G.refresh_oil_display then
-							pcall(_G.refresh_oil_display)
-						end
-					end)
-				end
+					
+					if _G.refresh_oil_display then
+						pcall(_G.refresh_oil_display)
+					end
+				end)
 			end
 		end, 100)
 	end,
@@ -217,8 +221,14 @@ vim.api.nvim_create_user_command("OpenOilIfEmpty", function()
 	if empty_buf then
 		vim.api.nvim_buf_delete(empty_buf, { force = true })
 		require("oil").open()
-		-- Refresh oil display to show directory name
+		-- Mark this oil instance as non-closable (after closing all buffers)
 		vim.schedule(function()
+			local oil_buf = vim.api.nvim_get_current_buf()
+			local ok, filetype = pcall(vim.api.nvim_get_option_value, "filetype", { buf = oil_buf })
+			if ok and filetype == "oil" then
+				vim.b[oil_buf].oil_allow_close = false
+			end
+			
 			if _G.refresh_oil_display then
 				_G.refresh_oil_display()
 			end
@@ -228,34 +238,99 @@ vim.api.nvim_create_user_command("OpenOilIfEmpty", function()
 	end
 end, { desc = "Open oil if in empty buffer state" })
 
--- Prevent closing oil when it's the only buffer (like on startup)
+-- Set oil closability on startup based on harpoon files
+vim.api.nvim_create_autocmd("VimEnter", {
+	group = augroup("oil_startup_closable"),
+	callback = function()
+		-- Check if oil opened as default file explorer (no files specified)
+		if vim.fn.argc() == 0 then
+			vim.schedule(function()
+				local oil_buf = vim.api.nvim_get_current_buf()
+				local ok, filetype = pcall(vim.api.nvim_get_option_value, "filetype", { buf = oil_buf })
+				if ok and filetype == "oil" then
+					-- Check if there are harpoon files available
+					local has_harpoon_files = false
+					local harpoon_ok, harpoon = pcall(require, "harpoon")
+					if harpoon_ok then
+						local list_ok, harpoon_list = pcall(function() return harpoon:list() end)
+						if list_ok and harpoon_list and harpoon_list:length() > 0 then
+							for i = 1, harpoon_list:length() do
+								local item = harpoon_list.items[i]
+								if item and item.value and item.value ~= "" then
+									local file_path = item.value
+									if not file_path:match("^/") then
+										file_path = vim.fn.getcwd() .. "/" .. file_path
+									end
+									if vim.fn.filereadable(file_path) == 1 then
+										has_harpoon_files = true
+										break
+									end
+								end
+							end
+						end
+					end
+					
+					-- Set closability based on harpoon files
+					vim.b[oil_buf].oil_allow_close = has_harpoon_files
+				end
+			end)
+		end
+	end,
+})
+
+-- Prevent closing oil based on context
 vim.api.nvim_create_autocmd("FileType", {
 	group = augroup("oil_prevent_close"),
 	pattern = "oil",
 	callback = function(ev)
-		vim.schedule(function()
-			local buffers = vim.api.nvim_list_bufs()
-			local valid_buffers = {}
+		-- Override oil's close keymaps with a check
+		local function safe_oil_close()
+			local allow_close = vim.b[ev.buf].oil_allow_close
 			
-			for _, buf in ipairs(buffers) do
-				if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
-					local buftype = vim.api.nvim_get_option_value("buftype", { buf = buf })
-					local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
-					
-					if buftype == "" or filetype == "oil" then
-						table.insert(valid_buffers, buf)
+			if allow_close == false then
+				-- Oil opened after closing all buffers - not closable
+				vim.notify("Cannot close oil - no other files open", vim.log.levels.WARN)
+			elseif allow_close == true then
+				-- Oil opened on startup - check if there are harpoon files
+				local has_harpoon_files = false
+				local harpoon_ok, harpoon = pcall(require, "harpoon")
+				if harpoon_ok then
+					local list_ok, harpoon_list = pcall(function() return harpoon:list() end)
+					if list_ok and harpoon_list and harpoon_list:length() > 0 then
+						for i = 1, harpoon_list:length() do
+							local item = harpoon_list.items[i]
+							if item and item.value and item.value ~= "" then
+								local file_path = item.value
+								if not file_path:match("^/") then
+									file_path = vim.fn.getcwd() .. "/" .. file_path
+								end
+								if vim.fn.filereadable(file_path) == 1 then
+									has_harpoon_files = true
+									break
+								end
+							end
+						end
 					end
 				end
+				
+				if has_harpoon_files then
+					require("oil.actions").close.callback()
+				else
+					vim.notify("Cannot close oil - no files to switch to", vim.log.levels.WARN)
+				end
+			else
+				-- Oil opened via toggle_float - always allow closing
+				require("oil.actions").close.callback()
 			end
-			
-			-- If oil is the only valid buffer, disable close keymaps
-			if #valid_buffers == 1 then
-				vim.keymap.set("n", "q", "<nop>", { buffer = ev.buf })
-				vim.keymap.set("n", "<Esc>", "<nop>", { buffer = ev.buf })
-			end
-		end)
+		end
+		
+		-- Override the close keymaps for this oil buffer
+		vim.keymap.set("n", "q", safe_oil_close, { buffer = ev.buf, desc = "Close oil (protected)" })
+		vim.keymap.set("n", "<Esc>", safe_oil_close, { buffer = ev.buf, desc = "Close oil (protected)" })
 	end,
 })
+
+
 
 
 

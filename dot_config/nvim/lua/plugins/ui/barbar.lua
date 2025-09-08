@@ -413,8 +413,6 @@ return {
 			end)
 		end
 
-
-
 		-- Update oil display when navigating directories
 		vim.api.nvim_create_autocmd("User", {
 			pattern = "OilEnter",
