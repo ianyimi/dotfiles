@@ -44,6 +44,7 @@ return {
 		local harpoon = require("harpoon")
 
 		barbar.setup({
+			auto_hide = false, -- Never hide tabline, even with single buffer
 			hide = {
 				inactive = false,
 			},
@@ -245,7 +246,7 @@ return {
 			end,
 		})
 
-		-- Hook into barbar's state system to provide unique names
+		-- Hook into barbar's state system to provide unique names and oil directory names
 		local original_get_buffer_data = state.get_buffer_data
 		state.get_buffer_data = function(buf)
 			-- Always call the original function first to get the expected data structure
@@ -258,14 +259,38 @@ return {
 
 			-- Only enhance with unique names if we have valid data and buffer
 			if data and buf then
-				-- Safely get buffer name with error handling
-				local ok, buf_path = pcall(vim.api.nvim_buf_get_name, buf)
-				if ok and buf_path and buf_path ~= "" then
-					-- Store the unique name for display
-					data.unique_name = get_unique_name(buf_path)
+				-- Check if this is an oil buffer
+				local ft_ok, filetype = pcall(vim.api.nvim_get_option_value, "filetype", { buf = buf })
+				if ft_ok and filetype == "oil" then
+					-- For oil buffers, try to get the current directory
+					local oil_ok, oil = pcall(require, "oil")
+					if oil_ok then
+						local dir = oil.get_current_dir(buf)
+						if dir then
+							-- Store the directory name for display in barbar
+							data.unique_name = "📁 " .. vim.fn.fnamemodify(dir, ":~")
+						else
+							data.unique_name = "📁 File Explorer"
+						end
+					else
+						data.unique_name = "📁 File Explorer"
+					end
+				else
+					-- Safely get buffer name with error handling for regular files
+					local buf_ok, buf_path = pcall(vim.api.nvim_buf_get_name, buf)
+					if buf_ok and buf_path and buf_path ~= "" then
+						-- Store the unique name for display
+						data.unique_name = get_unique_name(buf_path)
+					end
 				end
 			end
 			return data
+		end
+
+		-- Function to refresh barbar display for oil buffers
+		local function refresh_oil_display()
+			-- Force barbar to re-read buffer data
+			render.update()
 		end
 
 		-- Function to handle file deletions
@@ -388,9 +413,34 @@ return {
 			end)
 		end
 
+
+
+		-- Update oil display when navigating directories
+		vim.api.nvim_create_autocmd("User", {
+			pattern = "OilEnter",
+			callback = function()
+				vim.schedule(function()
+					refresh_oil_display()
+				end)
+			end,
+		})
+
+		-- Also refresh on buffer enter for oil buffers
+		vim.api.nvim_create_autocmd("BufEnter", {
+			callback = function()
+				local ok, filetype = pcall(vim.api.nvim_get_option_value, "filetype", { buf = 0 })
+				if ok and filetype == "oil" then
+					vim.schedule(function()
+						refresh_oil_display()
+					end)
+				end
+			end,
+		})
+
 		-- Make functions globally accessible
 		_G.update_harpoon_from_buffer_order = update_harpoon_from_buffer_order
 		_G.handle_file_rename = handle_file_rename
+		_G.refresh_oil_display = refresh_oil_display
 
 		vim.api.nvim_create_autocmd({ "BufEnter", "BufAdd", "BufLeave", "User" }, {
 			callback = refresh_all_harpoon_tabs,

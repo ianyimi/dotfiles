@@ -5,7 +5,7 @@ return {
     current_only = false,
     winblend = 50,
     zindex = 40,
-    excluded_filetypes = {},
+    excluded_filetypes = { "oil" },
     width = 2,
     handlers = {
       cursor = {

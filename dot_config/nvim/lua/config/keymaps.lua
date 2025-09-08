@@ -41,9 +41,27 @@ keymap.set("n", "<a-x>", "<cmd>tabclose<CR>", { desc = "Close current tab" })
 keymap.set("n", "<a-h>", "<cmd>tabnext", { desc = "Split window right" })
 keymap.set("n", "<a-l>", "<cmd>tabprev", { desc = "Split window below" })
 
--- buffer controls
-keymap.set("n", "<S-x>", ":bd<CR>", { noremap = true, silent = true, desc = "Close Buffer" })
-keymap.set("n", "<C-S-x>", ":bd!<CR>", { noremap = true, silent = true, desc = "Close Buffer (Force)" })
+-- buffer controls with oil auto-open
+keymap.set("n", "<S-x>", function()
+	-- Use pcall to prevent errors from interfering plugins
+	local ok = pcall(vim.cmd, "bd")
+	if ok then
+		-- Check immediately if we should open oil
+		vim.schedule(function()
+			pcall(vim.cmd, "OpenOilIfEmpty")
+		end)
+	end
+end, { noremap = true, silent = true, desc = "Close Buffer" })
+keymap.set("n", "<C-S-x>", function()
+	-- Use pcall to prevent errors from interfering plugins  
+	local ok = pcall(vim.cmd, "bd!")
+	if ok then
+		-- Check immediately if we should open oil
+		vim.schedule(function()
+			pcall(vim.cmd, "OpenOilIfEmpty")
+		end)
+	end
+end, { noremap = true, silent = true, desc = "Close Buffer (Force)" })
 
 keymap.set("v", "<S-j>", ":m '>+1<CR>gv=gv", { desc = "Downshift selected code" })
 keymap.set("v", "<S-k>", ":m '<-2<CR>gv=gv", { desc = "Upshift selected code" })

@@ -145,6 +145,120 @@ vim.api.nvim_create_autocmd('User', {
 	end
 })
 
+-- Function to check if we should open oil
+local function should_open_oil()
+	local buffers = vim.api.nvim_list_bufs()
+	local valid_buffers = {}
+	
+	for _, buf in ipairs(buffers) do
+		if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+			local buftype = vim.api.nvim_get_option_value("buftype", { buf = buf })
+			local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
+			
+			if buftype == "" and filetype ~= "oil" then
+				table.insert(valid_buffers, buf)
+			end
+		end
+	end
+	
+	-- If we have exactly one valid buffer left and it's empty/unnamed
+	if #valid_buffers == 1 then
+		local remaining_buf = valid_buffers[1]
+		local buf_name = vim.api.nvim_buf_get_name(remaining_buf)
+		local line_count = vim.api.nvim_buf_line_count(remaining_buf)
+		local first_line = vim.api.nvim_buf_get_lines(remaining_buf, 0, 1, false)[1] or ""
+		
+		-- Check if buffer is empty (no name, only one line, and first line is empty)
+		if buf_name == "" and line_count == 1 and first_line == "" then
+			return remaining_buf
+		end
+	end
+	return nil
+end
+
+-- Hook into buffer close events with immediate response
+vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
+	group = augroup("oil_auto_open"),
+	callback = function()
+		-- Add a small delay to let other autocmds complete
+		vim.defer_fn(function()
+			local empty_buf = should_open_oil()
+			if empty_buf then
+				-- Check if oil is already open
+				local oil_already_open = false
+				for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+					if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+						local ft = vim.api.nvim_get_option_value("filetype", { buf = buf })
+						if ft == "oil" then
+							oil_already_open = true
+							break
+						end
+					end
+				end
+				
+				if not oil_already_open then
+					pcall(vim.api.nvim_buf_delete, empty_buf, { force = true })
+					pcall(require("oil").open)
+					-- Refresh oil display to show directory name
+					vim.schedule(function()
+						if _G.refresh_oil_display then
+							pcall(_G.refresh_oil_display)
+						end
+					end)
+				end
+			end
+		end, 100)
+	end,
+})
+
+-- Also create a command for manual triggering
+vim.api.nvim_create_user_command("OpenOilIfEmpty", function()
+	local empty_buf = should_open_oil()
+	if empty_buf then
+		vim.api.nvim_buf_delete(empty_buf, { force = true })
+		require("oil").open()
+		-- Refresh oil display to show directory name
+		vim.schedule(function()
+			if _G.refresh_oil_display then
+				_G.refresh_oil_display()
+			end
+		end)
+	else
+		vim.notify("Not in empty buffer state")
+	end
+end, { desc = "Open oil if in empty buffer state" })
+
+-- Prevent closing oil when it's the only buffer (like on startup)
+vim.api.nvim_create_autocmd("FileType", {
+	group = augroup("oil_prevent_close"),
+	pattern = "oil",
+	callback = function(ev)
+		vim.schedule(function()
+			local buffers = vim.api.nvim_list_bufs()
+			local valid_buffers = {}
+			
+			for _, buf in ipairs(buffers) do
+				if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+					local buftype = vim.api.nvim_get_option_value("buftype", { buf = buf })
+					local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
+					
+					if buftype == "" or filetype == "oil" then
+						table.insert(valid_buffers, buf)
+					end
+				end
+			end
+			
+			-- If oil is the only valid buffer, disable close keymaps
+			if #valid_buffers == 1 then
+				vim.keymap.set("n", "q", "<nop>", { buffer = ev.buf })
+				vim.keymap.set("n", "<Esc>", "<nop>", { buffer = ev.buf })
+			end
+		end)
+	end,
+})
+
+
+
 -- -- Autocommand to enable paste mode when exiting visual block mode
 -- vim.api.nvim_create_autocmd("VisualLeave", {
 --   group = augroup("PasteInVisualBlock"),
