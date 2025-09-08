@@ -293,6 +293,29 @@ return {
 			render.update()
 		end
 
+		-- Function to clean up empty buffers
+		local function cleanup_empty_buffers()
+			vim.schedule(function()
+				local buffers = vim.api.nvim_list_bufs()
+				for _, buf in ipairs(buffers) do
+					if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+						local buftype = vim.api.nvim_get_option_value("buftype", { buf = buf })
+						local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
+						local buf_name = vim.api.nvim_buf_get_name(buf)
+						local line_count = vim.api.nvim_buf_line_count(buf)
+						local first_line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] or ""
+						
+						-- Delete empty, unnamed buffers (but not oil buffers or other special ones)
+						if buftype == "" and filetype ~= "oil" and 
+						   buf_name == "" and line_count == 1 and first_line == "" and
+						   vim.fn.bufwinnr(buf) == -1 then -- Not in a window
+							pcall(vim.api.nvim_buf_delete, buf, { force = true })
+						end
+					end
+				end
+			end)
+		end
+
 		-- Function to handle file deletions
 		local function handle_file_delete(deleted_path)
 			if not deleted_path then
@@ -431,6 +454,9 @@ return {
 					vim.schedule(function()
 						refresh_oil_display()
 					end)
+				else
+					-- Clean up empty buffers when entering non-oil buffers
+					cleanup_empty_buffers()
 				end
 			end,
 		})
@@ -439,9 +465,14 @@ return {
 		_G.update_harpoon_from_buffer_order = update_harpoon_from_buffer_order
 		_G.handle_file_rename = handle_file_rename
 		_G.refresh_oil_display = refresh_oil_display
+		_G.cleanup_empty_buffers = cleanup_empty_buffers
 
 		vim.api.nvim_create_autocmd({ "BufEnter", "BufAdd", "BufLeave", "User" }, {
-			callback = refresh_all_harpoon_tabs,
+			callback = function()
+				refresh_all_harpoon_tabs()
+				-- Clean up empty buffers after harpoon navigation
+				cleanup_empty_buffers()
+			end,
 		})
 
 		-- Hook into Oil file operations
