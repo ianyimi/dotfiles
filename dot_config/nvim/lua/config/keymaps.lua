@@ -23,6 +23,14 @@ keymap.set("n", "<S-j>", "mz<S-j>`z", { desc = "Upshift line below" })
 -- toggle file explorer
 keymap.set("n", "<leader>e", function()
 	require("oil").toggle_float()
+	vim.schedule(function()
+		local buf = vim.api.nvim_get_current_buf()
+		local ok, ft = pcall(vim.api.nvim_get_option_value, "filetype", { buf = buf })
+		if ok and ft == "oil" then
+			-- Opening via <leader>e should always be closable
+			vim.b[buf].oil_allow_close = nil
+		end
+	end)
 end, { desc = "[E]xplore Files" })
 
 -- pane controls

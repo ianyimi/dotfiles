@@ -10,6 +10,8 @@ vim.g.markdown_recommended_style = 0
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
+vim.g.lazygit_config = true
+
 vim.opt.spelllang = { "en" }
 
 vim.opt.number = true
