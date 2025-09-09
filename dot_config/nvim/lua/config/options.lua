@@ -96,6 +96,7 @@ if git_worktree then
 elseif git_branch then
 	-- Use the branch name if worktree path is not available
 	local branch_name = git_branch:gsub('[^%w%-_./]', '_')
+	branch_name = branch_name:gsub('/', '_')
 	local shada_filename = 'main-' .. branch_name .. '.shada'
 	vim.opt.shadafile = vim.fn.stdpath('data') .. '/shada/' .. shada_filename
 else
