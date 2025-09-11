@@ -53,7 +53,15 @@ keymap.set("n", "<a-l>", "<cmd>tabprev", { desc = "Split window below" })
 
 -- buffer controls with oil auto-open
 keymap.set("n", "<S-x>", function()
-	pcall(vim.cmd, "bd")
+	local buf = vim.api.nvim_get_current_buf()
+	local buf_path = vim.api.nvim_buf_get_name(buf)
+	
+	-- If file doesn't exist on disk but buffer does, force delete
+	if buf_path ~= "" and not vim.fn.filereadable(buf_path) then
+		pcall(vim.cmd, "bd!")
+	else
+		pcall(vim.cmd, "bd")
+	end
 	-- Oil auto-open is handled by the autocmd
 end, { noremap = true, silent = true, desc = "Close Buffer" })
 keymap.set("n", "<C-S-x>", function()

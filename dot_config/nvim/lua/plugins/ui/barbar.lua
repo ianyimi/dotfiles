@@ -322,42 +322,70 @@ return {
 				return
 			end
 
+			-- Normalize the deleted path to absolute
+			local deleted_path_abs = vim.fn.fnamemodify(deleted_path, ":p")
 			local harpoon_list = harpoon:list()
 			local deleted_buffer = nil
 			local harpoon_index = nil
 
-			-- Find the deleted file's buffer
+			-- Find the deleted file's buffer using normalized path comparison
 			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
 				if vim.api.nvim_buf_is_valid(buf) then
 					local ok, buf_path = pcall(vim.api.nvim_buf_get_name, buf)
-					if ok and buf_path == deleted_path then
-						deleted_buffer = buf
+					if ok and buf_path ~= "" then
+						local buf_path_abs = vim.fn.fnamemodify(buf_path, ":p")
+						if buf_path_abs == deleted_path_abs then
+							deleted_buffer = buf
+							break
+						end
+					end
+				end
+			end
+
+			-- Find the deleted file in harpoon list using normalized paths
+			for i, item in ipairs(harpoon_list.items) do
+				if item and item.value ~= "" then
+					local item_path_abs = vim.fn.fnamemodify(item.value, ":p")
+					if item_path_abs == deleted_path_abs then
+						harpoon_index = i
 						break
 					end
 				end
 			end
 
-			-- Find the deleted file in harpoon list
-			for i, item in ipairs(harpoon_list.items) do
-				if item and vim.fn.fnamemodify(item.value, ":p") == vim.fn.fnamemodify(deleted_path, ":p") then
-					harpoon_index = i
-					break
-				end
-			end
-
-			-- Remove from harpoon list
+			-- Remove from harpoon list first
 			if harpoon_index then
 				table.remove(harpoon_list.items, harpoon_index)
 				harpoon_list._length = #harpoon_list.items
 			end
 
-			-- Delete the buffer
+			-- Delete the buffer with force (works when not the active buffer)
 			if deleted_buffer then
-				vim.api.nvim_buf_delete(deleted_buffer, { force = true })
+				pcall(vim.api.nvim_buf_delete, deleted_buffer, { force = true })
 			end
 
 			-- Refresh barbar to reflect changes
 			vim.schedule(function()
+				render.update()
+			end)
+		end
+
+		-- Function to cleanup buffers for deleted files (not just from Oil)
+		local function cleanup_deleted_file_buffers()
+			vim.schedule(function()
+				local buffers = vim.api.nvim_list_bufs()
+				
+				for _, buf in ipairs(buffers) do
+					if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
+						local buf_path = vim.api.nvim_buf_get_name(buf)
+						
+						-- Check if buffer has a file path and that file no longer exists
+						if buf_path ~= "" and not vim.fn.filereadable(buf_path) then
+							handle_file_delete(buf_path)
+						end
+					end
+				end
+				
 				render.update()
 			end)
 		end
@@ -472,6 +500,15 @@ return {
 				refresh_all_harpoon_tabs()
 				-- Clean up empty buffers after harpoon navigation
 				cleanup_empty_buffers()
+				-- Clean up buffers for deleted files
+				cleanup_deleted_file_buffers()
+			end,
+		})
+
+		-- Additional autocmd to clean up deleted file buffers when focus returns to Neovim
+		vim.api.nvim_create_autocmd({ "FocusGained", "CursorHold" }, {
+			callback = function()
+				cleanup_deleted_file_buffers()
 			end,
 		})
 

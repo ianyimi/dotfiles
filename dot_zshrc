@@ -28,6 +28,7 @@ alias nrd="npm run dev"
 alias nrb="npm run build"
 alias nrs="npm run start"
 alias nrt="npm run test"
+alias ocu="brew update && brew upgrade opencode"
 
 alias skr="brew services restart sketchybar"
 
