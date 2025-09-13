@@ -199,7 +199,7 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 				pcall(vim.api.nvim_buf_delete, empty_buf, { force = true })
 				pcall(require("oil").open)
 				-- Mark this oil instance as non-closable (after closing all buffers)
-			vim.defer_fn(function()
+				vim.schedule(function()
 					local oil_buf = vim.api.nvim_get_current_buf()
 					local ok, filetype = pcall(vim.api.nvim_get_option_value, "filetype", { buf = oil_buf })
 					if ok and filetype == "oil" then
@@ -254,14 +254,26 @@ vim.api.nvim_create_autocmd("VimEnter", {
 					if harpoon_ok then
 						local list_ok, harpoon_list = pcall(function() return harpoon:list() end)
 						if list_ok and harpoon_list and harpoon_list:length() > 0 then
-							has_harpoon_files = true
+							for i = 1, harpoon_list:length() do
+								local item = harpoon_list.items[i]
+								if item and item.value and item.value ~= "" then
+									local file_path = item.value
+									if not file_path:match("^/") then
+										file_path = vim.fn.getcwd() .. "/" .. file_path
+									end
+									if vim.fn.filereadable(file_path) == 1 then
+										has_harpoon_files = true
+										break
+									end
+								end
+							end
 						end
 					end
 					
 					-- Set closability based on harpoon files
 					vim.b[oil_buf].oil_allow_close = has_harpoon_files
 				end
-			end, 150)
+			end)
 		end
 	end,
 })
