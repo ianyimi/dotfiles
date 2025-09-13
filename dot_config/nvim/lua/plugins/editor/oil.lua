@@ -76,13 +76,20 @@ end
 --   orig_refresh(...)
 -- end
 
--- Declare a global function to retrieve the current directory
+-- Throttled winbar to reduce render overhead
+local _oil_winbar_cache = { dir = nil, ts = 0 }
 function _G.get_oil_winbar()
-	local dir = require("oil").get_current_dir()
-	if dir then
-		return vim.fn.fnamemodify(dir, ":~")
+	local now = (vim.uv and vim.uv.now and vim.uv.now()) or 0
+	if now - (_oil_winbar_cache.ts or 0) > 150 then
+		local ok, dir = pcall(function()
+			return require("oil").get_current_dir()
+		end)
+		_oil_winbar_cache.dir = ok and dir or nil
+		_oil_winbar_cache.ts = now
+	end
+	if _oil_winbar_cache.dir then
+		return vim.fn.fnamemodify(_oil_winbar_cache.dir, ":~")
 	else
-		-- If there is no current directory (e.g. over ssh), just show the buffer name
 		return vim.api.nvim_buf_get_name(0)
 	end
 end
@@ -94,12 +101,13 @@ return {
 		enabled = true,
 		dependencies = { "nvim-tree/nvim-web-devicons" },
 		config = function()
-			require("oil").setup({
-				default_file_explorer = true,
-				columns = { "icon", "mtime", "size" },
-				delete_to_trash = true,
-				skip_confirm_for_simple_edits = true,
-				watch_for_changes = true,
+				_bench("oil.setup begin")
+				require("oil").setup({
+					default_file_explorer = true,
+					columns = { "icon", "mtime", "size" },
+					delete_to_trash = true,
+					skip_confirm_for_simple_edits = true,
+					watch_for_changes = true,
 				view_options = {
 					show_hidden = true,
 					natural_order = true,
@@ -213,6 +221,28 @@ return {
 						end,
 					},
 				},
+			})
+			_bench("oil.setup end")
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "oil",
+				once = true,
+				callback = function()
+					_bench("FileType oil")
+				end,
+			})
+			vim.api.nvim_create_autocmd("BufEnter", {
+				pattern = "oil://*",
+				once = true,
+				callback = function()
+					_bench("BufEnter oil")
+					vim.schedule(function()
+						pcall(vim.cmd, "redraw!")
+					end)
+					-- Kick off Harpoon/Barbar sync shortly after startup so pins render
+					vim.defer_fn(function()
+						pcall(vim.api.nvim_exec_autocmds, "User", { pattern = "HarpoonListChanged" })
+					end, 200)
+				end,
 			})
 		end,
 	},

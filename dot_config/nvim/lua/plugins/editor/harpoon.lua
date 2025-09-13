@@ -46,11 +46,11 @@ return {
 							end
 							list.items = new_items
 							list._length = #new_items
-							vim.cmd(":do User")
+							vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 						else
 							-- Add to harpoon list
 							list:add()
-							vim.cmd(":do User")
+							vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 						end
 					end)
 				end,

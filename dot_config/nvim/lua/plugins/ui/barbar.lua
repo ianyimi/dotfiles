@@ -97,11 +97,13 @@ return {
 
 		local function refresh_all_harpoon_tabs()
 			if updating_harpoon then return end
+			if _G._bench then _G._bench("harpoon refresh start") end
 
 			local ok, list = pcall(function()
 				return harpoon:list()
 			end)
 			if not ok or not list then
+				if _G._bench then _G._bench("harpoon refresh skip: no list") end
 				return
 			end
 			unpin_all()
@@ -133,6 +135,7 @@ return {
 				::continue::
 			end
 			render.update()
+			if _G._bench then _G._bench("harpoon refresh end") end
 		end
 
 		-- Function to update harpoon list based on current buffer order
@@ -143,7 +146,9 @@ return {
 				return harpoon:list()
 			end)
 			if not ok or not harpoon_list then
-				updating_harpoon = false
+			updating_harpoon = false
+			-- Fire event so others can refresh
+			vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 				return
 			end
 
@@ -353,21 +358,19 @@ return {
 				end
 			end
 
-			-- Remove from harpoon list first
-			if harpoon_index then
-				table.remove(harpoon_list.items, harpoon_index)
-				harpoon_list._length = #harpoon_list.items
-			end
+				-- Remove from harpoon list first
+				if harpoon_index then
+					table.remove(harpoon_list.items, harpoon_index)
+					harpoon_list._length = #harpoon_list.items
+				end
 
-			-- Delete the buffer with force (works when not the active buffer)
-			if deleted_buffer then
-				pcall(vim.api.nvim_buf_delete, deleted_buffer, { force = true })
-			end
+				-- Delete the buffer with force (works when not the active buffer)
+				if deleted_buffer then
+					pcall(vim.api.nvim_buf_delete, deleted_buffer, { force = true })
+				end
 
-			-- Refresh barbar to reflect changes
-			vim.schedule(function()
-				render.update()
-			end)
+				-- Fire list-changed event
+				vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 		end
 
 		-- Function to cleanup buffers for deleted files (not just from Oil)
@@ -458,10 +461,8 @@ return {
 				end
 			end
 
-			-- Just update the render, don't refresh all harpoon tabs
-			vim.schedule(function()
-				render.update()
-			end)
+				-- Notify others that the Harpoon list changed
+				vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 		end
 
 		-- Update oil display when navigating directories
@@ -495,13 +496,31 @@ return {
 		_G.refresh_oil_display = refresh_oil_display
 		_G.cleanup_empty_buffers = cleanup_empty_buffers
 
-		vim.api.nvim_create_autocmd({ "BufEnter", "BufAdd", "BufLeave", "User" }, {
+		-- Debounced refresh on Harpoon list changes
+		local _harpoon_refresh_timer
+		local function debounced_harpoon_refresh()
+			if _harpoon_refresh_timer then
+				_harpoon_refresh_timer:stop()
+				_harpoon_refresh_timer:close()
+			end
+			_harpoon_refresh_timer = vim.uv.new_timer()
+			_harpoon_refresh_timer:start(100, 0, function()
+				_harpoon_refresh_timer:stop()
+				_harpoon_refresh_timer:close()
+				_harpoon_refresh_timer = nil
+				vim.schedule(function()
+					pcall(refresh_all_harpoon_tabs)
+					cleanup_empty_buffers()
+					cleanup_deleted_file_buffers()
+				end)
+			end)
+		end
+
+		vim.api.nvim_create_autocmd("User", {
+			pattern = "HarpoonListChanged",
 			callback = function()
-				refresh_all_harpoon_tabs()
-				-- Clean up empty buffers after harpoon navigation
-				cleanup_empty_buffers()
-				-- Clean up buffers for deleted files
-				cleanup_deleted_file_buffers()
+				if _G._bench then _G._bench("HarpoonListChanged received") end
+				debounced_harpoon_refresh()
 			end,
 		})
 
