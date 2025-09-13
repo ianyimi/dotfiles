@@ -6,35 +6,32 @@ return {
 
 		conform.setup({
 			formatters_by_ft = {
-				javascript = { "prettier" },
-				typescript = { "prettier" },
-				javascriptreact = { "prettier" },
-				typescriptreact = { "prettier" },
-				svelte = { "prettier" },
-				css = { "prettier" },
-				html = { "prettier" },
-				json = { "prettier" },
-				yaml = { "prettier" },
-				markdown = { "prettier" },
-				graphql = { "prettier" },
-				liquid = { "prettier" },
+				javascript = { "prettierd", "prettier" },
+				typescript = { "prettierd", "prettier" },
+				javascriptreact = { "prettierd", "prettier" },
+				typescriptreact = { "prettierd", "prettier" },
+				svelte = { "prettierd", "prettier" },
+				css = { "prettierd", "prettier" },
+				html = { "prettierd", "prettier" },
+				json = { "prettierd", "prettier" },
+				yaml = { "prettierd", "prettier" },
+				markdown = { "prettierd", "prettier" },
+				["markdown.mdx"] = { "prettierd", "prettier" },
+				mdx = { "prettierd", "prettier" },
+				graphql = { "prettierd", "prettier" },
+				liquid = { "prettierd", "prettier" },
 				lua = { "stylua" },
 				python = { "isort", "black" },
 			},
 			format_on_save = {
 				lsp_fallback = true,
 				async = false,
-				timeout_ms = 1000,
+				timeout_ms = 2000,
 			},
 		})
 
 		-- Configure individual formatters
-		conform.formatters.prettier = {
-			-- Use project's prettier and config
-			command = "prettier",
-			args = { "--write", "$FILENAME" },
-			stdin = false,
-		}
+		-- Use built-in prettier (stdio). Prefer `prettierd` if available.
 		conform.formatters.shfmt = {
 			prepend_args = { "-i", "4" },
 		}

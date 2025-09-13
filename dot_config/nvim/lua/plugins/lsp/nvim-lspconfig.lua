@@ -18,7 +18,42 @@ return {
 	},
 	config = function()
 		-- Setup fidget for LSP progress notifications
-		require("fidget").setup({})
+		require("fidget").setup({
+		notification = {
+			override_vim_notify = true,
+		},
+	})
+
+	-- Mirror all notifications into :messages so they are copyable
+	local __orig_notify = vim.notify
+	vim.notify = function(msg, level, opts)
+		-- push content to :messages using echomsg so it persists in history
+		local function echomsg_line(line)
+			-- use :echomsg with a quoted string to handle special chars
+			vim.cmd("silent! echomsg " .. vim.fn.string(tostring(line)))
+		end
+		if type(msg) == "table" then
+			for _, line in ipairs(msg) do echomsg_line(line) end
+		else
+			for _, line in ipairs(vim.split(tostring(msg), "\n", { plain = true })) do echomsg_line(line) end
+		end
+		return __orig_notify(msg, level, opts)
+	end
+
+	-- Also mirror LSP $/progress messages into :messages without altering Fidget
+	local __orig_progress = vim.lsp.handlers["$/progress"]
+	vim.lsp.handlers["$/progress"] = function(err, result, ctx, config)
+		pcall(function()
+			if result and type(result.value) == "table" then
+				local v = result.value
+				local msg = v.message or v.title or v.kind
+				if msg and msg ~= "" then
+					vim.cmd("silent! echomsg " .. vim.fn.string("[LSP] " .. msg))
+				end
+			end
+		end)
+		return __orig_progress and __orig_progress(err, result, ctx, config)
+	end
 
 		-- Setup ts-error-translator
 		require('ts-error-translator').setup()
@@ -70,8 +105,9 @@ return {
 				})
 			end
 
-			-- Format on save
-			if client.supports_method("textDocument/formatting") then
+			-- Format on save (avoid duplicates when using Conform)
+			local has_conform = pcall(require, "conform")
+			if (not has_conform) and client.supports_method("textDocument/formatting") then
 				vim.api.nvim_create_autocmd("BufWritePre", {
 					buffer = bufnr,
 					callback = function()
@@ -100,14 +136,22 @@ return {
 			"html",
 			"jsonls",
 			"lua_ls",
+			"remark_ls",
+			"mdx_analyzer",
 			"tailwindcss",
 			"taplo",
 			"vtsls",
 		}
 
 		-- Ensure servers are installed via Mason registry
+		local mason_name_map = {
+			lua_ls = "lua-language-server",
+			remark_ls = "remark-language-server",
+			mdx_analyzer = "mdx-analyzer",
+		}
 		for _, server in ipairs(servers) do
-			local ok, pkg = pcall(mason_registry.get_package, server)
+			local pkg_name = mason_name_map[server] or server
+			local ok, pkg = pcall(mason_registry.get_package, pkg_name)
 			if ok and not pkg:is_installed() then
 				pkg:install()
 			end
@@ -132,6 +176,41 @@ return {
 							},
 							telemetry = { enable = false },
 						},
+					},
+				})
+			elseif server == "remark_ls" then
+				lspconfig.remark_ls.setup({
+					on_attach = on_attach,
+					capabilities = capabilities,
+					filetypes = { "markdown" },
+				})
+			elseif server == "mdx_analyzer" then
+				lspconfig.mdx_analyzer.setup({
+					on_attach = on_attach,
+					capabilities = capabilities,
+					filetypes = { "mdx", "markdown.mdx" },
+				})
+			elseif server == "tailwindcss" then
+				lspconfig.tailwindcss.setup({
+					on_attach = on_attach,
+					capabilities = capabilities,
+					filetypes = {
+						"aspnetcorerazor", "astro", "astro-markdown", "blade", "clojure", "django-html",
+						"htmldjango", "edge", "eelixir", "elixir", "ejs", "erb", "eruby", "gohtml",
+						"gohtmltmpl", "haml", "handlebars", "hbs", "html", "htmlangular", "html-eex",
+						"heex", "jade", "leaf", "liquid", "mustache", "njk", "nunjucks", "php",
+						"razor", "slim", "twig", "css", "less", "postcss", "sass", "scss", "stylus",
+						"sugarss", "javascript", "javascriptreact", "reason", "rescript", "typescript",
+						"typescriptreact", "vue", "svelte", "templ",
+					},
+				})
+			elseif server == "eslint" then
+				lspconfig.eslint.setup({
+					on_attach = on_attach,
+					capabilities = capabilities,
+					filetypes = {
+						"javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact",
+						"typescript.tsx", "vue", "svelte", "astro", "htmlangular",
 					},
 				})
 			else

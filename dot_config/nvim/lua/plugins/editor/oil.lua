@@ -1,43 +1,72 @@
 -- helper function to parse output
-local function parse_output(proc)
-	local result = proc:wait()
-	local ret = {}
-	if result.code == 0 then
-		for line in vim.gsplit(result.stdout, "\n", { plain = true, trimempty = true }) do
-			-- Remove trailing slash
-			line = line:gsub("/$", "")
-			ret[line] = true
-		end
+local pending_git = {}
+local git_status = {}
+
+local function start_git_status(dir)
+	if pending_git[dir] or git_status[dir] then
+		return
 	end
-	return ret
-end
+	pending_git[dir] = { ignored = {}, tracked = {}, done = { ignored = false, tracked = false } }
 
--- build git status cache
-local function new_git_status()
-	return setmetatable({}, {
-		__index = function(self, key)
-			local ignore_proc = vim.system(
-				{ "git", "ls-files", "--ignored", "--exclude-standard", "--others", "--directory" },
-				{
-					cwd = key,
-					text = true,
-				}
-			)
-			local tracked_proc = vim.system({ "git", "ls-tree", "HEAD", "--name-only" }, {
-				cwd = key,
-				text = true,
-			})
-			local ret = {
-				ignored = parse_output(ignore_proc),
-				tracked = parse_output(tracked_proc),
-			}
+	vim.system(
+		{ "git", "ls-files", "--ignored", "--exclude-standard", "--others", "--directory" },
+		{ cwd = dir, text = true },
+		function(res)
+			local ignored = {}
+			if res.code == 0 and res.stdout then
+				for line in vim.gsplit(res.stdout, "\n", { plain = true, trimempty = true }) do
+					line = line:gsub("/$", "")
+					ignored[line] = true
+				end
+			end
+			local p = pending_git[dir]
+			if not p then
+				return
+			end
+			p.ignored = ignored
+			p.done.ignored = true
+			if p.done.tracked then
+				git_status[dir] = { ignored = p.ignored, tracked = p.tracked }
+				pending_git[dir] = nil
+				vim.schedule(function()
+					local ok, actions = pcall(require, "oil.actions")
+					if ok and actions.refresh and actions.refresh.callback then
+						pcall(actions.refresh.callback)
+					end
+				end)
+			end
+		end
+	)
 
-			rawset(self, key, ret)
-			return ret
-		end,
-	})
+	vim.system(
+		{ "git", "ls-tree", "HEAD", "--name-only" },
+		{ cwd = dir, text = true },
+		function(res)
+			local tracked = {}
+			if res.code == 0 and res.stdout then
+				for line in vim.gsplit(res.stdout, "\n", { plain = true, trimempty = true }) do
+					tracked[line] = true
+				end
+			end
+			local p = pending_git[dir]
+			if not p then
+				return
+			end
+			p.tracked = tracked
+			p.done.tracked = true
+			if p.done.ignored then
+				git_status[dir] = { ignored = p.ignored, tracked = p.tracked }
+				pending_git[dir] = nil
+				vim.schedule(function()
+					local ok, actions = pcall(require, "oil.actions")
+					if ok and actions.refresh and actions.refresh.callback then
+						pcall(actions.refresh.callback)
+					end
+				end)
+			end
+		end
+	)
 end
-local git_status = new_git_status()
 
 -- -- Clear git status cache on refresh
 -- local refresh = require("oil.actions").refresh
@@ -85,11 +114,17 @@ return {
 							return is_dotfile
 						end
 						-- dotfiles are considered hidden unless tracked
+						if not git_status[dir] and not pending_git[dir] then
+							start_git_status(dir)
+						end
+						local st = git_status[dir]
+						if not st then
+							return is_dotfile
+						end
 						if is_dotfile then
-							return not git_status[dir].tracked[name]
+							return not st.tracked[name]
 						else
-							-- Check if file is gitignored
-							return git_status[dir].ignored[name]
+							return st.ignored[name]
 						end
 					end,
 				},

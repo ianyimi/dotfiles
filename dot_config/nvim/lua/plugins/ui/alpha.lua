@@ -1,7 +1,11 @@
 return {
 	"goolord/alpha-nvim",
 	event = "VimEnter",
-	enabled = true,
+	-- Only load when starting with no files/dirs
+	cond = function()
+		return vim.fn.argc() == 0
+	end,
+	enabled = false,
 	init = false,
 	opts = function()
 		local dashboard = require("alpha.themes.dashboard")

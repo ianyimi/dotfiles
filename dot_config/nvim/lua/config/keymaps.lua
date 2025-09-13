@@ -85,6 +85,36 @@ keymap.set("n", "<leader>gG", function()
 	LazyVim.lazygit()
 end, { desc = "Lazygit (cwd)" })
 
+-- make ZZ conditional: if a lazygit float exists, close it and quit all; else fallback to default ZZ
+keymap.set("n", "ZZ", function()
+	local has_lazygit = false
+	for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_is_valid(buf) then
+			local okft, ft = pcall(function() return vim.bo[buf].filetype end)
+			if okft and ft == "lazyterm" then
+				local cmd = vim.b[buf].lazyterm_cmd
+				if type(cmd) == "string" and cmd:find("lazygit", 1, true) then
+					has_lazygit = true
+					break
+				elseif type(cmd) == "table" and cmd[1] == "lazygit" then
+					has_lazygit = true
+					break
+				end
+			end
+		end
+	end
+	if has_lazygit then
+		pcall(function() require("util.terminal").close_all() end)
+		pcall(vim.cmd, "silent! wall")
+		local ok = pcall(vim.cmd, "qa")
+		if not ok then
+			pcall(vim.cmd, "qa!")
+		end
+	else
+		vim.cmd("normal! ZZ")
+	end
+end, { desc = "Smart write-quit (handles lazygit)" })
+
 -- delete to void register & paste
 keymap.set("x", "<leader>p", '"_dP', { desc = "[P]aste & Delete to void" })
 

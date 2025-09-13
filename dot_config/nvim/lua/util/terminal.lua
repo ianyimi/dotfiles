@@ -55,7 +55,7 @@ function M.open(cmd, opts)
     backdrop = LazyVim.has("edgy.nvim") and not cmd and 100 or nil,
   }, opts or {}, { persistent = true }) --[[@as LazyTermOpts]]
 
-  local termkey = vim.inspect({ cmd = cmd or "shell", cwd = opts.cwd, env = opts.env, count = vim.v.count1 })
+  local termkey = vim.inspect({ cmd = cmd or "shell", cwd = opts.cwd, env = opts.env, count = vim.v.count1, tab = vim.api.nvim_get_current_tabpage() })
 
   if terminals[termkey] and terminals[termkey]:buf_valid() then
     terminals[termkey]:toggle()
@@ -93,5 +93,23 @@ function M.open(cmd, opts)
 
   return terminals[termkey]
 end
+
+function M.close_all()
+  -- Wipe all lazyterm buffers to ensure jobs are stopped
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_valid(buf) then
+      local ok, ft = pcall(function() return vim.bo[buf].filetype end)
+      if ok and ft == "lazyterm" then
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+      end
+    end
+  end
+end
+
+vim.api.nvim_create_autocmd("QuitPre", {
+  callback = function()
+    M.close_all()
+  end,
+})
 
 return M

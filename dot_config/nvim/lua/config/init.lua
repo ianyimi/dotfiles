@@ -186,6 +186,37 @@ function M.setup(opts)
 			LazyVim.news.setup()
 			LazyVim.root.setup()
 
+			-- After VeryLazy, most UI overrides (Noice/Fidget) are active. Wrap notify to also log to :messages
+			vim.schedule(function()
+				local __orig_notify = vim.notify
+				vim.notify = function(msg, level, opts)
+					local function echomsg_line(line)
+						vim.cmd("silent! echomsg " .. vim.fn.string(tostring(line)))
+					end
+					if type(msg) == "table" then
+						for _, line in ipairs(msg) do echomsg_line(line) end
+					else
+						for _, line in ipairs(vim.split(tostring(msg), "\n", { plain = true })) do echomsg_line(line) end
+					end
+					return __orig_notify(msg, level, opts)
+				end
+
+				-- Also mirror LSP $/progress into :messages
+				local __orig_progress = vim.lsp.handlers["$/progress"]
+				vim.lsp.handlers["$/progress"] = function(err, result, ctx, config)
+					pcall(function()
+						if result and type(result.value) == "table" then
+							local v = result.value
+							local msg = v.message or v.title or v.kind
+							if msg and msg ~= "" then
+								vim.cmd("silent! echomsg " .. vim.fn.string("[LSP] " .. msg))
+							end
+						end
+					end)
+					return __orig_progress and __orig_progress(err, result, ctx, config)
+				end
+			end)
+
 			vim.api.nvim_create_user_command("LazyExtras", function()
 				LazyVim.extras.show()
 			end, { desc = "Manage LazyVim extras" })
