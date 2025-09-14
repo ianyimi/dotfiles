@@ -19,8 +19,6 @@ return {
 		},
 		{ "nvim-telescope/telescope-ui-select.nvim" },
 		{ "danielpieper/telescope-tmuxinator.nvim" },
-
-		-- Useful for getting pretty icons, but requires a Nerd Font.
 		{ "nvim-tree/nvim-web-devicons",            enabled = vim.g.have_nerd_font },
 		{ "xvzc/chezmoi.nvim" },
 		{
@@ -65,8 +63,6 @@ return {
 			require("telescope.builtin").find_files({ hidden = true, default_text = line })
 		end
 
-
-
 		return {
 			defaults = {
 				cwd = false,
@@ -104,9 +100,43 @@ return {
 						["<C-Up>"] = actions.cycle_history_prev,
 						["<PageDown>"] = actions.preview_scrolling_down,
 						["<PageUp>"] = actions.preview_scrolling_up,
+						["<C-n>"] = function(prompt_bufnr)
+							local state = require("telescope.actions.state")
+							local entry = state.get_selected_entry()
+							local path = entry and (entry.path or entry.filename or entry.value) or nil
+							actions.select_default(prompt_bufnr)
+							if path then
+								vim.schedule(function()
+									local ok_h, harpoon = pcall(require, "harpoon")
+									if not ok_h then return end
+									local list = harpoon:list()
+									if list and type(list.add) == "function" then
+										pcall(function() list:add() end)
+										pcall(vim.api.nvim_exec_autocmds, "User", { pattern = "HarpoonListChanged" })
+									end
+								end)
+							end
+						end,
 					},
 					n = {
 						["q"] = actions.close,
+						["<C-n>"] = function(prompt_bufnr)
+							local state = require("telescope.actions.state")
+							local entry = state.get_selected_entry()
+							local path = entry and (entry.path or entry.filename or entry.value) or nil
+							actions.select_default(prompt_bufnr)
+							if path then
+								vim.schedule(function()
+									local ok_h, harpoon = pcall(require, "harpoon")
+									if not ok_h then return end
+									local list = harpoon:list()
+									if list and type(list.add) == "function" then
+										pcall(function() list:add() end)
+										pcall(vim.api.nvim_exec_autocmds, "User", { pattern = "HarpoonListChanged" })
+									end
+								end)
+							end
+						end,
 					},
 				},
 			},
@@ -186,7 +216,7 @@ return {
 										vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
 										vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', 'bash')
 									end
-								end
+								end,
 							})
 						else
 							-- Show security message
@@ -223,10 +253,10 @@ return {
 									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr,
 										vim.filetype.match({ filename = filename }) or 'text')
 								end
-							end
+							end,
 						})
 					end
-				end
+				end,
 			})
 
 			-- Add custom keymaps
@@ -284,9 +314,9 @@ return {
 
 
 		vim.keymap.set("n", "<leader>ft", builtin.builtin, { desc = "[F]ind [S]elect Telescope" })
-		vim.keymap.set("n", "<leader>fs",
-			function() extensions.tmuxinator.projects(require('telescope.themes').get_dropdown({})) end,
-			{ desc = "[F]ind [S]ession" })
+		vim.keymap.set("n", "<leader>fs", function()
+			extensions.tmuxinator.projects(require('telescope.themes').get_dropdown({}))
+		end, { desc = "[F]ind [S]ession" })
 		vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "[F]ind [H]elp" })
 		vim.keymap.set("n", "<leader>fk", builtin.keymaps, { desc = "[F]ind [K]eymaps" })
 		vim.keymap.set("n", "<leader>gw", builtin.grep_string, { desc = "[G]rep current [W]ord" })
@@ -299,7 +329,6 @@ return {
 			extensions.git_worktree.create_git_worktree()
 		end, { desc = "[C]reate [W]orkspace" })
 		vim.keymap.set("n", "<leader>f.", project_oldfiles, { desc = '[F]ind Recent Files ("." for repeat)' })
-		-- vim.keymap.set("n", "<leader><leader>", builtin.buffers, { desc = "[ ] Find existing buffers" })
 
 		-- Search Chezmoi configuration files
 		vim.keymap.set("n", "<leader>fc", extensions.chezmoi.find_files, { desc = "[F]ind [C]hezmoi" })
@@ -313,10 +342,7 @@ return {
 
 		-- Live Grep in open files
 		vim.keymap.set("n", "<leader>fo", function()
-			builtin.live_grep({
-				grep_open_files = true,
-				prompt_title = "Live Grep in Open Files",
-			})
+			builtin.live_grep({ grep_open_files = true, prompt_title = "Live Grep in Open Files" })
 		end, { desc = "[F]ind in [O]pen Files" })
 	end,
 }
