@@ -43,6 +43,9 @@ return {
 		if type(opts.ensure_installed) == "table" then
 			opts.ensure_installed = require("util").dedup(opts.ensure_installed)
 		end
+		-- Use markdown parser for mdx files
+		pcall(vim.treesitter.language.register, "markdown", "mdx")
+		pcall(vim.treesitter.language.register, "markdown", "markdown.mdx")
 		require("nvim-treesitter.configs").setup(opts)
 		require("nvim-ts-autotag").setup()
 	end,

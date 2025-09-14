@@ -1,5 +1,10 @@
 -- Add any additional autocmds here
 
+-- Minimal MDX detection so LSP/TS attach
+vim.filetype.add({
+	extension = { mdx = "mdx" },
+})
+
 local function augroup(name)
 	return vim.api.nvim_create_augroup("lazyvim_" .. name, { clear = true })
 end
