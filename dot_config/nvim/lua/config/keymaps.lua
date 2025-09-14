@@ -52,22 +52,104 @@ keymap.set("n", "<a-h>", "<cmd>tabnext", { desc = "Split window right" })
 keymap.set("n", "<a-l>", "<cmd>tabprev", { desc = "Split window below" })
 
 -- buffer controls with oil auto-open
-keymap.set("n", "<S-x>", function()
-	local buf = vim.api.nvim_get_current_buf()
-	local buf_path = vim.api.nvim_buf_get_name(buf)
-	
-	-- If file doesn't exist on disk but buffer does, force delete
-	if buf_path ~= "" and not vim.fn.filereadable(buf_path) then
-		pcall(vim.cmd, "bd!")
-	else
-		pcall(vim.cmd, "bd")
+local function real_other_buffers_count(exclude)
+	local count = 0
+	for _, b in ipairs(vim.api.nvim_list_bufs()) do
+		if vim.api.nvim_buf_is_loaded(b) and b ~= exclude then
+			local bt = vim.api.nvim_get_option_value("buftype", { buf = b })
+			local ft = vim.api.nvim_get_option_value("filetype", { buf = b })
+			local name = vim.api.nvim_buf_get_name(b)
+			if bt == "" and ft ~= "oil" and name ~= "" then
+				count = count + 1
+			end
+		end
 	end
-	-- Oil auto-open is handled by the autocmd
-end, { noremap = true, silent = true, desc = "Close Buffer" })
+	return count
+end
+keymap.set("n", "<S-x>", function()
+	local cur = vim.api.nvim_get_current_buf()
+	-- if present in harpoon, remove it before deleting
+	pcall(function()
+		local ok_h, harpoon = pcall(require, "harpoon")
+		if not ok_h then return end
+		local list = harpoon:list()
+		local current_file = vim.api.nvim_buf_get_name(cur)
+		if current_file == "" then return end
+		local norm = vim.fn.fnamemodify(current_file, ":p")
+		local found_index
+		for i, item in ipairs(list.items or {}) do
+			if vim.fn.fnamemodify(item.value or "", ":p") == norm then
+				found_index = i
+				break
+			end
+		end
+		if found_index then
+			if type(list.remove_at) == "function" then
+				list:remove_at(found_index)
+			else
+				local new_items = {}
+				for i, item in ipairs(list.items or {}) do
+					if i ~= found_index then table.insert(new_items, item) end
+				end
+				list.items = new_items
+				list._length = #new_items
+			end
+			pcall(vim.api.nvim_exec_autocmds, "User", { pattern = "HarpoonListChanged" })
+		end
+	end)
+	-- if there is exactly one other real file buffer, close this window after delete
+	if real_other_buffers_count(cur) == 1 then
+		local win = vim.api.nvim_get_current_win()
+		local old_ei = vim.o.eventignore
+		local new_ei = (old_ei ~= "" and (old_ei:find("User") and old_ei or (old_ei .. ",User"))) or "User"
+		vim.o.eventignore = new_ei
+		pcall(vim.api.nvim_buf_delete, cur, { force = false })
+		vim.o.eventignore = old_ei
+		vim.schedule(function()
+			if vim.api.nvim_win_is_valid(win) then
+				pcall(vim.cmd, "close")
+			end
+		end)
+		return
+	end
+	-- otherwise keep the split: switch window to another buffer, then delete current
+	local alt = vim.fn.bufnr("#")
+	if alt > 0 and vim.api.nvim_buf_is_loaded(alt) and alt ~= cur then
+		pcall(vim.cmd, "buffer #")
+	elseif not pcall(vim.cmd, "bprevious") then
+		if not pcall(vim.cmd, "bnext") then
+			pcall(vim.cmd, "enew")
+		end
+	end
+	pcall(vim.api.nvim_buf_delete, cur, { force = false })
+end, { noremap = true, silent = true, desc = "Close Buffer (smart)" })
+
 keymap.set("n", "<C-S-x>", function()
-	pcall(vim.cmd, "bd!")
-	-- Oil auto-open is handled by the autocmd
-end, { noremap = true, silent = true, desc = "Close Buffer (Force)" })
+	local cur = vim.api.nvim_get_current_buf()
+	if real_other_buffers_count(cur) == 1 then
+		local win = vim.api.nvim_get_current_win()
+		local old_ei = vim.o.eventignore
+		local new_ei = (old_ei ~= "" and (old_ei:find("User") and old_ei or (old_ei .. ",User"))) or "User"
+		vim.o.eventignore = new_ei
+		pcall(vim.api.nvim_buf_delete, cur, { force = true })
+		vim.o.eventignore = old_ei
+		vim.schedule(function()
+			if vim.api.nvim_win_is_valid(win) then
+				pcall(vim.cmd, "close")
+			end
+		end)
+		return
+	end
+	local alt = vim.fn.bufnr("#")
+	if alt > 0 and vim.api.nvim_buf_is_loaded(alt) and alt ~= cur then
+		pcall(vim.cmd, "buffer #")
+	elseif not pcall(vim.cmd, "bprevious") then
+		if not pcall(vim.cmd, "bnext") then
+			pcall(vim.cmd, "enew")
+		end
+	end
+	pcall(vim.api.nvim_buf_delete, cur, { force = true })
+end, { noremap = true, silent = true, desc = "Close Buffer (Force, smart)" })
 
 keymap.set("v", "<S-j>", ":m '>+1<CR>gv=gv", { desc = "Downshift selected code" })
 keymap.set("v", "<S-k>", ":m '<-2<CR>gv=gv", { desc = "Upshift selected code" })
