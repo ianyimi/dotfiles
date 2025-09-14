@@ -16,6 +16,43 @@ return {
 			end,
 		},
 	},
+	config = function(_, opts)
+		local harpoon = require("harpoon")
+		-- Try both styles to be compatible with harpoon2
+		pcall(function()
+			if type(harpoon.setup) == "function" then
+				harpoon:setup(opts)
+			else
+				harpoon:setup(opts)
+			end
+		end)
+		-- Wrap list methods to emit our sync event on changes
+		local orig_list = harpoon.list
+		if type(orig_list) == "function" then
+			harpoon.list = function(...)
+				local lst = orig_list(...)
+				if lst and not lst.__harpoon_event_wrapped then
+					local function wrap(name)
+						local fn = lst[name]
+						if type(fn) == "function" then
+							lst[name] = function(self, ...)
+								local ret = fn(self, ...)
+								vim.schedule(function()
+									pcall(vim.api.nvim_exec_autocmds, "User", { pattern = "HarpoonListChanged" })
+								end)
+								return ret
+							end
+						end
+					end
+					for _, m in ipairs({ "add", "remove", "remove_at", "clear", "replace", "append", "prepend" }) do
+						wrap(m)
+					end
+					lst.__harpoon_event_wrapped = true
+				end
+				return lst
+			end
+		end
+	end,
 	keys = function()
 		local harpoon = require("harpoon")
 		-- basic telescope configuration
@@ -60,7 +97,52 @@ return {
 				"<leader>y",
 				function()
 					pcall(function()
-						harpoon.ui:toggle_quick_menu(harpoon:list())
+						local list = harpoon:list()
+						local function snapshot(lst)
+							local vals = {}
+							for i = 1, (lst:length() or #lst.items or 0) do
+								local it = lst.items[i]
+								vals[#vals + 1] = it and it.value or nil
+							end
+							return vals
+						end
+						local before = snapshot(list)
+						harpoon.ui:toggle_quick_menu(list)
+						vim.schedule(function()
+							local menu_buf
+							for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+								if vim.api.nvim_buf_is_loaded(buf) then
+									local ok, ft = pcall(vim.api.nvim_get_option_value, "filetype", { buf = buf })
+									local name = vim.api.nvim_buf_get_name(buf)
+									if (ok and ft == "harpoon") or (name and name:match("Harpoon")) then
+										menu_buf = buf
+									end
+								end
+							end
+							if menu_buf then
+								vim.api.nvim_create_autocmd("BufWipeout", {
+									buffer = menu_buf,
+									once = true,
+									callback = function()
+										local after = snapshot(harpoon:list())
+										local changed = false
+										if #before ~= #after then
+											changed = true
+										else
+											for i = 1, #before do
+												if before[i] ~= after[i] then
+													changed = true
+													break
+												end
+											end
+										end
+										if changed then
+											vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
+										end
+									end,
+								})
+							end
+						end)
 					end)
 				end,
 				desc = "Harpoon Quick Menu",
