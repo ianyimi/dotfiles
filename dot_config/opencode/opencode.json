@@ -15,7 +15,8 @@
 			"command": [
 				"npx",
 				"@playwright/mcp@latest",
-				"--extension"
+				"--browser",
+				"chrome"
 			],
 			"enabled": true
 		},
