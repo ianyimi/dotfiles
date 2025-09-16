@@ -126,7 +126,7 @@ function M.update_config()
 	local config = [[
 os:
   editPreset: "nvim-remote"
-  open: "[ -z \"$NVIM\" ] && (nvim -- {{filename}}) || (nvim --server \"$NVIM\" --remote-tab {{filename}})"
+  open: "[ -z \"$NVIM\" ] && (nvim -- {{filename}}) || (nvim --server \"$NVIM\" --remote-send '<C-\\><C-n>:edit {{filename}}<CR>')"
 
 gui:
   nerdFontsVersion: 3
