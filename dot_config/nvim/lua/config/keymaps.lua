@@ -101,8 +101,7 @@ keymap.set("n", "<S-x>", function()
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
 		local old_ei = vim.o.eventignore
-		local new_ei = (old_ei ~= "" and (old_ei:find("User") and old_ei or (old_ei .. ",User"))) or "User"
-		vim.o.eventignore = new_ei
+		vim.o.eventignore = "all"
 		pcall(vim.api.nvim_buf_delete, cur, { force = false })
 		vim.o.eventignore = old_ei
 		vim.schedule(function()
@@ -121,7 +120,11 @@ keymap.set("n", "<S-x>", function()
 			pcall(vim.cmd, "enew")
 		end
 	end
+	-- Suppress all events during buffer deletion to prevent satellite/gitsigns errors
+	local old_ei = vim.o.eventignore
+	vim.o.eventignore = "all"
 	pcall(vim.api.nvim_buf_delete, cur, { force = false })
+	vim.o.eventignore = old_ei
 end, { noremap = true, silent = true, desc = "Close Buffer (smart)" })
 
 keymap.set("n", "<C-S-x>", function()
@@ -129,8 +132,7 @@ keymap.set("n", "<C-S-x>", function()
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
 		local old_ei = vim.o.eventignore
-		local new_ei = (old_ei ~= "" and (old_ei:find("User") and old_ei or (old_ei .. ",User"))) or "User"
-		vim.o.eventignore = new_ei
+		vim.o.eventignore = "all"
 		pcall(vim.api.nvim_buf_delete, cur, { force = true })
 		vim.o.eventignore = old_ei
 		vim.schedule(function()
@@ -148,7 +150,11 @@ keymap.set("n", "<C-S-x>", function()
 			pcall(vim.cmd, "enew")
 		end
 	end
+	-- Suppress all events during buffer deletion to prevent satellite/gitsigns errors
+	local old_ei = vim.o.eventignore
+	vim.o.eventignore = "all"
 	pcall(vim.api.nvim_buf_delete, cur, { force = true })
+	vim.o.eventignore = old_ei
 end, { noremap = true, silent = true, desc = "Close Buffer (Force, smart)" })
 
 keymap.set("v", "<S-j>", ":m '>+1<CR>gv=gv", { desc = "Downshift selected code" })
