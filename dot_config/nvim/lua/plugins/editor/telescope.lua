@@ -250,8 +250,18 @@ return {
 										end
 									end
 									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
-									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr,
-										vim.filetype.match({ filename = filename }) or 'text')
+									
+									-- Determine filetype and apply proper highlighting
+									local ft = vim.filetype.match({ filename = filename, buf = self.state.bufnr }) or 'text'
+									vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
+									
+									-- Apply treesitter highlighting if available
+									if require('nvim-treesitter.parsers').has_parser(ft) then
+										vim.treesitter.start(self.state.bufnr, ft)
+									else
+										-- Fallback to regex highlighting
+										require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
+									end
 								end
 							end,
 						})
