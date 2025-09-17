@@ -241,7 +241,12 @@ return {
 									end
 									
 									-- Handle other file patterns
-									if fname:match("%.zsh$") or fname:match("zshrc") then
+									-- TypeScript / TSX
+									if fname:match("%.tsx$") then
+										return "tsx"
+									elseif fname:match("%.ts$") then
+										return "typescript"
+									elseif fname:match("%.zsh$") or fname:match("zshrc") then
 										return "zsh"
 									elseif fname:match("%.sh$") or fname:match("%.bash$") or fname:match("bashrc") then
 										return "bash"
@@ -256,13 +261,15 @@ return {
 								local ft = detect_filetype(vim.fn.fnamemodify(filename, ':t'))
 								vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
 								
-								-- Apply treesitter highlighting if available
-								if require('nvim-treesitter.parsers').has_parser(ft) then
-									vim.treesitter.start(self.state.bufnr, ft)
-								else
-									-- Fallback to regex highlighting
-									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
-								end
+												-- Apply treesitter highlighting if available
+												local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
+												local ok_has, has = pcall(function() return require('nvim-treesitter.parsers').has_parser(lang) end)
+												if ok_has and has then
+													pcall(vim.treesitter.start, self.state.bufnr, lang)
+												else
+													-- Fallback to regex highlighting
+													require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
+												end
 							end
 						end,
 					})
@@ -370,54 +377,61 @@ return {
 									end
 									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
 									
-									-- Custom filetype detection for telescope previews
-									local function detect_filetype(fname)
-										-- Handle chezmoi dotfiles
-										if fname == "dot_zshrc" then
-											return "zsh"
-										elseif fname == "dot_bashrc" then
-											return "bash"
-										elseif fname == "dot_profile" or fname == "dot_bash_profile" then
-											return "bash"
-										elseif fname:match("^dot_") then
-											local suffix = fname:match("^dot_(.+)$")
-											if suffix then
-												if suffix:match("zsh") then
-													return "zsh"
-												elseif suffix:match("bash") then
-													return "bash"
-												elseif suffix:match("gitconfig") then
-													return "gitconfig"
-												elseif suffix:match("vimrc") or suffix:match("nvimrc") then
-													return "vim"
+												-- Custom filetype detection for telescope previews
+												local function detect_filetype(fname)
+													-- Handle chezmoi dotfiles
+													if fname == "dot_zshrc" then
+														return "zsh"
+													elseif fname == "dot_bashrc" then
+														return "bash"
+													elseif fname == "dot_profile" or fname == "dot_bash_profile" then
+														return "bash"
+													elseif fname:match("^dot_") then
+														local suffix = fname:match("^dot_(.+)$")
+														if suffix then
+															if suffix:match("zsh") then
+																return "zsh"
+															elseif suffix:match("bash") then
+																return "bash"
+															elseif suffix:match("gitconfig") then
+																return "gitconfig"
+															elseif suffix:match("vimrc") or suffix:match("nvimrc") then
+																return "vim"
+															end
+														end
+														return "conf"
+													end
+													
+													-- Handle other file patterns
+													-- TypeScript / TSX
+													if fname:match("%.tsx$") then
+														return "tsx"
+													elseif fname:match("%.ts$") then
+														return "typescript"
+													elseif fname:match("%.zsh$") or fname:match("zshrc") then
+														return "zsh"
+													elseif fname:match("%.sh$") or fname:match("%.bash$") or fname:match("bashrc") then
+														return "bash"
+													elseif fname:match("%.conf$") or fname:match("%.cfg$") or fname:match("%.config$") then
+														return "conf"
+													end
+													
+													-- Fallback to vim's detection
+													return vim.filetype.match({ filename = fname }) or 'text'
 												end
-											end
-											return "conf"
-										end
-										
-										-- Handle other file patterns
-										if fname:match("%.zsh$") or fname:match("zshrc") then
-											return "zsh"
-										elseif fname:match("%.sh$") or fname:match("%.bash$") or fname:match("bashrc") then
-											return "bash"
-										elseif fname:match("%.conf$") or fname:match("%.cfg$") or fname:match("%.config$") then
-											return "conf"
-										end
-										
-										-- Fallback to vim's detection
-										return vim.filetype.match({ filename = fname }) or 'text'
-									end
 									
 									local ft = detect_filetype(filename)
 									vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
 									
-									-- Apply treesitter highlighting if available
-									if require('nvim-treesitter.parsers').has_parser(ft) then
-										vim.treesitter.start(self.state.bufnr, ft)
-									else
-										-- Fallback to regex highlighting
-										require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
-									end
+													-- Apply treesitter highlighting if available
+													local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
+													local ok_has, has = pcall(function() return require('nvim-treesitter.parsers').has_parser(lang) end)
+													if ok_has and has then
+														pcall(vim.treesitter.start, self.state.bufnr, lang)
+													else
+														-- Fallback to regex highlighting
+														require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
+													end
 								end
 							end,
 						})
