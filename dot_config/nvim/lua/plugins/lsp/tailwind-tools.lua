@@ -1,6 +1,7 @@
 return {
 	"luckasRanarison/tailwind-tools.nvim",
 	name = "tailwind-tools",
+	event = "VeryLazy",
 	build = ":UpdateRemotePlugins",
 	dependencies = {
 		"nvim-treesitter/nvim-treesitter",

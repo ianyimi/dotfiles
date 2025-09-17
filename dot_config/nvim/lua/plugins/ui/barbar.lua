@@ -146,9 +146,9 @@ return {
 				return harpoon:list()
 			end)
 			if not ok or not harpoon_list then
-			updating_harpoon = false
-			-- Fire event so others can refresh
-			vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
+				updating_harpoon = false
+				-- Fire event so others can refresh
+				vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 				return
 			end
 
@@ -309,11 +309,11 @@ return {
 						local buf_name = vim.api.nvim_buf_get_name(buf)
 						local line_count = vim.api.nvim_buf_line_count(buf)
 						local first_line = vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] or ""
-						
+
 						-- Delete empty, unnamed buffers (but not oil buffers or other special ones)
-						if buftype == "" and filetype ~= "oil" and 
-						   buf_name == "" and line_count == 1 and first_line == "" and
-						   vim.fn.bufwinnr(buf) == -1 then -- Not in a window
+						if buftype == "" and filetype ~= "oil" and
+								buf_name == "" and line_count == 1 and first_line == "" and
+								vim.fn.bufwinnr(buf) == -1 then -- Not in a window
 							pcall(vim.api.nvim_buf_delete, buf, { force = true })
 						end
 					end
@@ -358,37 +358,37 @@ return {
 				end
 			end
 
-				-- Remove from harpoon list first
-				if harpoon_index then
-					table.remove(harpoon_list.items, harpoon_index)
-					harpoon_list._length = #harpoon_list.items
-				end
+			-- Remove from harpoon list first
+			if harpoon_index then
+				table.remove(harpoon_list.items, harpoon_index)
+				harpoon_list._length = #harpoon_list.items
+			end
 
-				-- Delete the buffer with force (works when not the active buffer)
-				if deleted_buffer then
-					pcall(vim.api.nvim_buf_delete, deleted_buffer, { force = true })
-				end
+			-- Delete the buffer with force (works when not the active buffer)
+			if deleted_buffer then
+				pcall(vim.api.nvim_buf_delete, deleted_buffer, { force = true })
+			end
 
-				-- Fire list-changed event
-				vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
+			-- Fire list-changed event
+			vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 		end
 
 		-- Function to cleanup buffers for deleted files (not just from Oil)
 		local function cleanup_deleted_file_buffers()
 			vim.schedule(function()
 				local buffers = vim.api.nvim_list_bufs()
-				
+
 				for _, buf in ipairs(buffers) do
 					if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
 						local buf_path = vim.api.nvim_buf_get_name(buf)
-						
+
 						-- Check if buffer has a file path and that file no longer exists
 						if buf_path ~= "" and not vim.fn.filereadable(buf_path) then
 							handle_file_delete(buf_path)
 						end
 					end
 				end
-				
+
 				render.update()
 			end)
 		end
@@ -461,8 +461,8 @@ return {
 				end
 			end
 
-				-- Notify others that the Harpoon list changed
-				vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
+			-- Notify others that the Harpoon list changed
+			vim.api.nvim_exec_autocmds("User", { pattern = "HarpoonListChanged" })
 		end
 
 		-- Update oil display when navigating directories
@@ -562,7 +562,7 @@ return {
 						if deleted_path:match("^oil://") then
 							deleted_path = deleted_path:gsub("^oil://", "")
 						end
-						
+
 						handle_file_delete(deleted_path)
 					end
 				end
