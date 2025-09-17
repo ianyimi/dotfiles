@@ -101,7 +101,8 @@ keymap.set("n", "<S-x>", function()
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
 		local old_ei = vim.o.eventignore
-		vim.o.eventignore = "all"
+		-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
+		vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
 		pcall(vim.api.nvim_buf_delete, cur, { force = false })
 		vim.o.eventignore = old_ei
 		vim.schedule(function()
@@ -120,9 +121,9 @@ keymap.set("n", "<S-x>", function()
 			pcall(vim.cmd, "enew")
 		end
 	end
-	-- Suppress all events during buffer deletion to prevent satellite/gitsigns errors
+	-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
 	local old_ei = vim.o.eventignore
-	vim.o.eventignore = "all"
+	vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
 	pcall(vim.api.nvim_buf_delete, cur, { force = false })
 	vim.o.eventignore = old_ei
 end, { noremap = true, silent = true, desc = "Close Buffer (smart)" })
@@ -132,7 +133,8 @@ keymap.set("n", "<C-S-x>", function()
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
 		local old_ei = vim.o.eventignore
-		vim.o.eventignore = "all"
+		-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
+		vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
 		pcall(vim.api.nvim_buf_delete, cur, { force = true })
 		vim.o.eventignore = old_ei
 		vim.schedule(function()
@@ -150,9 +152,9 @@ keymap.set("n", "<C-S-x>", function()
 			pcall(vim.cmd, "enew")
 		end
 	end
-	-- Suppress all events during buffer deletion to prevent satellite/gitsigns errors
+	-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
 	local old_ei = vim.o.eventignore
-	vim.o.eventignore = "all"
+	vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
 	pcall(vim.api.nvim_buf_delete, cur, { force = true })
 	vim.o.eventignore = old_ei
 end, { noremap = true, silent = true, desc = "Close Buffer (Force, smart)" })
