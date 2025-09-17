@@ -100,11 +100,7 @@ keymap.set("n", "<S-x>", function()
 	-- if there is exactly one other real file buffer, close this window after delete
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
-		local old_ei = vim.o.eventignore
-		-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
-		vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
-		pcall(vim.api.nvim_buf_delete, cur, { force = false })
-		vim.o.eventignore = old_ei
+		LazyVim.safe_buf_delete(cur, { force = false })
 		vim.schedule(function()
 			if vim.api.nvim_win_is_valid(win) then
 				pcall(vim.cmd, "close")
@@ -121,22 +117,14 @@ keymap.set("n", "<S-x>", function()
 			pcall(vim.cmd, "enew")
 		end
 	end
-	-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
-	local old_ei = vim.o.eventignore
-	vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
-	pcall(vim.api.nvim_buf_delete, cur, { force = false })
-	vim.o.eventignore = old_ei
+	LazyVim.safe_buf_delete(cur, { force = false })
 end, { noremap = true, silent = true, desc = "Close Buffer (smart)" })
 
 keymap.set("n", "<C-S-x>", function()
 	local cur = vim.api.nvim_get_current_buf()
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
-		local old_ei = vim.o.eventignore
-		-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
-		vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
-		pcall(vim.api.nvim_buf_delete, cur, { force = true })
-		vim.o.eventignore = old_ei
+		LazyVim.safe_buf_delete(cur, { force = true })
 		vim.schedule(function()
 			if vim.api.nvim_win_is_valid(win) then
 				pcall(vim.cmd, "close")
@@ -152,11 +140,7 @@ keymap.set("n", "<C-S-x>", function()
 			pcall(vim.cmd, "enew")
 		end
 	end
-	-- Suppress satellite/gitsigns events but allow Oil's BufDelete/BufWipeout
-	local old_ei = vim.o.eventignore
-	vim.o.eventignore = "User,WinEnter,WinLeave,BufEnter,BufLeave,CursorMoved,CursorMovedI"
-	pcall(vim.api.nvim_buf_delete, cur, { force = true })
-	vim.o.eventignore = old_ei
+	LazyVim.safe_buf_delete(cur, { force = true })
 end, { noremap = true, silent = true, desc = "Close Buffer (Force, smart)" })
 
 keymap.set("v", "<S-j>", ":m '>+1<CR>gv=gv", { desc = "Downshift selected code" })

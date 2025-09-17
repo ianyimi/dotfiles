@@ -196,7 +196,7 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 		vim.defer_fn(function()
 			local empty_buf = should_open_oil()
 			if empty_buf then
-				pcall(vim.api.nvim_buf_delete, empty_buf, { force = true })
+				LazyVim.safe_buf_delete(empty_buf, { force = true })
 				pcall(require("oil").open)
 				-- Mark this oil instance as non-closable (after closing all buffers)
 				vim.schedule(function()
@@ -219,7 +219,7 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 vim.api.nvim_create_user_command("OpenOilIfEmpty", function()
 	local empty_buf = should_open_oil()
 	if empty_buf then
-		vim.api.nvim_buf_delete(empty_buf, { force = true })
+		LazyVim.safe_buf_delete(empty_buf, { force = true })
 		require("oil").open()
 		-- Mark this oil instance as non-closable (after closing all buffers)
 		vim.schedule(function()

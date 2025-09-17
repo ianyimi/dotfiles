@@ -20,6 +20,31 @@ local LazyUtil = require("lazy.core.util")
 ---@field cmp lazyvim.util.cmp
 local M = {}
 
+-- Safe buffer deletion that prevents satellite.nvim and gitsigns errors
+-- while preserving Oil auto-open functionality
+function M.safe_buf_delete(buf, opts)
+	opts = opts or {}
+	local force = opts.force or false
+	
+	-- Save current eventignore setting
+	local old_ei = vim.o.eventignore
+	
+	-- Block only the events that cause satellite/gitsigns errors:
+	-- - WinEnter/WinLeave: satellite.nvim view management
+	-- - BufEnter/BufLeave: gitsigns status updates  
+	-- - User: gitsigns autocmds
+	-- Keep BufDelete/BufWipeout for Oil auto-open functionality
+	vim.o.eventignore = "WinEnter,WinLeave,BufEnter,BufLeave,User"
+	
+	-- Perform the buffer deletion
+	local success = pcall(vim.api.nvim_buf_delete, buf, { force = force })
+	
+	-- Restore original eventignore setting
+	vim.o.eventignore = old_ei
+	
+	return success
+end
+
 ---@type table<string, string|string[]>
 local deprecated = {
   get_clients = "lsp",
