@@ -355,3 +355,56 @@ vim.api.nvim_create_autocmd("FileType", {
 --     vim.opt.paste = false
 --   end,
 -- })
+
+-- Enhanced filetype detection for shell and config files
+vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
+	group = augroup("enhanced_filetype_detection"),
+	pattern = "*",
+	callback = function(args)
+		local filename = vim.fn.expand("%:t")
+		local filepath = vim.fn.expand("%:p")
+		
+
+		
+		-- Explicit chezmoi file detection
+		if filename == "dot_zshrc" then
+			vim.bo[args.buf].filetype = "zsh"
+			return
+		elseif filename == "dot_bashrc" then
+			vim.bo[args.buf].filetype = "bash"
+			return
+		elseif filename == "dot_profile" or filename == "dot_bash_profile" then
+			vim.bo[args.buf].filetype = "bash"
+			return
+		end
+		
+		-- General shell file patterns
+		if filename:match("%.zsh$") or filename:match("zshrc") or filename:match("zprofile") then
+			vim.bo[args.buf].filetype = "zsh"
+		elseif filename:match("%.sh$") or filename:match("%.bash$") or filename:match("bashrc") or filename:match("bash_profile") or filename:match("profile") then
+			vim.bo[args.buf].filetype = "bash"
+		elseif filename:match("%.fish$") then
+			vim.bo[args.buf].filetype = "fish"
+		elseif filename:match("%.env") or filename:match("^%.env") then
+			vim.bo[args.buf].filetype = "sh"
+		elseif filename:match("%.ini$") or filename:match("%.conf$") or filename:match("%.config$") or filename:match("%.cfg$") then
+			vim.bo[args.buf].filetype = "ini"
+		elseif filename:match("^dot_") then
+			-- General chezmoi dotfiles - detect by suffix
+			local suffix = filename:match("^dot_(.+)$")
+			if suffix then
+				if suffix:match("zsh") then
+					vim.bo[args.buf].filetype = "zsh"
+				elseif suffix:match("bash") then
+					vim.bo[args.buf].filetype = "bash"
+				elseif suffix:match("gitconfig") then
+					vim.bo[args.buf].filetype = "gitconfig"
+				elseif suffix:match("vimrc") or suffix:match("nvimrc") then
+					vim.bo[args.buf].filetype = "vim"
+				else
+					vim.bo[args.buf].filetype = "conf"
+				end
+			end
+		end
+	end,
+})

@@ -63,6 +63,20 @@ return {
 			require("telescope.builtin").find_files({ hidden = true, default_text = line })
 		end
 
+		local oldfiles_no_ignore = function(prompt_bufnr)
+			local action_state = require("telescope.actions.state")
+			local line = action_state.get_current_line()
+			actions.close(prompt_bufnr)
+			find_files_with_escaped_paths({ no_ignore = true, default_text = line })
+		end
+
+		local oldfiles_with_hidden = function(prompt_bufnr)
+			local action_state = require("telescope.actions.state")
+			local line = action_state.get_current_line()
+			actions.close(prompt_bufnr)
+			find_files_with_escaped_paths({ hidden = true, default_text = line })
+		end
+
 		return {
 			defaults = {
 				cwd = false,
@@ -157,12 +171,117 @@ return {
 		local builtin = require("telescope.builtin")
 		local extensions = require("telescope").extensions
 
-		local function project_oldfiles(ofopts)
+		-- Shared utility to add enhanced telescope functionality
+		local function enhance_telescope_opts(ofopts, picker_type)
 			ofopts = ofopts or {}
 			local current_dir = vim.fn.getcwd()
-			ofopts.cwd_only = true
-			ofopts.cwd = current_dir
-			builtin.oldfiles(ofopts)
+			
+			-- Project-scoped behavior
+			if picker_type == "oldfiles" then
+				ofopts.cwd_only = true
+				ofopts.cwd = current_dir
+			elseif picker_type == "find_files" then
+				-- Find files specific options can go here
+			end
+			
+			-- Add enhanced previewer with custom filetype detection for all pickers
+			ofopts.previewer = require('telescope.previewers').new_buffer_previewer({
+				title = "File Preview",
+				get_buffer_by_name = function(_, entry)
+					return entry.value or entry.filename or entry[1]
+				end,
+				define_preview = function(self, entry)
+					local filename = entry.value or entry.filename or entry[1]
+					local filepath = entry.path or filename
+					
+					if not filepath or filepath == "" then return end
+					
+					-- Use same logic as find_files for all file types
+					vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
+					vim.fn.jobstart({ 'cat', filepath }, {
+						stdout_buffered = true,
+						on_stdout = function(_, data)
+							if data and #data > 0 then
+								if data[#data] == "" then
+									table.remove(data, #data)
+								end
+								local lines = {}
+								for _, line in ipairs(data) do
+									for split_line in line:gmatch("[^\n]*") do
+										if split_line ~= "" or #lines == 0 then
+											table.insert(lines, split_line)
+										end
+									end
+								end
+								vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+								
+								-- Custom filetype detection for telescope previews
+								local function detect_filetype(fname)
+									-- Handle chezmoi dotfiles
+									if fname == "dot_zshrc" then
+										return "zsh"
+									elseif fname == "dot_bashrc" then
+										return "bash"
+									elseif fname == "dot_profile" or fname == "dot_bash_profile" then
+										return "bash"
+									elseif fname:match("^dot_") then
+										local suffix = fname:match("^dot_(.+)$")
+										if suffix then
+											if suffix:match("zsh") then
+												return "zsh"
+											elseif suffix:match("bash") then
+												return "bash"
+											elseif suffix:match("gitconfig") then
+												return "gitconfig"
+											elseif suffix:match("vimrc") or suffix:match("nvimrc") then
+												return "vim"
+											end
+										end
+										return "conf"
+									end
+									
+									-- Handle other file patterns
+									if fname:match("%.zsh$") or fname:match("zshrc") then
+										return "zsh"
+									elseif fname:match("%.sh$") or fname:match("%.bash$") or fname:match("bashrc") then
+										return "bash"
+									elseif fname:match("%.conf$") or fname:match("%.cfg$") or fname:match("%.config$") then
+										return "conf"
+									end
+									
+									-- Fallback to vim's detection
+									return vim.filetype.match({ filename = fname }) or 'text'
+								end
+								
+								local ft = detect_filetype(vim.fn.fnamemodify(filename, ':t'))
+								vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
+								
+								-- Apply treesitter highlighting if available
+								if require('nvim-treesitter.parsers').has_parser(ft) then
+									vim.treesitter.start(self.state.bufnr, ft)
+								else
+									-- Fallback to regex highlighting
+									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
+								end
+							end
+						end,
+					})
+				end,
+			})
+			
+			-- The global telescope mappings already handle:
+			-- - Harpoon integration (<C-n>)
+			-- - File splits (<a-v>, <a-b>) 
+			-- - History navigation (<C-Down>, <C-Up>)
+			-- - Preview scrolling (<PageDown>, <PageUp>)
+			-- So we don't need to duplicate them here
+			
+			return ofopts
+		end
+
+		local function project_oldfiles(ofopts)
+			local enhanced_opts = enhance_telescope_opts(ofopts, "oldfiles")
+			builtin.oldfiles(enhanced_opts)
 		end
 
 		local function escape_special_chars(path)
@@ -251,8 +370,45 @@ return {
 									end
 									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
 									
-									-- Determine filetype and apply proper highlighting
-									local ft = vim.filetype.match({ filename = filename, buf = self.state.bufnr }) or 'text'
+									-- Custom filetype detection for telescope previews
+									local function detect_filetype(fname)
+										-- Handle chezmoi dotfiles
+										if fname == "dot_zshrc" then
+											return "zsh"
+										elseif fname == "dot_bashrc" then
+											return "bash"
+										elseif fname == "dot_profile" or fname == "dot_bash_profile" then
+											return "bash"
+										elseif fname:match("^dot_") then
+											local suffix = fname:match("^dot_(.+)$")
+											if suffix then
+												if suffix:match("zsh") then
+													return "zsh"
+												elseif suffix:match("bash") then
+													return "bash"
+												elseif suffix:match("gitconfig") then
+													return "gitconfig"
+												elseif suffix:match("vimrc") or suffix:match("nvimrc") then
+													return "vim"
+												end
+											end
+											return "conf"
+										end
+										
+										-- Handle other file patterns
+										if fname:match("%.zsh$") or fname:match("zshrc") then
+											return "zsh"
+										elseif fname:match("%.sh$") or fname:match("%.bash$") or fname:match("bashrc") then
+											return "bash"
+										elseif fname:match("%.conf$") or fname:match("%.cfg$") or fname:match("%.config$") then
+											return "conf"
+										end
+										
+										-- Fallback to vim's detection
+										return vim.filetype.match({ filename = fname }) or 'text'
+									end
+									
+									local ft = detect_filetype(filename)
 									vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
 									
 									-- Apply treesitter highlighting if available
@@ -318,8 +474,14 @@ return {
 			require("telescope.builtin").find_files(opts)
 		end
 
+		-- Enhanced find files with shared utility
+		local function enhanced_find_files(opts)
+			local enhanced_opts = enhance_telescope_opts(opts, "find_files")
+			find_files_with_escaped_paths(enhanced_opts)
+		end
+
 		vim.keymap.set("n", "<leader>ff", function()
-			find_files_with_escaped_paths()
+			enhanced_find_files()
 		end, { desc = "[F]ind [F]iles" })
 
 
