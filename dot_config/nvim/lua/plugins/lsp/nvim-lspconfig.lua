@@ -212,6 +212,12 @@ return {
 						"javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact",
 						"typescript.tsx", "vue", "svelte", "astro", "htmlangular",
 					},
+					settings = {
+						format = false, -- Disable ESLint formatting, let Prettier handle it
+						codeActionOnSave = {
+							enable = false, -- Disable auto-fix on save to prevent bulk changes
+						},
+					},
 				})
 			else
 				-- Default config for all other servers
