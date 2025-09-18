@@ -58,5 +58,39 @@ return {
       },
     },
   },
+  config = function(_, opts)
+    local ok_sat, sat = pcall(require, "satellite")
+    if ok_sat then pcall(sat.setup, opts) end
+
+    -- Guard Satellite render to avoid rare out-of-bounds crashes
+    local ok_view, view = pcall(require, "satellite.view")
+    if ok_view and type(view.render) == "function" then
+      local orig_render = view.render
+      view.render = function(...)
+        local ok, res = pcall(orig_render, ...)
+        if ok then return res end
+        -- Suppress sporadic errors; try again on next event
+      end
+    end
+
+    -- Clamp util indices to valid line ranges defensively
+    local ok_util, util = pcall(require, "satellite.util")
+    if ok_util and type(util.virtual_line_count) == "function" then
+      local orig_vlc = util.virtual_line_count
+      util.virtual_line_count = function(winid, row, ...)
+        local buf_ok, buf = pcall(vim.api.nvim_win_get_buf, winid)
+        if buf_ok then
+          local line_count = vim.api.nvim_buf_line_count(buf)
+          if type(row) == "number" then
+            if row < 1 then row = 1 end
+            if row > line_count then row = line_count end
+          end
+        end
+        local ok1, res = pcall(orig_vlc, winid, row, ...)
+        if ok1 then return res end
+        return 0
+      end
+    end
+  end,
 }
 
