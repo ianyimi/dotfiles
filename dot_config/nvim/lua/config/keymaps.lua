@@ -84,16 +84,15 @@ keymap.set("n", "<S-x>", function()
 			end
 		end
 		if found_index then
-			if type(list.remove_at) == "function" then
-				list:remove_at(found_index)
-			else
-				local new_items = {}
-				for i, item in ipairs(list.items or {}) do
-					if i ~= found_index then table.insert(new_items, item) end
+			-- Always compact/shift the list when removing
+			local new_items = {}
+			for i, item in ipairs(list.items or {}) do
+				if i ~= found_index and item and item.value and item.value ~= "" then
+					table.insert(new_items, item)
 				end
-				list.items = new_items
-				list._length = #new_items
 			end
+			list.items = new_items
+			list._length = #new_items
 			pcall(vim.api.nvim_exec_autocmds, "User", { pattern = "HarpoonListChanged" })
 		end
 	end)

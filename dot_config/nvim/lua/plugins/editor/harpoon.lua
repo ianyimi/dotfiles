@@ -28,6 +28,17 @@ return {
 		end)
 		-- Wrap list methods to emit our sync event on changes
 		local orig_list = harpoon.list
+		local function compact_list(lst)
+			if not lst or type(lst.items) ~= "table" then return end
+			local new_items = {}
+			for _, item in ipairs(lst.items) do
+				if item and item.value and item.value ~= "" then
+					table.insert(new_items, item)
+				end
+			end
+			lst.items = new_items
+			lst._length = #new_items
+		end
 		if type(orig_list) == "function" then
 			harpoon.list = function(...)
 				local lst = orig_list(...)
@@ -37,6 +48,10 @@ return {
 						if type(fn) == "function" then
 							lst[name] = function(self, ...)
 								local ret = fn(self, ...)
+								-- Only compact for explicit removes to preserve Harpoon semantics
+								if name == "remove" or name == "remove_at" then
+									compact_list(self)
+								end
 								vim.schedule(function()
 									pcall(vim.api.nvim_exec_autocmds, "User", { pattern = "HarpoonListChanged" })
 								end)

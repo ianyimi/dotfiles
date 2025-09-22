@@ -178,8 +178,9 @@ return {
 			
 			-- Project-scoped behavior
 			if picker_type == "oldfiles" then
-				ofopts.cwd_only = true
+				ofopts.only_cwd = true
 				ofopts.cwd = current_dir
+				ofopts.sort_mru = true
 			elseif picker_type == "find_files" then
 				-- Find files specific options can go here
 			end
