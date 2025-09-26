@@ -225,7 +225,7 @@ function M.foldexpr()
 end
 
 ---@param buf number?
-function M.bufremove(buf)
+function M.bufremove(buf, opts)
   buf = buf or 0
   buf = buf == 0 and vim.api.nvim_get_current_buf() or buf
 
@@ -263,7 +263,8 @@ function M.bufremove(buf)
     end)
   end
   if vim.api.nvim_buf_is_valid(buf) then
-    pcall(vim.cmd, "bdelete! " .. buf)
+    local force = opts and opts.force or false
+    pcall(LazyVim.safe_buf_delete, buf, { force = force })
   end
 end
 

@@ -99,7 +99,7 @@ keymap.set("n", "<S-x>", function()
 	-- if there is exactly one other real file buffer, close this window after delete
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
-		LazyVim.safe_buf_delete(cur, { force = false })
+		require("util.ui").bufremove(cur, { force = false })
 		vim.schedule(function()
 			if vim.api.nvim_win_is_valid(win) then
 				pcall(vim.cmd, "close")
@@ -107,23 +107,15 @@ keymap.set("n", "<S-x>", function()
 		end)
 		return
 	end
-	-- otherwise keep the split: switch window to another buffer, then delete current
-	local alt = vim.fn.bufnr("#")
-	if alt > 0 and vim.api.nvim_buf_is_loaded(alt) and alt ~= cur then
-		pcall(vim.cmd, "buffer #")
-	elseif not pcall(vim.cmd, "bprevious") then
-		if not pcall(vim.cmd, "bnext") then
-			pcall(vim.cmd, "enew")
-		end
-	end
-	LazyVim.safe_buf_delete(cur, { force = false })
+	-- otherwise keep the split using util.ui.bufremove
+	require("util.ui").bufremove(cur, { force = false })
 end, { noremap = true, silent = true, desc = "Close Buffer (smart)" })
 
 keymap.set("n", "<C-S-x>", function()
 	local cur = vim.api.nvim_get_current_buf()
 	if real_other_buffers_count(cur) == 1 then
 		local win = vim.api.nvim_get_current_win()
-		LazyVim.safe_buf_delete(cur, { force = true })
+		require("util.ui").bufremove(cur, { force = true })
 		vim.schedule(function()
 			if vim.api.nvim_win_is_valid(win) then
 				pcall(vim.cmd, "close")
@@ -131,15 +123,8 @@ keymap.set("n", "<C-S-x>", function()
 		end)
 		return
 	end
-	local alt = vim.fn.bufnr("#")
-	if alt > 0 and vim.api.nvim_buf_is_loaded(alt) and alt ~= cur then
-		pcall(vim.cmd, "buffer #")
-	elseif not pcall(vim.cmd, "bprevious") then
-		if not pcall(vim.cmd, "bnext") then
-			pcall(vim.cmd, "enew")
-		end
-	end
-	LazyVim.safe_buf_delete(cur, { force = true })
+	-- otherwise keep the split using util.ui.bufremove
+	require("util.ui").bufremove(cur, { force = true })
 end, { noremap = true, silent = true, desc = "Close Buffer (Force, smart)" })
 
 keymap.set("v", "<S-j>", ":m '>+1<CR>gv=gv", { desc = "Downshift selected code" })

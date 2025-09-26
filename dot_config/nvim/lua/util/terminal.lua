@@ -100,7 +100,7 @@ function M.close_all()
     if vim.api.nvim_buf_is_valid(buf) then
       local ok, ft = pcall(function() return vim.bo[buf].filetype end)
       if ok and ft == "lazyterm" then
-        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+        pcall(LazyVim.safe_buf_delete, buf, { force = true })
       end
     end
   end

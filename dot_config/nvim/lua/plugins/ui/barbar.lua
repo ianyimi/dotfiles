@@ -314,8 +314,8 @@ return {
 						if buftype == "" and filetype ~= "oil" and
 								buf_name == "" and line_count == 1 and first_line == "" and
 								vim.fn.bufwinnr(buf) == -1 then -- Not in a window
-							pcall(vim.api.nvim_buf_delete, buf, { force = true })
-						end
+								pcall(LazyVim.safe_buf_delete, buf, { force = true })
+							end
 					end
 				end
 			end)
@@ -366,7 +366,7 @@ return {
 
 			-- Delete the buffer with force (works when not the active buffer)
 			if deleted_buffer then
-				pcall(vim.api.nvim_buf_delete, deleted_buffer, { force = true })
+				pcall(LazyVim.safe_buf_delete, deleted_buffer, { force = true })
 			end
 
 			-- Fire list-changed event
@@ -426,7 +426,7 @@ return {
 			if old_buffer then
 				-- Check if buffer has unsaved changes
 				if not vim.api.nvim_buf_get_option(old_buffer, "modified") then
-					vim.api.nvim_buf_delete(old_buffer, { force = true })
+					pcall(LazyVim.safe_buf_delete, old_buffer, { force = true })
 				end
 			end
 
