@@ -192,30 +192,116 @@ return {
 							end
 						end,
 					},
-					gs = {
-						desc = "[G]rep in Directory",
-						callback = function()
-							-- get the current directory
-							local prefills = { paths = require("oil").get_current_dir() }
+				gs = {
+					desc = "[G]rep in Directory",
+					callback = function()
+						-- get the current directory
+						local prefills = { paths = require("oil").get_current_dir() }
 
-							local grug_far = require("grug-far")
-							-- instance check
-							if not grug_far.has_instance("explorer") then
-								grug_far.open({
-									instanceName = "explorer",
-									prefills = prefills,
-									staticTitle = "Find and Replace from Explorer",
-								})
-							else
-								grug_far.open_instance("explorer")
-								-- updating the prefills without clearing the search and other fields
-								grug_far.update_instance_prefills("explorer", prefills, false)
+						local grug_far = require("grug-far")
+						-- instance check
+						if not grug_far.has_instance("explorer") then
+							grug_far.open({
+								instanceName = "explorer",
+								prefills = prefills,
+								staticTitle = "Find and Replace from Explorer",
+							})
+						else
+							grug_far.open_instance("explorer")
+							-- updating the prefills without clearing the search and other fields
+							grug_far.update_instance_prefills("explorer", prefills, false)
+						end
+					end,
+				},
+				["<leader>y"] = {
+					desc = "Copy files to clipboard (cross-instance)",
+					callback = function()
+						local oil = require("oil")
+						local current_dir = oil.get_current_dir()
+						if not current_dir then
+							vim.notify("Not in an oil buffer", vim.log.levels.ERROR)
+							return
+						end
+
+						local mode = vim.fn.mode()
+						local files = {}
+
+						if mode == "v" or mode == "V" then
+							local start_line = vim.fn.line("v")
+							local end_line = vim.fn.line(".")
+							if start_line > end_line then
+								start_line, end_line = end_line, start_line
 							end
-						end,
-					},
+							for line = start_line, end_line do
+								local entry = oil.get_entry_on_line(0, line)
+								if entry then
+									table.insert(files, current_dir .. entry.name)
+								end
+							end
+							vim.cmd("normal! \\<Esc>")
+						else
+							local entry = oil.get_cursor_entry()
+							if entry then
+								table.insert(files, current_dir .. entry.name)
+							end
+						end
+
+						if #files == 0 then
+							vim.notify("No files selected", vim.log.levels.WARN)
+							return
+						end
+
+						local json = vim.fn.json_encode(files)
+						vim.fn.setreg("+", json)
+						vim.notify(string.format("Copied %d file(s) to clipboard", #files))
+					end,
+				},
+				["<leader>p"] = {
+					desc = "Paste files from clipboard (cross-instance)",
+					callback = function()
+						local oil = require("oil")
+						local dest_dir = oil.get_current_dir()
+						if not dest_dir then
+							vim.notify("Not in an oil buffer", vim.log.levels.ERROR)
+							return
+						end
+
+						local clipboard = vim.fn.getreg("+")
+						local ok, files = pcall(vim.fn.json_decode, clipboard)
+						
+						if not ok or type(files) ~= "table" then
+							vim.notify("No valid files in clipboard", vim.log.levels.ERROR)
+							return
+						end
+
+						for _, source_path in ipairs(files) do
+							local filename = vim.fn.fnamemodify(source_path, ":t")
+							local dest_path = dest_dir .. filename
+							
+							local cmd = string.format("cp -r %s %s", 
+								vim.fn.shellescape(source_path),
+								vim.fn.shellescape(dest_path))
+							
+							local result = vim.fn.system(cmd)
+							if vim.v.shell_error ~= 0 then
+								vim.notify("Failed to copy: " .. filename .. "\n" .. result, vim.log.levels.ERROR)
+							end
+						end
+
+						vim.notify(string.format("Pasted %d file(s)", #files))
+						require("oil.actions").refresh.callback()
+					end,
+				},
 				},
 			})
 			_bench("oil.setup end")
+			vim.api.nvim_create_autocmd("FileType", {
+				pattern = "oil",
+				callback = function(args)
+					-- Disable global <leader>p in Oil buffers
+					vim.keymap.set("x", "<leader>p", "<Nop>", { buffer = args.buf, desc = "Disabled in Oil" })
+				end,
+			})
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = "oil",
 				once = true,
