@@ -330,8 +330,62 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
+-- Track MRU (Most Recently Used) files - completely custom, ignoring v:oldfiles
+_G.__mru_files = _G.__mru_files or {}
 
+-- Update MRU when entering a buffer
+vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+	group = augroup("track_mru_enter"),
+	callback = function(ev)
+		pcall(function()
+			local bt = vim.api.nvim_get_option_value("buftype", { buf = ev.buf })
+			if bt ~= "" then return end
+			local ft = vim.api.nvim_get_option_value("filetype", { buf = ev.buf })
+			if ft == "oil" or ft == "alpha" or ft == "lazy" then return end
+			local name = vim.api.nvim_buf_get_name(ev.buf)
+			if name and name ~= "" and vim.fn.filereadable(name) == 1 then
+				local fullpath = vim.fn.fnamemodify(name, ":p")
+				-- Remove if already exists (we'll re-add at front)
+				for i, path in ipairs(_G.__mru_files) do
+					if path == fullpath then
+						table.remove(_G.__mru_files, i)
+						break
+					end
+				end
+				-- Insert at front
+				table.insert(_G.__mru_files, 1, fullpath)
+				-- Keep list manageable (max 200 files for good history)
+				if #_G.__mru_files > 200 then
+					table.remove(_G.__mru_files)
+				end
+			end
+		end)
+	end,
+})
 
+-- Track buffer close to ensure closed files go to front of MRU
+vim.api.nvim_create_autocmd("BufDelete", {
+	group = augroup("track_mru_close"),
+	callback = function(ev)
+		pcall(function()
+			local bt = vim.api.nvim_get_option_value("buftype", { buf = ev.buf })
+			if bt ~= "" then return end
+			local name = vim.api.nvim_buf_get_name(ev.buf)
+			if name and name ~= "" and vim.fn.filereadable(name) == 1 then
+				local fullpath = vim.fn.fnamemodify(name, ":p")
+				-- Remove from MRU if exists
+				for i, path in ipairs(_G.__mru_files) do
+					if path == fullpath then
+						table.remove(_G.__mru_files, i)
+						break
+					end
+				end
+				-- Re-add at front (most recently closed = most recently used)
+				table.insert(_G.__mru_files, 1, fullpath)
+			end
+		end)
+	end,
+})
 
 
 -- -- Autocommand to enable paste mode when exiting visual block mode

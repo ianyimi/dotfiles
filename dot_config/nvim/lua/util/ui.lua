@@ -239,6 +239,8 @@ function M.bufremove(buf, opts)
     end
   end
 
+  local __old_ei = vim.o.eventignore or ""
+  vim.o.eventignore = "BufEnter,WinEnter" .. (__old_ei ~= "" and ("," .. __old_ei) or "")
   for _, win in ipairs(vim.fn.win_findbuf(buf)) do
     vim.api.nvim_win_call(win, function()
       if not vim.api.nvim_win_is_valid(win) or vim.api.nvim_win_get_buf(win) ~= buf then
@@ -264,8 +266,11 @@ function M.bufremove(buf, opts)
   end
   if vim.api.nvim_buf_is_valid(buf) then
     local force = opts and opts.force or false
+    -- allow BufLeave/WinLeave to fire for MRU, but suppress enter on any last moment swaps
     pcall(LazyVim.safe_buf_delete, buf, { force = force })
   end
+  -- restore eventignore
+  vim.o.eventignore = __old_ei
 end
 
 return M

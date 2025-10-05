@@ -63,20 +63,6 @@ return {
 			require("telescope.builtin").find_files({ hidden = true, default_text = line })
 		end
 
-		local oldfiles_no_ignore = function(prompt_bufnr)
-			local action_state = require("telescope.actions.state")
-			local line = action_state.get_current_line()
-			actions.close(prompt_bufnr)
-			find_files_with_escaped_paths({ no_ignore = true, default_text = line })
-		end
-
-		local oldfiles_with_hidden = function(prompt_bufnr)
-			local action_state = require("telescope.actions.state")
-			local line = action_state.get_current_line()
-			actions.close(prompt_bufnr)
-			find_files_with_escaped_paths({ hidden = true, default_text = line })
-		end
-
 		return {
 			defaults = {
 				cwd = false,
@@ -178,9 +164,7 @@ return {
 			
 			-- Project-scoped behavior
 			if picker_type == "oldfiles" then
-				ofopts.only_cwd = true
 				ofopts.cwd = current_dir
-				ofopts.sort_mru = true
 			elseif picker_type == "find_files" then
 				-- Find files specific options can go here
 			end
@@ -289,7 +273,62 @@ return {
 
 		local function project_oldfiles(ofopts)
 			local enhanced_opts = enhance_telescope_opts(ofopts, "oldfiles")
-			builtin.oldfiles(enhanced_opts)
+			
+			-- Force reload ShaDa to get latest oldfiles (fixes per-project ShaDa staleness)
+			vim.cmd('rshada!')
+			
+			-- Get currently open buffer to exclude from results
+			local current_buf = vim.api.nvim_get_current_buf()
+			local current_file = vim.api.nvim_buf_get_name(current_buf)
+			local current_file_normalized = current_file ~= "" and vim.fn.fnamemodify(current_file, ":p") or nil
+			
+			-- Get MRU files from our custom tracking
+			local mru_files = _G.__mru_files or {}
+			local cwd = enhanced_opts.cwd or vim.fn.getcwd()
+			local cwd_normalized = vim.fn.fnamemodify(cwd, ":p")
+			
+			-- Filter MRU files: only current project, exclude current buffer
+			local project_mru = {}
+			local seen = {}
+			for _, filepath in ipairs(mru_files) do
+				local normalized = vim.fn.fnamemodify(filepath, ":p")
+				if normalized ~= current_file_normalized
+					and normalized:find(cwd_normalized, 1, true) == 1
+					and vim.fn.filereadable(normalized) == 1 then
+					table.insert(project_mru, normalized)
+					seen[normalized] = true
+				end
+			end
+			
+			-- Add v:oldfiles as fallback for historical files not in current session
+			local oldfiles = vim.tbl_filter(function(file)
+				local normalized = vim.fn.fnamemodify(file, ":p")
+				return not seen[normalized]
+					and normalized ~= current_file_normalized
+					and normalized:find(cwd_normalized, 1, true) == 1
+					and vim.fn.filereadable(normalized) == 1
+			end, vim.v.oldfiles or {})
+			
+			-- Merge: MRU first (current session), then oldfiles (historical)
+			for _, file in ipairs(oldfiles) do
+				table.insert(project_mru, file)
+			end
+			
+			-- Use telescope's standard picker with hybrid MRU + oldfiles list
+			local conf = require("telescope.config").values
+			local finders = require("telescope.finders")
+			local make_entry = require("telescope.make_entry")
+			local pickers = require("telescope.pickers")
+			
+			pickers.new(enhanced_opts, {
+				prompt_title = "Recent Files (MRU)",
+				finder = finders.new_table({
+					results = project_mru,
+					entry_maker = make_entry.gen_from_file(enhanced_opts),
+				}),
+				sorter = conf.file_sorter(enhanced_opts),
+				previewer = enhanced_opts.previewer,
+			}):find()
 		end
 
 		local function escape_special_chars(path)
