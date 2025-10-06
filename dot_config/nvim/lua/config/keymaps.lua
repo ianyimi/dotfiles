@@ -173,6 +173,26 @@ keymap.set("n", "<leader>D", '"_D', { desc = "[D]elete to void" })
 -- void shift-q
 keymap.set("n", "<S-q>", "<nop>")
 
+-- fix undo/redo cursor jumping by suppressing events that might interfere
+_G._undo_in_progress = false
+_G._redo_in_progress = false
+
+keymap.set("n", "u", function()
+	_G._undo_in_progress = true
+	vim.cmd("silent! undo")
+	vim.schedule(function()
+		_G._undo_in_progress = false
+	end)
+end, { desc = "Undo" })
+
+keymap.set("n", "<C-r>", function()
+	_G._redo_in_progress = true
+	vim.cmd("silent! redo")
+	vim.schedule(function()
+		_G._redo_in_progress = false
+	end)
+end, { desc = "Redo" })
+
 keymap.set("n", "<a-C-h>", ":h <Space>", { desc = "[H]elp" })
 
 -- Lua keybind to copy the file path of the current buffer to the clipboard with home directory replaced by ~

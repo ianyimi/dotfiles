@@ -50,12 +50,6 @@ vim.opt.showmode = false
 
 vim.opt.undofile = true
 
--- Fix undo/redo cursor jumping by improving jumplist behavior
-vim.opt.jumpoptions = "stack"
-
--- Prevent unwanted cursor movement during undo/redo
-vim.opt.undoreload = 10000
-
 -- Function to detect the operating system
 local function is_windows()
 	return package.config:sub(1, 1) == '\\'

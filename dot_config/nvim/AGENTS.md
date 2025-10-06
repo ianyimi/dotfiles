@@ -29,3 +29,9 @@
 - **Strings**: Use double quotes for user-visible text, single for internal strings
 - **Global access**: Use `vim.*` API, define `LazyVim` util functions in `util/`
 - **File organization**: Group by functionality (`plugins/`, `config/`, `util/`)
+
+## Critical Configuration Rules
+- **NEVER remove functionality** when fixing bugs or making changes unless explicitly requested by user or the removed code is clearly a previous failed implementation attempt of what is currently being fixed AND the new implementation has been confirmed working by the user
+- **Preserve all features** when refactoring - existing behavior must remain intact
+- When fixing issues, identify root cause and fix minimally without breaking other features
+- If unsure whether to remove functionality, ask the user first

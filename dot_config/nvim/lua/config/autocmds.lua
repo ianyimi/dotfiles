@@ -61,6 +61,9 @@ vim.api.nvim_create_autocmd({ "VimResized" }, {
 vim.api.nvim_create_autocmd("BufReadPost", {
 	group = augroup("last_loc"),
 	callback = function(event)
+		if _G._undo_in_progress or _G._redo_in_progress then
+			return
+		end
 		local exclude = { "gitcommit" }
 		local buf = event.buf
 		if vim.tbl_contains(exclude, vim.bo[buf].filetype) or vim.b[buf].lazyvim_last_loc then
@@ -337,6 +340,9 @@ _G.__mru_files = _G.__mru_files or {}
 vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
 	group = augroup("track_mru_enter"),
 	callback = function(ev)
+		if _G._undo_in_progress or _G._redo_in_progress then
+			return
+		end
 		pcall(function()
 			local bt = vim.api.nvim_get_option_value("buftype", { buf = ev.buf })
 			if bt ~= "" then return end
