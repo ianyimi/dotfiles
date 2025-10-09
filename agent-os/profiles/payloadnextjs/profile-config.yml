@@ -1,7 +1,6 @@
 inherits_from: default
 
 # Uncomment and modify to exclude specific inherited files:
-# exclude_inherited_files:
-#   - standards/backend/api/*
-#   - standards/backend/database/migrations.md
-#   - workflows/implementation/specific-workflow.md
+exclude_inherited_files:
+- standards/global/*
+- standards/backend/*

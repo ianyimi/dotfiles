@@ -1,4 +1,4 @@
-inherits_from: default
+inherits_from: false
 
 # Uncomment and modify to exclude specific inherited files:
 # exclude_inherited_files:
