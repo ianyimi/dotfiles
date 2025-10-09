@@ -22,3 +22,7 @@ set-option -g display-panes-colour colour84
 
 # clock
 set-window-option -g clock-mode-colour colour205
+
+# status bar
+set -g status-left-length 40
+set -g status-left "#[fg=colour84,bold]#S #[fg=colour123]| "

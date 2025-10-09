@@ -11,7 +11,7 @@ return {
 		"xvzc/chezmoi.nvim",
 		opts = {
 			edit = {
-				watch = false,
+				watch = true,
 				force = false,
 			},
 			notification = {
