@@ -49,6 +49,8 @@ vim.opt.termguicolors = true
 vim.opt.showmode = false
 
 vim.opt.undofile = true
+vim.opt.undolevels = 10000
+vim.opt.undoreload = 10000
 
 -- Function to detect the operating system
 local function is_windows()

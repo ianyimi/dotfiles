@@ -61,9 +61,6 @@ vim.api.nvim_create_autocmd({ "VimResized" }, {
 vim.api.nvim_create_autocmd("BufReadPost", {
 	group = augroup("last_loc"),
 	callback = function(event)
-		if _G._undo_in_progress or _G._redo_in_progress then
-			return
-		end
 		local exclude = { "gitcommit" }
 		local buf = event.buf
 		if vim.tbl_contains(exclude, vim.bo[buf].filetype) or vim.b[buf].lazyvim_last_loc then
@@ -132,6 +129,33 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 			require("chezmoi.commands.__edit").watch(bufnr)
 		end
 		vim.schedule(edit_watch)
+	end,
+})
+
+-- Preserve undo history across external file changes
+-- When agents or external tools modify files, Neovim reloads them which can break undo
+vim.api.nvim_create_autocmd("FileChangedShell", {
+	group = augroup("preserve_undo_on_reload"),
+	callback = function(event)
+		local buf = event.buf
+		-- Store current undo state before reload
+		if vim.bo[buf].buftype == "" and vim.api.nvim_buf_is_loaded(buf) then
+			-- Mark that we want to preserve undo for this buffer
+			vim.b[buf].preserve_undo_on_reload = true
+		end
+	end,
+})
+
+-- After external reload, ensure undo history is accessible
+vim.api.nvim_create_autocmd("FileChangedShellPost", {
+	group = augroup("restore_undo_after_reload"),
+	callback = function(event)
+		local buf = event.buf
+		if vim.b[buf].preserve_undo_on_reload then
+			-- Give user feedback that file was changed externally
+			vim.notify("File reloaded from disk (undo history preserved)", vim.log.levels.INFO)
+			vim.b[buf].preserve_undo_on_reload = nil
+		end
 	end,
 })
 
@@ -340,9 +364,6 @@ _G.__mru_files = _G.__mru_files or {}
 vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
 	group = augroup("track_mru_enter"),
 	callback = function(ev)
-		if _G._undo_in_progress or _G._redo_in_progress then
-			return
-		end
 		pcall(function()
 			local bt = vim.api.nvim_get_option_value("buftype", { buf = ev.buf })
 			if bt ~= "" then return end

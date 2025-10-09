@@ -173,25 +173,34 @@ keymap.set("n", "<leader>D", '"_D', { desc = "[D]elete to void" })
 -- void shift-q
 keymap.set("n", "<S-q>", "<nop>")
 
--- fix undo/redo cursor jumping by suppressing events that might interfere
-_G._undo_in_progress = false
-_G._redo_in_progress = false
-
+-- fix undo/redo cursor jumping by using keepjumps and preserving view
 keymap.set("n", "u", function()
-	_G._undo_in_progress = true
-	vim.cmd("silent! undo")
-	vim.schedule(function()
-		_G._undo_in_progress = false
-	end)
-end, { desc = "Undo" })
+	local view = vim.fn.winsaveview()
+	local ok = pcall(vim.cmd, "silent keepjumps normal! u")
+	if ok then
+		-- Let undo move cursor to where the change was, but don't add to jumplist
+		-- Only restore view if cursor jumped to an unreasonable location
+		local new_pos = vim.api.nvim_win_get_cursor(0)
+		-- If cursor jumped more than 100 lines away, it's likely a spurious jump
+		if math.abs(new_pos[1] - view.lnum) > 100 then
+			vim.fn.winrestview(view)
+		end
+	end
+end, { desc = "Undo without jumplist pollution" })
 
 keymap.set("n", "<C-r>", function()
-	_G._redo_in_progress = true
-	vim.cmd("silent! redo")
-	vim.schedule(function()
-		_G._redo_in_progress = false
-	end)
-end, { desc = "Redo" })
+	local view = vim.fn.winsaveview()
+	local ok = pcall(vim.cmd, "silent keepjumps normal! \x12")
+	if ok then
+		-- Let redo move cursor to where the change was, but don't add to jumplist
+		-- Only restore view if cursor jumped to an unreasonable location
+		local new_pos = vim.api.nvim_win_get_cursor(0)
+		-- If cursor jumped more than 100 lines away, it's likely a spurious jump
+		if math.abs(new_pos[1] - view.lnum) > 100 then
+			vim.fn.winrestview(view)
+		end
+	end
+end, { desc = "Redo without jumplist pollution" })
 
 keymap.set("n", "<a-C-h>", ":h <Space>", { desc = "[H]elp" })
 
