@@ -177,12 +177,12 @@ local function get_buffer_state()
 	local buffers = vim.api.nvim_list_bufs()
 	local valid_buffers = {}
 	local oil_buffers = {}
-	
+
 	for _, buf in ipairs(buffers) do
 		if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_is_loaded(buf) then
 			local buftype = vim.api.nvim_get_option_value("buftype", { buf = buf })
 			local filetype = vim.api.nvim_get_option_value("filetype", { buf = buf })
-			
+
 			if buftype == "" then
 				if filetype == "oil" then
 					table.insert(oil_buffers, buf)
@@ -192,21 +192,21 @@ local function get_buffer_state()
 			end
 		end
 	end
-	
+
 	return valid_buffers, oil_buffers
 end
 
 -- Function to check if we should open oil
 local function should_open_oil()
 	local valid_buffers, oil_buffers = get_buffer_state()
-	
+
 	-- If we have exactly one valid buffer left and it's empty/unnamed
 	if #valid_buffers == 1 and #oil_buffers == 0 then
 		local remaining_buf = valid_buffers[1]
 		local buf_name = vim.api.nvim_buf_get_name(remaining_buf)
 		local line_count = vim.api.nvim_buf_line_count(remaining_buf)
 		local first_line = vim.api.nvim_buf_get_lines(remaining_buf, 0, 1, false)[1] or ""
-		
+
 		-- Check if buffer is empty (no name, only one line, and first line is empty)
 		if buf_name == "" and line_count == 1 and first_line == "" then
 			return remaining_buf
@@ -232,7 +232,7 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 					if ok and filetype == "oil" then
 						vim.b[oil_buf].oil_allow_close = false
 					end
-					
+
 					if _G.refresh_oil_display then
 						pcall(_G.refresh_oil_display)
 					end
@@ -255,7 +255,7 @@ vim.api.nvim_create_user_command("OpenOilIfEmpty", function()
 			if ok and filetype == "oil" then
 				vim.b[oil_buf].oil_allow_close = false
 			end
-			
+
 			if _G.refresh_oil_display then
 				_G.refresh_oil_display()
 			end
@@ -296,7 +296,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
 							end
 						end
 					end
-					
+
 					-- Set closability based on harpoon files
 					vim.b[oil_buf].oil_allow_close = has_harpoon_files
 				end
@@ -313,7 +313,7 @@ vim.api.nvim_create_autocmd("FileType", {
 		-- Override oil's close keymaps with a check
 		local function safe_oil_close()
 			local allow_close = vim.b[ev.buf].oil_allow_close
-			
+
 			if allow_close == false then
 				-- Oil opened after closing all buffers - not closable
 				vim.notify("Cannot close oil - no other files open", vim.log.levels.WARN)
@@ -339,7 +339,7 @@ vim.api.nvim_create_autocmd("FileType", {
 						end
 					end
 				end
-				
+
 				if has_harpoon_files then
 					require("oil.actions").close.callback()
 				else
@@ -350,7 +350,7 @@ vim.api.nvim_create_autocmd("FileType", {
 				require("oil.actions").close.callback()
 			end
 		end
-		
+
 		-- Override the close keymaps for this oil buffer
 		vim.keymap.set("n", "q", safe_oil_close, { buffer = ev.buf, desc = "Close oil (protected)" })
 		vim.keymap.set("n", "<Esc>", safe_oil_close, { buffer = ev.buf, desc = "Close oil (protected)" })
@@ -437,6 +437,109 @@ vim.api.nvim_create_autocmd("BufDelete", {
 --   end,
 -- })
 
+-- Auto-restart LSP when type definition files change
+vim.api.nvim_create_autocmd({ "BufWritePost" }, {
+	group = augroup("lsp_restart_on_types"),
+	pattern = { "*.d.ts", "tsconfig.json", "jsconfig.json", "payload-types.ts" },
+	callback = function()
+		vim.notify("Type definitions updated, restarting LSP...", vim.log.levels.INFO)
+		vim.cmd("LspRestart")
+	end,
+})
+
+-- Payload type watcher setup
+local payload_type_watchers = {}
+local payload_timer = nil
+
+-- Find a file in project directory recursively
+local function find_file_in_project(filename, max_depth)
+	max_depth = max_depth or 3
+	local cwd = vim.fn.getcwd()
+
+	-- Try to find the file using vim.fn.globpath
+	local results = vim.fn.globpath(cwd, "**/" .. filename, false, true)
+
+	-- Filter results by depth
+	local filtered = {}
+	for _, path in ipairs(results) do
+		local relative = path:sub(#cwd + 2) -- Remove cwd prefix
+		local depth = select(2, relative:gsub("/", "")) + 1
+		if depth <= max_depth then
+			table.insert(filtered, path)
+		end
+	end
+
+	return filtered[1] -- Return first match
+end
+
+local function setup_payload_type_watcher()
+	local cwd = vim.fn.getcwd()
+
+	-- First check if payload.config.ts exists in project
+	local payload_config = find_file_in_project("payload.config.ts", 3)
+	if not payload_config then
+		return -- No payload project detected
+	end
+
+	-- Find payload-types.ts in the same directory or nearby
+	local payload_types = find_file_in_project("payload-types.ts", 3)
+	if not payload_types then
+		return -- No types file to watch
+	end
+
+	-- Don't create duplicate watchers
+	if payload_type_watchers[payload_types] then
+		return
+	end
+
+	local uv = vim.loop
+
+	-- Track last modification time and last restart time
+	local last_mtime = vim.fn.getftime(payload_types)
+	local last_restart = 0
+
+	-- Use a timer to poll the file for changes
+	local timer = uv.new_timer()
+	if not timer then return end
+
+	timer:start(0, 1000, vim.schedule_wrap(function() -- Check every 1 second
+		local current_mtime = vim.fn.getftime(payload_types)
+		local now = vim.loop.now()
+
+		-- If file was modified and enough time has passed since last restart
+		if current_mtime > last_mtime and (now - last_restart) > 2000 then
+			last_mtime = current_mtime
+			last_restart = now
+
+			vim.notify("Payload types changed, restarting LSP...", vim.log.levels.INFO)
+			vim.cmd("LspRestart")
+		end
+	end))
+
+	payload_type_watchers[payload_types] = timer
+	vim.notify("Watching " .. vim.fn.fnamemodify(payload_types, ":~:.") .. " for changes", vim.log.levels.INFO)
+end
+
+-- Set up watcher on VimEnter
+vim.api.nvim_create_autocmd("VimEnter", {
+	group = augroup("setup_payload_watcher"),
+	callback = function()
+		vim.defer_fn(function()
+			setup_payload_type_watcher()
+		end, 1000) -- Wait for initialization
+	end,
+})
+
+-- Also try to set up watcher when changing directories
+vim.api.nvim_create_autocmd("DirChanged", {
+	group = augroup("setup_payload_watcher_on_cd"),
+	callback = function()
+		vim.defer_fn(function()
+			setup_payload_type_watcher()
+		end, 500)
+	end,
+})
+
 -- Enhanced filetype detection for shell and config files
 vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
 	group = augroup("enhanced_filetype_detection"),
@@ -444,9 +547,9 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
 	callback = function(args)
 		local filename = vim.fn.expand("%:t")
 		local filepath = vim.fn.expand("%:p")
-		
 
-		
+
+
 		-- Explicit chezmoi file detection
 		if filename == "dot_zshrc" then
 			vim.bo[args.buf].filetype = "zsh"
@@ -458,7 +561,7 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
 			vim.bo[args.buf].filetype = "bash"
 			return
 		end
-		
+
 		-- General shell file patterns
 		if filename:match("%.zsh$") or filename:match("zshrc") or filename:match("zprofile") then
 			vim.bo[args.buf].filetype = "zsh"

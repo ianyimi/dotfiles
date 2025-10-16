@@ -204,6 +204,9 @@ end, { desc = "Redo without jumplist pollution" })
 
 keymap.set("n", "<a-C-h>", ":h <Space>", { desc = "[H]elp" })
 
+-- LSP restart
+keymap.set("n", "<leader>rr", "<cmd>LspRestart<CR>", { desc = "[R]estart LSP" })
+
 -- Lua keybind to copy the file path of the current buffer to the clipboard with home directory replaced by ~
 vim.keymap.set("n", "<leader>cp", function()
 	-- Get the current file's absolute path

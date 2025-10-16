@@ -108,6 +108,11 @@
         name: syncthing
         state: present
 
+    - name: Check Install - Discord
+      community.general.homebrew:
+        name: discord
+        state: present
+
     - name: Check Install - LMStudio
       become: false
       environment:
@@ -143,6 +148,11 @@
     - name: Check Install - Git
       community.general.homebrew:
         name: git
+        state: present
+
+    - name: Check Install - k6
+      community.general.homebrew:
+        name: k6
         state: present
 
     - name: Check Install - Tailscale
