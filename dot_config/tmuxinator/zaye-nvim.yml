@@ -8,7 +8,7 @@ windows:
       layout: tiled
       panes:
         - chezmoi edit --watch
-  - opencode:
+  - agents:
       layout: tiled
       panes:
-        - opencode
+        - claude

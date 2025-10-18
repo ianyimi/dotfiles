@@ -1,7 +1,7 @@
 # /Users/zaye/.config/tmuxinator/project-astro-r3f.yml
 
-name: project-portfolio25
-root: ~/Documents/Projects/portfolio25/
+name: project-bootdev-gohttpserver
+root: ~/Documents/Projects/bootdev/go/httpfromtcp
 
 windows:
   - node:
@@ -16,8 +16,7 @@ windows:
       layout: 47ac,215x58,0,0{107x58,0,0,8,107x58,108,0,9}
       panes:
         - nv
-        - neofetch && pnpm sso && pnpm sst dev
+        - neofetch
   - agents:
       layout: even-horizontal
-      panes:
-        - opencode
+      panes: claude

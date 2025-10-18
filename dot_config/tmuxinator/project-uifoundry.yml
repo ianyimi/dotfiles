@@ -15,7 +15,7 @@ windows:
       panes:
         - nv
         - neofetch && pnpm sso && pnpm sst dev
-  - opencode:
+  - agents:
       layout: even-horizontal
       panes:
-        - opencode
+        - claude

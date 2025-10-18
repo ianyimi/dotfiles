@@ -17,7 +17,6 @@ windows:
       panes:
         - nv
         - neofetch
-  - claude:
+  - agents:
       layout: even-horizontal
-      panes:
-        claude
+      panes: claude
