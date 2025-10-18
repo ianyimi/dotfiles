@@ -8,3 +8,7 @@ windows:
       layout: tiled
       panes:
         - chezmoi edit --watch
+  - agents:
+      layout: even-horizontal
+      panes:
+        - claude
