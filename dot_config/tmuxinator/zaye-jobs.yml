@@ -1,0 +1,17 @@
+# /Users/zaye/.config/tmuxinator/zaye-dotfiles.yml
+
+name: zaye-jobs
+root: ~/Documents/Career
+
+windows:
+  - nvim:
+      layout: even-horizontal
+      panes:
+        - nv
+  - agents:
+      layout: tiled
+      panes:
+        - claude
+        - claude
+        - claude
+        - claude
