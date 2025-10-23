@@ -7,7 +7,7 @@ windows:
   - nvim:
       layout: even-horizontal
       panes:
-        - nv
+        - cd Applications && nv
   - agents:
       layout: tiled
       panes:
