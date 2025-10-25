@@ -11,7 +11,7 @@ after-login-command = []
 # Available commands : https://nikitabobko.github.io/AeroSpace/commands
 after-startup-command = [
 	'exec-and-forget sketchybar',
-	'exec-and-forget borders width=2.0',
+	'exec-and-forget borders active_color=0xffff0000 inactive_color=0x00000000 width=10.0',
 ]
 
 # Start AeroSpace at login
@@ -69,12 +69,12 @@ O = ['secondary', 'main']
 #                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
 #                 See: https://nikitabobko.github.io/AeroSpace/guide#assign-workspaces-to-monitors
 [gaps]
-inner.horizontal = 10
-inner.vertical = 10
-outer.left = 0
-outer.bottom = 0
-outer.top = [{ monitor.main = 8 }, { monitor.secondary = 40 }, 8]
-outer.right = 0
+inner.horizontal = 3
+inner.vertical = 3
+outer.left = 3
+outer.bottom = [{ monitor.main = 3 }, { monitor.secondary = 2 }, 3]
+outer.top = [{ monitor.main = 10 }, { monitor.secondary = 42 }, 10]
+outer.right = 3
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
@@ -238,29 +238,61 @@ alt-shift-tab = 'move-node-to-monitor --wrap-around --focus-follows-window next'
 alt-cmd-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 
 # see: https://nikitabobko.github.io/aerospace/commands#mode
-alt-shift-semicolon = 'mode service'
+alt-shift-semicolon = [
+	'mode service',
+	'exec-and-forget sketchybar --set aerospace.mode icon="S" drawing=on',
+]
 
 # 'service' binding mode declaration.
 # see: https://nikitabobko.github.io/aerospace/guide#binding-modes
 [mode.service.binding]
-esc = ['reload-config', 'mode main']
-r = ['flatten-workspace-tree', 'mode main'] # reset layout
+esc = [
+	'reload-config',
+	'mode main',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
+]
+r = [
+	'flatten-workspace-tree',
+	'mode main',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
+] # reset layout
 f = [
 	'layout floating tiling',
 	'mode main',
 	'exec-and-forget sketchybar --reload',
-	'exec-and-forget borders active_color=0xffe1e3e4 inactive_color=0xff494d64 width=2.0',
+	'exec-and-forget borders active_color=0xffff0000 inactive_color=0x00000000 width=10.0',
 	'exec-and-forget sleep 0.5 && sketchybar --trigger send_message message="aerospace reloaded"',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
 ] # toggle between floating and tiling layout
-backspace = ['close-all-windows-but-current', 'mode main']
+backspace = [
+	'close-all-windows-but-current',
+	'mode main',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
+]
 
 # sticky is not yet supported https://github.com/nikitabobko/aerospace/issues/2
 #s = ['layout sticky tiling', 'mode main']
 
-alt-shift-h = ['join-with left', 'mode main']
-alt-shift-j = ['join-with down', 'mode main']
-alt-shift-k = ['join-with up', 'mode main']
-alt-shift-l = ['join-with right', 'mode main']
+alt-shift-h = [
+	'join-with left',
+	'mode main',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
+]
+alt-shift-j = [
+	'join-with down',
+	'mode main',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
+]
+alt-shift-k = [
+	'join-with up',
+	'mode main',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
+]
+alt-shift-l = [
+	'join-with right',
+	'mode main',
+	'exec-and-forget sketchybar --set aerospace.mode drawing=off',
+]
 
 [[on-window-detected]]
 if.app-id = 'company.thebrowser.browser'
