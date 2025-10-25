@@ -359,6 +359,12 @@
         name: FelixKratz/formulae
         state: present
 
+    - name: JankyBorders
+      become: false
+      community.general.homebrew:
+        name: borders
+        state: present
+
     - name: Check Install - SketchyBar
       become: false
       ignore_errors: true
