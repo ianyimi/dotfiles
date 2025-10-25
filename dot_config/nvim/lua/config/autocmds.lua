@@ -223,6 +223,10 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 		vim.defer_fn(function()
 			local empty_buf = should_open_oil()
 			if empty_buf then
+				-- Detach gitsigns before deleting to prevent race conditions
+				pcall(function()
+					require("gitsigns").detach(empty_buf)
+				end)
 				LazyVim.safe_buf_delete(empty_buf, { force = true })
 				pcall(require("oil").open)
 				-- Mark this oil instance as non-closable (after closing all buffers)
@@ -246,6 +250,10 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 vim.api.nvim_create_user_command("OpenOilIfEmpty", function()
 	local empty_buf = should_open_oil()
 	if empty_buf then
+		-- Detach gitsigns before deleting to prevent race conditions
+		pcall(function()
+			require("gitsigns").detach(empty_buf)
+		end)
 		LazyVim.safe_buf_delete(empty_buf, { force = true })
 		require("oil").open()
 		-- Mark this oil instance as non-closable (after closing all buffers)
@@ -451,38 +459,38 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 local payload_type_watchers = {}
 local payload_timer = nil
 
--- Find a file in project directory recursively
-local function find_file_in_project(filename, max_depth)
-	max_depth = max_depth or 3
+-- Fast check for specific file paths (no globbing)
+local function find_payload_file(filename)
 	local cwd = vim.fn.getcwd()
+	local uv = vim.loop
 
-	-- Try to find the file using vim.fn.globpath
-	local results = vim.fn.globpath(cwd, "**/" .. filename, false, true)
+	-- Common locations for Payload CMS files (checked in order of likelihood)
+	local locations = {
+		cwd .. "/" .. filename,              -- ./payload-types.ts
+		cwd .. "/src/" .. filename,          -- ./src/payload-types.ts
+		cwd .. "/app/" .. filename,          -- ./app/payload-types.ts (Next.js app dir)
+		cwd .. "/server/" .. filename,       -- ./server/payload-types.ts
+	}
 
-	-- Filter results by depth
-	local filtered = {}
-	for _, path in ipairs(results) do
-		local relative = path:sub(#cwd + 2) -- Remove cwd prefix
-		local depth = select(2, relative:gsub("/", "")) + 1
-		if depth <= max_depth then
-			table.insert(filtered, path)
+	for _, path in ipairs(locations) do
+		local stat = uv.fs_stat(path)
+		if stat and stat.type == "file" then
+			return path
 		end
 	end
 
-	return filtered[1] -- Return first match
+	return nil
 end
 
 local function setup_payload_type_watcher()
-	local cwd = vim.fn.getcwd()
-
-	-- First check if payload.config.ts exists in project
-	local payload_config = find_file_in_project("payload.config.ts", 3)
+	-- First check if payload.config.ts exists in project (fast check)
+	local payload_config = find_payload_file("payload.config.ts")
 	if not payload_config then
 		return -- No payload project detected
 	end
 
-	-- Find payload-types.ts in the same directory or nearby
-	local payload_types = find_file_in_project("payload-types.ts", 3)
+	-- Find payload-types.ts in common locations
+	local payload_types = find_payload_file("payload-types.ts")
 	if not payload_types then
 		return -- No types file to watch
 	end
@@ -524,9 +532,10 @@ end
 vim.api.nvim_create_autocmd("VimEnter", {
 	group = augroup("setup_payload_watcher"),
 	callback = function()
-		vim.defer_fn(function()
+		-- Run on next tick without blocking (file finding is now instant)
+		vim.schedule(function()
 			setup_payload_type_watcher()
-		end, 1000) -- Wait for initialization
+		end)
 	end,
 })
 
@@ -534,9 +543,9 @@ vim.api.nvim_create_autocmd("VimEnter", {
 vim.api.nvim_create_autocmd("DirChanged", {
 	group = augroup("setup_payload_watcher_on_cd"),
 	callback = function()
-		vim.defer_fn(function()
+		vim.schedule(function()
 			setup_payload_type_watcher()
-		end, 500)
+		end)
 	end,
 })
 
