@@ -165,33 +165,6 @@ return {
 							end
 						end,
 					},
-					["<C-y>"] = {
-						desc = "[C]opy Directory path",
-						callback = function()
-							local current_dir = require("oil").get_current_dir()
-
-							-- Function to escape special characters
-							local function escape_special_chars(str)
-								-- Escape Lua pattern special characters
-								local special_chars =
-								{ "(", ")", "[", "]", "%%", ".", "+", "-", "*", "?", "^", "$", "/" }
-								for _, char in ipairs(special_chars) do
-									str = str:gsub("%" .. char, "\\" .. char)
-								end
-								return str
-							end
-
-							-- Copy it to the system clipboard
-							if current_dir then
-								-- Format to replace home with ~
-								local escaped_dir = escape_special_chars(vim.fn.fnamemodify(current_dir, ":~"))
-								vim.fn.setreg("+", escaped_dir)
-								vim.notify("Directory path copied: " .. escaped_dir)
-							else
-								vim.notify("No directory found", vim.log.levels.ERROR)
-							end
-						end,
-					},
 					gs = {
 						desc = "[G]rep in Directory",
 						callback = function()

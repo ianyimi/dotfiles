@@ -61,8 +61,8 @@ return {
 		-- LSP capabilities
 		local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-		-- Full on_attach function with all keymaps
-		local on_attach = function(client, bufnr)
+		-- Function to set up LSP keymaps (extracted so it can be reused)
+		local function setup_lsp_keymaps(bufnr)
 			local map = function(keys, func, desc)
 				vim.keymap.set("n", keys, func, { buffer = bufnr, desc = "LSP: " .. desc })
 			end
@@ -88,6 +88,11 @@ return {
 			map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
 			map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
 			map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
+		end
+
+		-- Full on_attach function with all keymaps
+		local on_attach = function(client, bufnr)
+			setup_lsp_keymaps(bufnr)
 
 			-- Document highlighting
 			if client.supports_method("textDocument/documentHighlight") then
@@ -287,6 +292,29 @@ return {
 					vim.cmd("stopinsert")
 				end, { "i", "s" }),
 			}),
+		})
+
+		-- Add LspAttach autocmd to ensure keymaps are always restored after LSP restart
+		-- This is a safety net in case on_attach doesn't fire reliably during restart
+		vim.api.nvim_create_autocmd("LspAttach", {
+			group = vim.api.nvim_create_augroup("lsp_keymaps_restore", { clear = true }),
+			callback = function(args)
+				local bufnr = args.buf
+				-- Only set up keymaps if they don't already exist (avoid duplicates)
+				local existing_maps = vim.api.nvim_buf_get_keymap(bufnr, "n")
+				local has_leader_ca = false
+				for _, map in ipairs(existing_maps) do
+					if map.lhs == " ca" then
+						has_leader_ca = true
+						break
+					end
+				end
+
+				-- If keymaps are missing, restore them
+				if not has_leader_ca then
+					setup_lsp_keymaps(bufnr)
+				end
+			end,
 		})
 	end,
 }

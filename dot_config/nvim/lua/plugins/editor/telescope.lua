@@ -275,7 +275,8 @@ return {
 			local enhanced_opts = enhance_telescope_opts(ofopts, "oldfiles")
 			
 			-- Force reload ShaDa to get latest oldfiles (fixes per-project ShaDa staleness)
-			vim.cmd('rshada!')
+			-- Use pcall to handle case where ShaDa file doesn't exist yet (new worktrees)
+			pcall(vim.cmd, 'rshada!')
 			
 			-- Get currently open buffer to exclude from results
 			local current_buf = vim.api.nvim_get_current_buf()

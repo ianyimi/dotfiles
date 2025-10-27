@@ -204,8 +204,41 @@ end, { desc = "Redo without jumplist pollution" })
 
 keymap.set("n", "<a-C-h>", ":h <Space>", { desc = "[H]elp" })
 
--- LSP restart
-keymap.set("n", "<leader>rr", "<cmd>LspRestart<CR>", { desc = "[R]estart LSP" })
+-- LSP restart with keymap restoration
+keymap.set("n", "<leader>rr", function()
+	vim.notify("Restarting all LSP servers...", vim.log.levels.INFO)
+	vim.cmd("LspRestart")
+
+	-- After restart, ensure keymaps are restored for all buffers
+	-- The LspAttach autocmd will handle the actual restoration
+	vim.defer_fn(function()
+		-- Get all buffers with LSP clients
+		local buffers_with_lsp = {}
+		for _, client in ipairs(vim.lsp.get_clients()) do
+			for _, buf in ipairs(vim.lsp.get_buffers_by_client_id(client.id)) do
+				buffers_with_lsp[buf] = true
+			end
+		end
+
+		-- Trigger LspAttach for each buffer to ensure keymaps are restored
+		local restored_count = 0
+		for buf, _ in pairs(buffers_with_lsp) do
+			if vim.api.nvim_buf_is_valid(buf) then
+				vim.api.nvim_exec_autocmds("LspAttach", { buffer = buf })
+				restored_count = restored_count + 1
+			end
+		end
+
+		if restored_count > 0 then
+			vim.notify(
+				string.format("LSP restarted and keymaps restored for %d buffer(s)", restored_count),
+				vim.log.levels.INFO
+			)
+		else
+			vim.notify("LSP restarted", vim.log.levels.INFO)
+		end
+	end, 500)
+end, { desc = "[R]estart LSP (with keymap restore)" })
 
 -- Lua keybind to copy the file path of the current buffer to the clipboard with home directory replaced by ~
 vim.keymap.set("n", "<leader>cp", function()

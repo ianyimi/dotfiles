@@ -449,9 +449,35 @@ vim.api.nvim_create_autocmd("BufDelete", {
 vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 	group = augroup("lsp_restart_on_types"),
 	pattern = { "*.d.ts", "tsconfig.json", "jsconfig.json", "payload-types.ts" },
-	callback = function()
-		vim.notify("Type definitions updated, restarting LSP...", vim.log.levels.INFO)
-		vim.cmd("LspRestart")
+	callback = function(ev)
+		local filepath = vim.api.nvim_buf_get_name(ev.buf)
+
+		-- Don't restart LSP for config files (avoid breaking keybinds while editing config)
+		if filepath:match("/.config/nvim/") or filepath:match("/%.local/share/chezmoi/") then
+			return
+		end
+
+		vim.notify("Type definitions updated, restarting TypeScript LSP...", vim.log.levels.INFO)
+
+		-- Only restart TypeScript-related LSP clients, not all clients
+		-- This preserves keybinds for other language servers
+		local ts_clients = { "ts_ls", "tsserver", "vtsls", "typescript-language-server" }
+		local restarted = false
+		for _, client in ipairs(vim.lsp.get_clients()) do
+			if vim.tbl_contains(ts_clients, client.name) then
+				vim.cmd("LspRestart " .. client.id)
+				restarted = true
+			end
+		end
+
+		-- After restart, trigger LspAttach to ensure keymaps are restored
+		-- The LspAttach autocmd in nvim-lspconfig.lua will handle the actual restoration
+		if restarted then
+			vim.defer_fn(function()
+				-- Force a buffer update to trigger LspAttach
+				vim.cmd("doautocmd User LspRestarted")
+			end, 500)
+		end
 	end,
 })
 
@@ -519,8 +545,24 @@ local function setup_payload_type_watcher()
 			last_mtime = current_mtime
 			last_restart = now
 
-			vim.notify("Payload types changed, restarting LSP...", vim.log.levels.INFO)
-			vim.cmd("LspRestart")
+			vim.notify("Payload types changed, restarting TypeScript LSP...", vim.log.levels.INFO)
+
+			-- Only restart TypeScript-related LSP clients
+			local ts_clients = { "ts_ls", "tsserver", "vtsls", "typescript-language-server" }
+			local restarted = false
+			for _, client in ipairs(vim.lsp.get_clients()) do
+				if vim.tbl_contains(ts_clients, client.name) then
+					vim.cmd("LspRestart " .. client.id)
+					restarted = true
+				end
+			end
+
+			-- After restart, trigger LspAttach to ensure keymaps are restored
+			if restarted then
+				vim.defer_fn(function()
+					vim.cmd("doautocmd User LspRestarted")
+				end, 500)
+			end
 		end
 	end))
 
