@@ -48,6 +48,10 @@ vim.opt.termguicolors = true
 
 vim.opt.showmode = false
 
+-- Suppress swap file ATTENTION messages for multi-session workflows
+-- This prevents E325 errors when opening the same folder in multiple tmux sessions
+vim.opt.shortmess:append("A")
+
 vim.opt.undofile = true
 vim.opt.undolevels = 10000
 vim.opt.undoreload = 10000

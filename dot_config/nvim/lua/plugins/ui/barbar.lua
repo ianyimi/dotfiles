@@ -43,6 +43,20 @@ return {
 		local render = require("barbar.ui.render")
 		local harpoon = require("harpoon")
 
+		-- Patch barbar's API to handle animation errors gracefully
+		local api = require("barbar.api")
+		local original_move_buffer_animated_tick = api.move_buffer_animated_tick
+		api.move_buffer_animated_tick = function(...)
+			-- Wrap the animation tick in pcall to suppress nil arithmetic errors
+			local success, result = pcall(original_move_buffer_animated_tick, ...)
+			if not success then
+				-- Error occurred, but buffer still moved (just without animation)
+				-- Silently ignore the animation error
+				return
+			end
+			return result
+		end
+
 		barbar.setup({
 			auto_hide = false, -- Never hide tabline, even with single buffer
 			hide = {

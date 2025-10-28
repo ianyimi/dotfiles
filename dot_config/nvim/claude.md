@@ -33,7 +33,8 @@ Check `git status`, `git diff`, and `git log` at the start of any work to unders
 - Ghana Cozy colorscheme development and export
 - OpenCode AI integration
 - LSP config modernization
-- Buffer management (migration from barbar to bufferline)
+- LSP keybind persistence (preventing loss on restart)
+- Buffer management (using barbar.nvim with Harpoon integration)
 
 ## Project Structure
 
