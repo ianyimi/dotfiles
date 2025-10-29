@@ -25,23 +25,28 @@ local M = {}
 function M.safe_buf_delete(buf, opts)
 	opts = opts or {}
 	local force = opts.force or false
-	
+
+	-- Explicitly detach gitsigns to prevent race conditions with async blame operations
+	pcall(function()
+		require("gitsigns").detach(buf)
+	end)
+
 	-- Save current eventignore setting
 	local old_ei = vim.o.eventignore
-	
+
 	-- Block only the events that cause satellite/gitsigns errors:
 	-- - WinEnter/WinLeave: satellite.nvim view management
-	-- - BufEnter/BufLeave: gitsigns status updates  
+	-- - BufEnter/BufLeave: gitsigns status updates
 	-- - User: gitsigns autocmds
 	-- Keep BufDelete/BufWipeout for Oil auto-open functionality
 	vim.o.eventignore = "WinEnter,WinLeave,BufEnter,BufLeave,User"
-	
+
 	-- Perform the buffer deletion
 	local success = pcall(vim.api.nvim_buf_delete, buf, { force = force })
-	
+
 	-- Restore original eventignore setting
 	vim.o.eventignore = old_ei
-	
+
 	return success
 end
 

@@ -223,10 +223,7 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 		vim.defer_fn(function()
 			local empty_buf = should_open_oil()
 			if empty_buf then
-				-- Detach gitsigns before deleting to prevent race conditions
-				pcall(function()
-					require("gitsigns").detach(empty_buf)
-				end)
+				-- safe_buf_delete now handles gitsigns detachment automatically
 				LazyVim.safe_buf_delete(empty_buf, { force = true })
 				pcall(require("oil").open)
 				-- Mark this oil instance as non-closable (after closing all buffers)
@@ -250,10 +247,7 @@ vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
 vim.api.nvim_create_user_command("OpenOilIfEmpty", function()
 	local empty_buf = should_open_oil()
 	if empty_buf then
-		-- Detach gitsigns before deleting to prevent race conditions
-		pcall(function()
-			require("gitsigns").detach(empty_buf)
-		end)
+		-- safe_buf_delete now handles gitsigns detachment automatically
 		LazyVim.safe_buf_delete(empty_buf, { force = true })
 		require("oil").open()
 		-- Mark this oil instance as non-closable (after closing all buffers)
