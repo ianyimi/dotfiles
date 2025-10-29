@@ -23,11 +23,8 @@ return {
 				lua = { "stylua" },
 				python = { "isort", "black" },
 			},
-			format_on_save = {
-				lsp_fallback = true,
-				async = false,
-				timeout_ms = 2000,
-			},
+			-- Disable conform's format_on_save - let LazyVim's format system handle it
+			-- This prevents double-formatting and cursor jumping issues
 		})
 
 		-- Configure individual formatters
