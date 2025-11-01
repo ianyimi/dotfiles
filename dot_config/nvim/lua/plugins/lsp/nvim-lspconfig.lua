@@ -218,6 +218,7 @@ return {
 						"typescript.tsx", "vue", "svelte", "astro", "htmlangular",
 					},
 					settings = {
+						useFlatConfig = true, -- Enable ESLint 9+ flat config (eslint.config.js) support
 						format = false, -- Disable ESLint formatting, let Prettier handle it
 						codeActionOnSave = {
 							enable = false, -- Disable auto-fix on save to prevent bulk changes
