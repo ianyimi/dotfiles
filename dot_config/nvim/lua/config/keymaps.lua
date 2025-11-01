@@ -173,41 +173,19 @@ keymap.set("n", "<leader>D", '"_D', { desc = "[D]elete to void" })
 -- void shift-q
 keymap.set("n", "<S-q>", "<nop>")
 
--- fix undo/redo cursor jumping by using keepjumps and preserving view
-keymap.set("n", "u", function()
-	local view = vim.fn.winsaveview()
-	local ok = pcall(vim.cmd, "silent keepjumps normal! u")
-	if ok then
-		-- Let undo move cursor to where the change was, but don't add to jumplist
-		-- Only restore view if cursor jumped to an unreasonable location
-		local new_pos = vim.api.nvim_win_get_cursor(0)
-		-- If cursor jumped more than 100 lines away, it's likely a spurious jump
-		if math.abs(new_pos[1] - view.lnum) > 100 then
-			vim.fn.winrestview(view)
-		end
-	end
-end, { desc = "Undo without jumplist pollution" })
-
-keymap.set("n", "<C-r>", function()
-	local view = vim.fn.winsaveview()
-	local ok = pcall(vim.cmd, "silent keepjumps normal! \x12")
-	if ok then
-		-- Let redo move cursor to where the change was, but don't add to jumplist
-		-- Only restore view if cursor jumped to an unreasonable location
-		local new_pos = vim.api.nvim_win_get_cursor(0)
-		-- If cursor jumped more than 100 lines away, it's likely a spurious jump
-		if math.abs(new_pos[1] - view.lnum) > 100 then
-			vim.fn.winrestview(view)
-		end
-	end
-end, { desc = "Redo without jumplist pollution" })
-
 keymap.set("n", "<a-C-h>", ":h <Space>", { desc = "[H]elp" })
 
 -- LSP restart with keymap restoration
 keymap.set("n", "<leader>rr", function()
-	vim.notify("Restarting all LSP servers...", vim.log.levels.INFO)
-	vim.cmd("LspRestart")
+	vim.notify("Restarting all LSP servers (including ESLint)...", vim.log.levels.INFO)
+
+	-- Restart all active LSP clients including ESLint
+	local clients = vim.lsp.get_clients()
+	local restarted_count = 0
+	for _, client in ipairs(clients) do
+		vim.cmd("LspRestart " .. client.id)
+		restarted_count = restarted_count + 1
+	end
 
 	-- After restart, ensure keymaps are restored for all buffers
 	-- The LspAttach autocmd will handle the actual restoration
@@ -231,11 +209,11 @@ keymap.set("n", "<leader>rr", function()
 
 		if restored_count > 0 then
 			vim.notify(
-				string.format("LSP restarted and keymaps restored for %d buffer(s)", restored_count),
+				string.format("LSP restarted (%d server(s), %d buffer(s))", restarted_count, restored_count),
 				vim.log.levels.INFO
 			)
 		else
-			vim.notify("LSP restarted", vim.log.levels.INFO)
+			vim.notify(string.format("LSP restarted (%d server(s))", restarted_count), vim.log.levels.INFO)
 		end
 	end, 500)
 end, { desc = "[R]estart LSP (with keymap restore)" })

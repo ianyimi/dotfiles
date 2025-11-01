@@ -451,11 +451,11 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 			return
 		end
 
-		vim.notify("Type definitions updated, restarting TypeScript LSP...", vim.log.levels.INFO)
+		vim.notify("Type definitions updated, restarting TypeScript LSP and ESLint...", vim.log.levels.INFO)
 
-		-- Only restart TypeScript-related LSP clients, not all clients
+		-- Only restart TypeScript-related LSP clients and ESLint, not all clients
 		-- This preserves keybinds for other language servers
-		local ts_clients = { "ts_ls", "tsserver", "vtsls", "typescript-language-server" }
+		local ts_clients = { "ts_ls", "tsserver", "vtsls", "typescript-language-server", "eslint" }
 		local restarted = false
 		for _, client in ipairs(vim.lsp.get_clients()) do
 			if vim.tbl_contains(ts_clients, client.name) then
@@ -539,10 +539,10 @@ local function setup_payload_type_watcher()
 			last_mtime = current_mtime
 			last_restart = now
 
-			vim.notify("Payload types changed, restarting TypeScript LSP...", vim.log.levels.INFO)
+			vim.notify("Payload types changed, restarting TypeScript LSP and ESLint...", vim.log.levels.INFO)
 
-			-- Only restart TypeScript-related LSP clients
-			local ts_clients = { "ts_ls", "tsserver", "vtsls", "typescript-language-server" }
+			-- Only restart TypeScript-related LSP clients and ESLint
+			local ts_clients = { "ts_ls", "tsserver", "vtsls", "typescript-language-server", "eslint" }
 			local restarted = false
 			for _, client in ipairs(vim.lsp.get_clients()) do
 				if vim.tbl_contains(ts_clients, client.name) then
