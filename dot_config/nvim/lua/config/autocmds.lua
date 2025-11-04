@@ -30,7 +30,8 @@ vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
 })
 
 -- Check if we need to reload the file when it changed
-vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave" }, {
+-- Triggers on: focus, terminal close, cursor idle, entering buffers, entering windows
+vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave", "CursorHold", "CursorHoldI" }, {
 	group = augroup("checktime"),
 	callback = function()
 		if vim.o.buftype ~= "nofile" then
@@ -133,28 +134,67 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
 })
 
 -- Preserve undo history across external file changes
--- When agents or external tools modify files, Neovim reloads them which can break undo
+-- When agents or external tools modify files, Neovim reloads them which clears undo history
+-- We save the undo tree to disk before reload and restore it after
 vim.api.nvim_create_autocmd("FileChangedShell", {
 	group = augroup("preserve_undo_on_reload"),
 	callback = function(event)
 		local buf = event.buf
-		-- Store current undo state before reload
-		if vim.bo[buf].buftype == "" and vim.api.nvim_buf_is_loaded(buf) then
-			-- Mark that we want to preserve undo for this buffer
-			vim.b[buf].preserve_undo_on_reload = true
+
+		-- Only preserve undo for normal file buffers that are loaded
+		if vim.bo[buf].buftype ~= "" or not vim.api.nvim_buf_is_loaded(buf) then
+			return
+		end
+
+		local filepath = vim.api.nvim_buf_get_name(buf)
+		if filepath == "" or vim.fn.filereadable(filepath) ~= 1 then
+			return
+		end
+
+		-- Create a temp file to store the undo tree
+		local undo_dir = vim.fn.stdpath("cache") .. "/undo_preserve"
+		vim.fn.mkdir(undo_dir, "p")
+
+		-- Use buffer number to create unique undo file
+		local undo_file = undo_dir .. "/" .. buf .. ".undo"
+
+		-- Save current undo tree to temp file
+		local ok, err = pcall(function()
+			vim.cmd("wundo! " .. vim.fn.fnameescape(undo_file))
+		end)
+
+		if ok then
+			-- Mark this buffer to restore undo after reload
+			vim.b[buf].undo_preserve_file = undo_file
+		else
+			-- If we couldn't save undo, don't try to restore it
+			vim.b[buf].undo_preserve_file = nil
 		end
 	end,
 })
 
--- After external reload, ensure undo history is accessible
+-- After external reload, restore the undo history from disk
 vim.api.nvim_create_autocmd("FileChangedShellPost", {
 	group = augroup("restore_undo_after_reload"),
 	callback = function(event)
 		local buf = event.buf
-		if vim.b[buf].preserve_undo_on_reload then
-			-- Give user feedback that file was changed externally
-			vim.notify("File reloaded from disk (undo history preserved)", vim.log.levels.INFO)
-			vim.b[buf].preserve_undo_on_reload = nil
+		local undo_file = vim.b[buf].undo_preserve_file
+
+		if undo_file and vim.fn.filereadable(undo_file) == 1 then
+			-- Restore undo tree from temp file
+			local ok, err = pcall(function()
+				vim.cmd("rundo " .. vim.fn.fnameescape(undo_file))
+			end)
+
+			if ok then
+				vim.notify("File reloaded (undo history preserved)", vim.log.levels.INFO)
+			else
+				vim.notify("File reloaded (could not restore undo history)", vim.log.levels.WARN)
+			end
+
+			-- Clean up temp file
+			pcall(vim.fn.delete, undo_file)
+			vim.b[buf].undo_preserve_file = nil
 		end
 	end,
 })
@@ -486,10 +526,10 @@ local function find_payload_file(filename)
 
 	-- Common locations for Payload CMS files (checked in order of likelihood)
 	local locations = {
-		cwd .. "/" .. filename,              -- ./payload-types.ts
-		cwd .. "/src/" .. filename,          -- ./src/payload-types.ts
-		cwd .. "/app/" .. filename,          -- ./app/payload-types.ts (Next.js app dir)
-		cwd .. "/server/" .. filename,       -- ./server/payload-types.ts
+		cwd .. "/" .. filename,      -- ./payload-types.ts
+		cwd .. "/src/" .. filename,  -- ./src/payload-types.ts
+		cwd .. "/app/" .. filename,  -- ./app/payload-types.ts (Next.js app dir)
+		cwd .. "/server/" .. filename, -- ./server/payload-types.ts
 	}
 
 	for _, path in ipairs(locations) do

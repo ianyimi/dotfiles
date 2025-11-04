@@ -52,6 +52,9 @@ vim.opt.showmode = false
 -- This prevents E325 errors when opening the same folder in multiple tmux sessions
 vim.opt.shortmess:append("A")
 
+vim.opt.autoread = true
+vim.opt.updatetime = 250
+
 vim.opt.undofile = true
 vim.opt.undolevels = 10000
 vim.opt.undoreload = 10000
