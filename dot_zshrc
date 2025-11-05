@@ -70,6 +70,14 @@ alias cdHome="cd ~/"
 alias nvZsh="nvim ~/.zshrc"
 
 alias nvAero="nvim ~/.aerospace.toml"
+
+# AeroSpace Monitor Daemon aliases
+alias aeromonStart='~/.config/aerospace-monitor/aerospace-monitor-daemon > ~/.config/aerospace-monitor/daemon.log 2>&1 &'
+alias aeromonStop='pkill -f aerospace-monitor-daemon && echo "✅ Daemon stopped"'
+alias aeromonRestart='aeromonStop; sleep 1; cd ~/.config/aerospace-monitor && ./build.sh && aeromonStart && echo "✅ Daemon restarted"'
+alias aeromonStatus='pgrep -fl aerospace-monitor-daemon || echo "❌ Daemon not running"'
+alias aeromonLogs='tail -f ~/.config/aerospace-monitor/daemon.log'
+
 # alias cm update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
 # alias cm update --view="chezmoi git pull -- --autostash --rebase && chezmoi diff"
 # alias chezmoi update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
