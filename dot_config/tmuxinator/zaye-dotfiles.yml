@@ -7,7 +7,7 @@ windows:
   - nvim:
       layout: tiled
       panes:
-        - chezmoi edit --watch
+        - nv
   - agents:
       layout: even-horizontal
       panes:
