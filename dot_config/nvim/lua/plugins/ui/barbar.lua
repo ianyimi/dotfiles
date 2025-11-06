@@ -34,8 +34,8 @@ return {
 		},
 		-- Additional barbar-specific keymaps for parity with bufferline
 		{ "<leader>bp", "<Cmd>BufferPin<CR>",               desc = "Toggle Pin" },
-		{ "<leader>C",  "<Cmd>BufferCloseBuffersRight<CR>", desc = "Delete Buffers to the Right" },
-		{ "<leader>X",  "<Cmd>BufferCloseBuffersLeft<CR>",  desc = "Delete Buffers to the Left" },
+		{ "<leader>X",  "<Cmd>BufferCloseBuffersRight<CR>", desc = "Delete Buffers to the Right" },
+		{ "<leader>Z",  "<Cmd>BufferCloseBuffersLeft<CR>",  desc = "Delete Buffers to the Left" },
 	},
 	config = function()
 		local barbar = require("barbar")
@@ -328,8 +328,8 @@ return {
 						if buftype == "" and filetype ~= "oil" and
 								buf_name == "" and line_count == 1 and first_line == "" and
 								vim.fn.bufwinnr(buf) == -1 then -- Not in a window
-								pcall(LazyVim.safe_buf_delete, buf, { force = true })
-							end
+							pcall(LazyVim.safe_buf_delete, buf, { force = true })
+						end
 					end
 				end
 			end)
