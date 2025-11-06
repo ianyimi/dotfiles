@@ -100,17 +100,33 @@ local function drawSpaces()
 		local firstMonitor = monitorsOutput:match("[^\r\n]+")
 		sbar.exec(LIST_CURRENT, function(focusedWorkspaceOutput)
 			local focusedWorkspace = focusedWorkspaceOutput:match("[^\r\n]+")
+
+			-- Collect all monitors into a table
+			local monitors = {}
+			for monitorId in monitorsOutput:gmatch("[^\r\n]+") do
+				table.insert(monitors, monitorId)
+			end
+
+			-- Track which monitors have been processed
+			local processedCount = 0
+			local allWorkspacesFound = {}
+
 			sbar.exec("aerospace workspace --monitor", function()
-				for monitorId in monitorsOutput:gmatch("[^\r\n]+") do
+				for _, monitorId in ipairs(monitors) do
 					sbar.exec(LIST_WORKSPACES_OCCUPIED:format(monitorId), function(workspacesOutput)
-						local workspaces = {}
 						for workspaceName in workspacesOutput:gmatch("[^\r\n]+") do
-							workspaces[workspaceName] = true
+							allWorkspacesFound[workspaceName] = true
 							local isSelected = workspaceName == focusedWorkspace
 							addWorkspaceItem(workspaceName, monitorId, isSelected)
 						end
-						if not workspaces[focusedWorkspace] then
-							addWorkspaceItem(focusedWorkspace, firstMonitor, true)
+
+						processedCount = processedCount + 1
+
+						-- Only run fallback after ALL monitors have been processed
+						if processedCount == #monitors then
+							if not allWorkspacesFound[focusedWorkspace] then
+								addWorkspaceItem(focusedWorkspace, firstMonitor, true)
+							end
 						end
 					end)
 				end
