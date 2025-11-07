@@ -1,5 +1,5 @@
-name: project-uifoundry
-root: ~/Documents/Projects/uifoundry.git/dev/
+name: project-next-saas-starter
+root: ~/Documents/Projects/next-saas-starter.git/dev/
 
 windows:
   - node:
