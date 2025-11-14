@@ -11,6 +11,8 @@ alias .....="cd ../../../../../"
 alias ......="cd ../../../../../../"
 alias .......="cd ../../../../../../../"
 
+alias claude="unset ANTHROPIC_API_KEY && claude"
+
 alias aocp="~/agent-os/scripts/create-profile.sh && chezmoi add ~/agent-os && echo 'Added new profile to dotfiles'"
 alias aopi="~/agent-os/scripts/project-install.sh"
 alias cpfd="cp -R"

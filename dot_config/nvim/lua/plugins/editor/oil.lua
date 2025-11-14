@@ -130,6 +130,7 @@ return {
 					end,
 				},
 				float = {
+					border = "rounded",
 					max_width = 120,
 				},
 				win_options = {

@@ -1,6 +1,7 @@
 local keymap = vim.keymap
 
 -- cut characters to void register
+keymap.set("n", "s", '"_s')
 keymap.set("n", "x", '"_x')
 keymap.set("n", "<Esc>", "<cmd>nohlsearch<CR>")
 
@@ -13,12 +14,9 @@ keymap.set("v", "<leader><S-w>", "<cmd>w<CR><Esc><cmd>bd<CR>", { desc = "[W]rite
 keymap.set("n", "<leader>.", "<cmd>normal gcc<CR>", { noremap = true, desc = "[C]omment line" })
 keymap.set("v", "<leader>.", "<cmd>normal gcc<CR>", { noremap = true, desc = "[C]omment lines" })
 
--- select all
+-- select/yank all
 keymap.set("n", "<C-a>", "gg<S-v><S-g>", { desc = "Select [A]ll" })
 keymap.set("n", "<C-y>", "gg<S-v><S-g>y", { desc = "[Y]ank All" })
-
---  upshift line below
-keymap.set("n", "<S-j>", "mz<S-j>`z", { desc = "Upshift line below" })
 
 -- toggle file explorer
 keymap.set("n", "<leader>e", function()
@@ -38,6 +36,10 @@ keymap.set("n", "<leader>v", "<C-w>v", { desc = "Split window right" })
 keymap.set("n", "<leader>b", "<C-w>s", { desc = "Split window below" })
 -- keymap.set("n", "<leader>es", "<C-w>=", { desc = "Make [E]qual [S]plits" })
 keymap.set("n", "<leader>x", "<cmd>close<CR>", { desc = "Close current split" })
+keymap.set("n", "<leader>B", function()
+	local buf = vim.api.nvim_get_current_buf()
+	vim.api.nvim_buf_delete(buf, { force = true })
+end, { noremap = true, silent = true, desc = "Force Close Current Buffer" })
 --  pane navigation
 keymap.set("n", "<leader>h", "<C-w><C-h>", { desc = "Move focus to the left pane" })
 keymap.set("n", "<leader>l", "<C-w><C-l>", { desc = "Move focus to the right pane" })
@@ -148,10 +150,10 @@ keymap.set("n", "ZZ", function()
 	-- Always close everything in one shot, regardless of LazyGit state
 	-- Close any LazyGit terminals first
 	pcall(function() require("util.terminal").close_all() end)
-	
+
 	-- Save all buffers
 	pcall(vim.cmd, "silent! wall")
-	
+
 	-- Force quit all - handles splits, tabs, everything
 	local ok = pcall(vim.cmd, "qa")
 	if not ok then

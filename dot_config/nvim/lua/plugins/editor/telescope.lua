@@ -65,7 +65,7 @@ return {
 
 		return {
 			defaults = {
-				cwd = false,
+				cwd = vim.fn.getcwd(),
 				prompt_prefix = " ",
 				selection_caret = " ",
 				get_selection_window = function()
@@ -161,14 +161,14 @@ return {
 		local function enhance_telescope_opts(ofopts, picker_type)
 			ofopts = ofopts or {}
 			local current_dir = vim.fn.getcwd()
-			
+
 			-- Project-scoped behavior
 			if picker_type == "oldfiles" then
 				ofopts.cwd = current_dir
 			elseif picker_type == "find_files" then
 				-- Find files specific options can go here
 			end
-			
+
 			-- Add enhanced previewer with custom filetype detection for all pickers
 			ofopts.previewer = require('telescope.previewers').new_buffer_previewer({
 				title = "File Preview",
@@ -178,9 +178,9 @@ return {
 				define_preview = function(self, entry)
 					local filename = entry.value or entry.filename or entry[1]
 					local filepath = entry.path or filename
-					
+
 					if not filepath or filepath == "" then return end
-					
+
 					-- Use same logic as find_files for all file types
 					vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
 					vim.fn.jobstart({ 'cat', filepath }, {
@@ -199,7 +199,7 @@ return {
 									end
 								end
 								vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
-								
+
 								-- Custom filetype detection for telescope previews
 								local function detect_filetype(fname)
 									-- Handle chezmoi dotfiles
@@ -224,7 +224,7 @@ return {
 										end
 										return "conf"
 									end
-									
+
 									-- Handle other file patterns
 									-- TypeScript / TSX
 									if fname:match("%.tsx$") then
@@ -238,89 +238,89 @@ return {
 									elseif fname:match("%.conf$") or fname:match("%.cfg$") or fname:match("%.config$") then
 										return "conf"
 									end
-									
+
 									-- Fallback to vim's detection
 									return vim.filetype.match({ filename = fname }) or 'text'
 								end
-								
+
 								local ft = detect_filetype(vim.fn.fnamemodify(filename, ':t'))
 								vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
-								
-												-- Apply treesitter highlighting if available
-												local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
-												local ok_has, has = pcall(function() return require('nvim-treesitter.parsers').has_parser(lang) end)
-												if ok_has and has then
-													pcall(vim.treesitter.start, self.state.bufnr, lang)
-												else
-													-- Fallback to regex highlighting
-													require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
-												end
+
+								-- Apply treesitter highlighting if available
+								local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
+								local ok_has, has = pcall(function() return require('nvim-treesitter.parsers').has_parser(lang) end)
+								if ok_has and has then
+									pcall(vim.treesitter.start, self.state.bufnr, lang)
+								else
+									-- Fallback to regex highlighting
+									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
+								end
 							end
 						end,
 					})
 				end,
 			})
-			
+
 			-- The global telescope mappings already handle:
 			-- - Harpoon integration (<C-n>)
-			-- - File splits (<a-v>, <a-b>) 
+			-- - File splits (<a-v>, <a-b>)
 			-- - History navigation (<C-Down>, <C-Up>)
 			-- - Preview scrolling (<PageDown>, <PageUp>)
 			-- So we don't need to duplicate them here
-			
+
 			return ofopts
 		end
 
 		local function project_oldfiles(ofopts)
 			local enhanced_opts = enhance_telescope_opts(ofopts, "oldfiles")
-			
+
 			-- Force reload ShaDa to get latest oldfiles (fixes per-project ShaDa staleness)
 			-- Use pcall to handle case where ShaDa file doesn't exist yet (new worktrees)
 			pcall(vim.cmd, 'rshada!')
-			
+
 			-- Get currently open buffer to exclude from results
 			local current_buf = vim.api.nvim_get_current_buf()
 			local current_file = vim.api.nvim_buf_get_name(current_buf)
 			local current_file_normalized = current_file ~= "" and vim.fn.fnamemodify(current_file, ":p") or nil
-			
+
 			-- Get MRU files from our custom tracking
 			local mru_files = _G.__mru_files or {}
 			local cwd = enhanced_opts.cwd or vim.fn.getcwd()
 			local cwd_normalized = vim.fn.fnamemodify(cwd, ":p")
-			
+
 			-- Filter MRU files: only current project, exclude current buffer
 			local project_mru = {}
 			local seen = {}
 			for _, filepath in ipairs(mru_files) do
 				local normalized = vim.fn.fnamemodify(filepath, ":p")
 				if normalized ~= current_file_normalized
-					and normalized:find(cwd_normalized, 1, true) == 1
-					and vim.fn.filereadable(normalized) == 1 then
+						and normalized:find(cwd_normalized, 1, true) == 1
+						and vim.fn.filereadable(normalized) == 1 then
 					table.insert(project_mru, normalized)
 					seen[normalized] = true
 				end
 			end
-			
+
 			-- Add v:oldfiles as fallback for historical files not in current session
 			local oldfiles = vim.tbl_filter(function(file)
 				local normalized = vim.fn.fnamemodify(file, ":p")
 				return not seen[normalized]
-					and normalized ~= current_file_normalized
-					and normalized:find(cwd_normalized, 1, true) == 1
-					and vim.fn.filereadable(normalized) == 1
+						and normalized ~= current_file_normalized
+						and normalized:find(cwd_normalized, 1, true) == 1
+						and vim.fn.filereadable(normalized) == 1
 			end, vim.v.oldfiles or {})
-			
+
 			-- Merge: MRU first (current session), then oldfiles (historical)
 			for _, file in ipairs(oldfiles) do
 				table.insert(project_mru, file)
 			end
-			
+
 			-- Use telescope's standard picker with hybrid MRU + oldfiles list
 			local conf = require("telescope.config").values
 			local finders = require("telescope.finders")
 			local make_entry = require("telescope.make_entry")
 			local pickers = require("telescope.pickers")
-			
+
 			pickers.new(enhanced_opts, {
 				prompt_title = "Recent Files (MRU)",
 				finder = finders.new_table({
@@ -417,62 +417,62 @@ return {
 										end
 									end
 									vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
-									
-												-- Custom filetype detection for telescope previews
-												local function detect_filetype(fname)
-													-- Handle chezmoi dotfiles
-													if fname == "dot_zshrc" then
-														return "zsh"
-													elseif fname == "dot_bashrc" then
-														return "bash"
-													elseif fname == "dot_profile" or fname == "dot_bash_profile" then
-														return "bash"
-													elseif fname:match("^dot_") then
-														local suffix = fname:match("^dot_(.+)$")
-														if suffix then
-															if suffix:match("zsh") then
-																return "zsh"
-															elseif suffix:match("bash") then
-																return "bash"
-															elseif suffix:match("gitconfig") then
-																return "gitconfig"
-															elseif suffix:match("vimrc") or suffix:match("nvimrc") then
-																return "vim"
-															end
-														end
-														return "conf"
-													end
-													
-													-- Handle other file patterns
-													-- TypeScript / TSX
-													if fname:match("%.tsx$") then
-														return "tsx"
-													elseif fname:match("%.ts$") then
-														return "typescript"
-													elseif fname:match("%.zsh$") or fname:match("zshrc") then
-														return "zsh"
-													elseif fname:match("%.sh$") or fname:match("%.bash$") or fname:match("bashrc") then
-														return "bash"
-													elseif fname:match("%.conf$") or fname:match("%.cfg$") or fname:match("%.config$") then
-														return "conf"
-													end
-													
-													-- Fallback to vim's detection
-													return vim.filetype.match({ filename = fname }) or 'text'
+
+									-- Custom filetype detection for telescope previews
+									local function detect_filetype(fname)
+										-- Handle chezmoi dotfiles
+										if fname == "dot_zshrc" then
+											return "zsh"
+										elseif fname == "dot_bashrc" then
+											return "bash"
+										elseif fname == "dot_profile" or fname == "dot_bash_profile" then
+											return "bash"
+										elseif fname:match("^dot_") then
+											local suffix = fname:match("^dot_(.+)$")
+											if suffix then
+												if suffix:match("zsh") then
+													return "zsh"
+												elseif suffix:match("bash") then
+													return "bash"
+												elseif suffix:match("gitconfig") then
+													return "gitconfig"
+												elseif suffix:match("vimrc") or suffix:match("nvimrc") then
+													return "vim"
 												end
-									
+											end
+											return "conf"
+										end
+
+										-- Handle other file patterns
+										-- TypeScript / TSX
+										if fname:match("%.tsx$") then
+											return "tsx"
+										elseif fname:match("%.ts$") then
+											return "typescript"
+										elseif fname:match("%.zsh$") or fname:match("zshrc") then
+											return "zsh"
+										elseif fname:match("%.sh$") or fname:match("%.bash$") or fname:match("bashrc") then
+											return "bash"
+										elseif fname:match("%.conf$") or fname:match("%.cfg$") or fname:match("%.config$") then
+											return "conf"
+										end
+
+										-- Fallback to vim's detection
+										return vim.filetype.match({ filename = fname }) or 'text'
+									end
+
 									local ft = detect_filetype(filename)
 									vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
-									
-													-- Apply treesitter highlighting if available
-													local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
-													local ok_has, has = pcall(function() return require('nvim-treesitter.parsers').has_parser(lang) end)
-													if ok_has and has then
-														pcall(vim.treesitter.start, self.state.bufnr, lang)
-													else
-														-- Fallback to regex highlighting
-														require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
-													end
+
+									-- Apply treesitter highlighting if available
+									local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
+									local ok_has, has = pcall(function() return require('nvim-treesitter.parsers').has_parser(lang) end)
+									if ok_has and has then
+										pcall(vim.treesitter.start, self.state.bufnr, lang)
+									else
+										-- Fallback to regex highlighting
+										require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
+									end
 								end
 							end,
 						})

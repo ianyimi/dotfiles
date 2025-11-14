@@ -51,7 +51,7 @@ exec-on-workspace-change = [
 # Fallback value (if you omit the key): on-focused-monitor-changed = []
 on-focus-changed = [
 	'exec-and-forget sketchybar --trigger front_app_switched',
-	'exec-and-forget sleep(0.1)',
+	'exec-and-forget sleep(0.25)',
 	'move-mouse window-lazy-center',
 	# 'exec-and-forget sketchybar --trigger send_message MESSAGE="Focus has changed"'
 ]

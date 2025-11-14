@@ -17,14 +17,32 @@ return {
 			local oil_ok, oil = pcall(require, "oil")
 			local mini_files_ok, mini_files = pcall(require, "mini.files")
 			if op == worktree.Operations.Switch then
-				local new_path = normalize_path(metadata.path)
-				vim.api.nvim_set_current_dir(new_path)
-				if oil_ok then
-					oil.open(new_path)
-				elseif mini_files_ok then
-					mini_files.open(new_path)
+				-- Convert to absolute path - metadata.path is relative to git root
+				local new_path = metadata.path
+				-- If path is not absolute, make it absolute
+				if not vim.startswith(new_path, "/") and not vim.startswith(new_path, "~") then
+					-- Get the git toplevel directory
+					local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+					if git_root and git_root ~= "" then
+						-- Build absolute path relative to git root's parent
+						local parent_dir = vim.fn.fnamemodify(git_root, ":h")
+						new_path = parent_dir .. "/" .. new_path
+					end
 				end
-				print("Updated Directory: " .. new_path)
+				new_path = normalize_path(vim.fn.fnamemodify(new_path, ":p"))
+
+				-- Use pcall to safely change directory
+				local ok, err = pcall(vim.api.nvim_set_current_dir, new_path)
+				if ok then
+					if oil_ok then
+						oil.open(new_path)
+					elseif mini_files_ok then
+						mini_files.open(new_path)
+					end
+					print("Updated Directory: " .. new_path)
+				else
+					vim.notify("Failed to change directory: " .. tostring(err), vim.log.levels.ERROR)
+				end
 			end
 		end)
 
