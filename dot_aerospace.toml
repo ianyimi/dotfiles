@@ -69,8 +69,8 @@ T = ['secondary', 'main']
 #                 Monitor pattern is the same as for 'workspace-to-monitor-force-assignment'.
 #                 See: https://nikitabobko.github.io/AeroSpace/guide#assign-workspaces-to-monitors
 [gaps]
-inner.horizontal = 10
-inner.vertical = 10
+inner.horizontal = 5
+inner.vertical = 5
 outer.left = 0
 outer.bottom = 0
 outer.top = 40
