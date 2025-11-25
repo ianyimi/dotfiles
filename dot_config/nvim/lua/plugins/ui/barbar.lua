@@ -62,6 +62,7 @@ return {
 			hide = {
 				inactive = false,
 			},
+			highlight_visible = false, -- Show both current and visible buffers with different highlights
 			icons = {
 				pinned = { filename = true, buffer_index = true },
 				diagnostics = { { enabled = true } },

@@ -97,7 +97,14 @@ return {
 			_bench("oil.setup begin")
 			require("oil").setup({
 				default_file_explorer = true,
-				columns = { "icon", "mtime", "size" },
+				columns = {
+					"icon",
+					{
+						"mtime",
+						format = "%b %d %I:%M %p", -- 12-hour format with AM/PM (e.g., "Jan 15 03:45 PM")
+					},
+					"size",
+				},
 				delete_to_trash = true,
 				skip_confirm_for_simple_edits = true,
 				watch_for_changes = true,
