@@ -1,5 +1,5 @@
 name: project-obsidian-mcp-macros
-root: ~/Documents/Projects/obsidian-mcp-macros/
+root: ~/Documents/Projects/obsidian-mcp-macros.git/dev/
 
 windows:
   - node:
