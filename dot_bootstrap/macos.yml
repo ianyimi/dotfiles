@@ -412,6 +412,18 @@
         name: font-jetbrains-mono-nerd-font
         state: present
 
+    - name: Check if JankyBorders is running
+      become: false
+      shell: "pgrep -x borders"
+      register: borders_status
+      failed_when: false
+      changed_when: false
+
+    - name: Start JankyBorders if not running
+      become: false
+      shell: "borders active_color=0xffff0000 inactive_color=0x00000000 width=10.0 &"
+      when: borders_status.rc != 0
+
     - name: Check Install - SketchyBar
       become: false
       ignore_errors: true
