@@ -517,7 +517,17 @@ vim.api.nvim_create_autocmd({ "BufWritePost" }, {
 
 -- Payload type watcher setup
 local payload_type_watchers = {}
-local payload_timer = nil
+
+-- Cleanup function to stop all timers
+local function cleanup_payload_watchers()
+	for path, timer in pairs(payload_type_watchers) do
+		if timer then
+			pcall(timer.stop, timer)
+			pcall(timer.close, timer)
+		end
+		payload_type_watchers[path] = nil
+	end
+end
 
 -- Fast check for specific file paths (no globbing)
 local function find_payload_file(filename)
@@ -620,8 +630,18 @@ vim.api.nvim_create_autocmd("DirChanged", {
 	group = augroup("setup_payload_watcher_on_cd"),
 	callback = function()
 		vim.schedule(function()
+			-- Clean up old watchers before setting up new ones
+			cleanup_payload_watchers()
 			setup_payload_type_watcher()
 		end)
+	end,
+})
+
+-- Clean up timers on Neovim exit
+vim.api.nvim_create_autocmd("VimLeavePre", {
+	group = augroup("cleanup_payload_watchers"),
+	callback = function()
+		cleanup_payload_watchers()
 	end,
 })
 

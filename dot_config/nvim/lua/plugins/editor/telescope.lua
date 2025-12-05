@@ -175,15 +175,28 @@ return {
 				get_buffer_by_name = function(_, entry)
 					return entry.value or entry.filename or entry[1]
 				end,
+				teardown = function(self)
+					-- Kill any running job when preview is torn down
+					if self.state and self.state.preview_job_id then
+						pcall(vim.fn.jobstop, self.state.preview_job_id)
+						self.state.preview_job_id = nil
+					end
+				end,
 				define_preview = function(self, entry)
 					local filename = entry.value or entry.filename or entry[1]
 					local filepath = entry.path or filename
 
 					if not filepath or filepath == "" then return end
 
+					-- Kill any existing job before starting a new one
+					if self.state.preview_job_id then
+						pcall(vim.fn.jobstop, self.state.preview_job_id)
+						self.state.preview_job_id = nil
+					end
+
 					-- Use same logic as find_files for all file types
 					vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
-					vim.fn.jobstart({ 'cat', filepath }, {
+					self.state.preview_job_id = vim.fn.jobstart({ 'cat', filepath }, {
 						stdout_buffered = true,
 						on_stdout = function(_, data)
 							if data and #data > 0 then
@@ -351,9 +364,22 @@ return {
 				get_buffer_by_name = function(_, entry)
 					return entry.value
 				end,
+				teardown = function(self)
+					-- Kill any running job when preview is torn down
+					if self.state and self.state.preview_job_id then
+						pcall(vim.fn.jobstop, self.state.preview_job_id)
+						self.state.preview_job_id = nil
+					end
+				end,
 				define_preview = function(self, entry)
 					local filename = entry.value
 					local filepath = entry.path or entry.filename
+
+					-- Kill any existing job before starting a new one
+					if self.state.preview_job_id then
+						pcall(vim.fn.jobstop, self.state.preview_job_id)
+						self.state.preview_job_id = nil
+					end
 
 					-- Handle .env files
 					if filename:match("%.env") then
@@ -363,7 +389,7 @@ return {
 							-- Clear buffer first
 							vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
 							-- Show actual file contents
-							vim.fn.jobstart({ 'cat', filepath }, {
+							self.state.preview_job_id = vim.fn.jobstart({ 'cat', filepath }, {
 								stdout_buffered = true,
 								on_stdout = function(_, data)
 									if data and #data > 0 then
@@ -400,7 +426,7 @@ return {
 					else
 						-- Use default preview for other files
 						vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, {})
-						vim.fn.jobstart({ 'cat', filepath }, {
+						self.state.preview_job_id = vim.fn.jobstart({ 'cat', filepath }, {
 							stdout_buffered = true,
 							on_stdout = function(_, data)
 								if data and #data > 0 then
