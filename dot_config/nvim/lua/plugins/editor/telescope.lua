@@ -100,7 +100,7 @@ return {
 						["<C-Up>"] = actions.cycle_history_prev,
 						["<PageDown>"] = actions.preview_scrolling_down,
 						["<PageUp>"] = actions.preview_scrolling_up,
-						["<C-n>"] = function(prompt_bufnr)
+						["<C-s>"] = function(prompt_bufnr)
 							local state = require("telescope.actions.state")
 							local entry = state.get_selected_entry()
 							local path = entry and (entry.path or entry.filename or entry.value) or nil
@@ -120,7 +120,7 @@ return {
 					},
 					n = {
 						["q"] = actions.close,
-						["<C-n>"] = function(prompt_bufnr)
+						["<C-s>"] = function(prompt_bufnr)
 							local state = require("telescope.actions.state")
 							local entry = state.get_selected_entry()
 							local path = entry and (entry.path or entry.filename or entry.value) or nil
@@ -572,7 +572,7 @@ return {
 		end, { desc = "[F]ind [S]ession" })
 		vim.keymap.set("n", "<leader>fh", builtin.help_tags, { desc = "[F]ind [H]elp" })
 		vim.keymap.set("n", "<leader>fk", builtin.keymaps, { desc = "[F]ind [K]eymaps" })
-		vim.keymap.set("n", "<leader>gw", builtin.grep_string, { desc = "[G]rep current [W]ord" })
+		vim.keymap.set("n", "gw", builtin.grep_string, { desc = "[G]rep current [W]ord" })
 		vim.keymap.set("n", "<leader>fg", builtin.live_grep, { desc = "[F]ind by [G]rep" })
 		vim.keymap.set("n", "<leader>fd", builtin.diagnostics, { desc = "[F]ind [D]iagnostics" })
 		vim.keymap.set("n", "<leader>fw", function()

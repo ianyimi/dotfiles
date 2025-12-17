@@ -27,10 +27,11 @@ vim.opt.splitright = true
 
 vim.opt.wrap = false
 
-vim.opt.expandtab = false
+vim.opt.expandtab = true
 local tabSize = 2
 vim.opt.tabstop = tabSize
 vim.opt.shiftwidth = tabSize
+vim.opt.softtabstop = tabSize
 
 -- only set clipboard if not in ssh, to make sure the OSC 52
 -- integration works automatically. Requires Neovim >= 0.10.0
