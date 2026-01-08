@@ -1,20 +1,21 @@
-name: project-obsidian-agents-server
-root: ~/Documents/Obsidian/Vaults/The Dev Lab/.obsidian/plugins/obsidian-agents-server.git
+name: project-uifoundry-2
+root: ~/Documents/Projects/uifoundry-v2.git/dev/
 
 windows:
-  - Dev Vault:
+  - node:
       layout: even-horizontal
       # Synchronize all panes of this window, can be enabled before or after the pane commands run.
       # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
       # synchronize: after
       panes:
-        - ... && nv
+        - neofetch
+        - neofetch
   - nvim:
       layout: 47ac,215x58,0,0{107x58,0,0,8,107x58,108,0,9}
       panes:
         - nv
         - neofetch
-  - claude:
+  - agents:
       layout: even-horizontal
       panes:
-        claude
+        - claude
