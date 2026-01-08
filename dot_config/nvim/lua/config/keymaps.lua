@@ -160,7 +160,7 @@ keymap.set("n", "ZZ", function()
 		pcall(vim.cmd, "qa!")
 	end
 end, { desc = "Force quit all (saves first)" })
-keymap.set("n", "WQ", "<leader>wZZ", { desc = "Split window below" })
+keymap.set("n", "QQ", "<leader>wZZ", { desc = "Split window below" })
 
 -- delete to void register & paste
 keymap.set("x", "<leader>p", '"_dP', { desc = "[P]aste & Delete to void" })
