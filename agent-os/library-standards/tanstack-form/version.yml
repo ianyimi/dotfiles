@@ -1,0 +1,7 @@
+library: "@tanstack/react-form"
+current_major: 8
+current_minor: 0
+last_updated: 2025-01-24
+docs_source: https://tanstack.com/form/latest
+best_practices_source: https://tanstack.com/form/latest/docs/framework/react/guides/validation
+llms_txt: https://tanstack.com/llms.txt

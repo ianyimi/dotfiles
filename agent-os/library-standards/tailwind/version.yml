@@ -1,0 +1,7 @@
+library: tailwindcss
+current_major: 4
+current_minor: 0
+last_updated: 2025-01-24
+docs_source: https://tailwindcss.com/docs
+best_practices_source: https://tailwindcss.com/docs/reusing-styles
+llms_txt: https://tailwindcss.com/llms.txt

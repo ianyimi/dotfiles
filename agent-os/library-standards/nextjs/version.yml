@@ -1,0 +1,7 @@
+library: next
+current_major: 16
+current_minor: 0
+last_updated: 2025-01-24
+docs_source: https://nextjs.org/docs
+best_practices_source: https://nextjs.org/docs/app/building-your-application
+llms_txt: https://nextjs.org/llms.txt

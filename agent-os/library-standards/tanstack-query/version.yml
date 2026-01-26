@@ -1,0 +1,7 @@
+library: "@tanstack/react-query"
+current_major: 5
+current_minor: 0
+last_updated: 2025-01-24
+docs_source: https://tanstack.com/query/latest
+best_practices_source: https://tanstack.com/query/latest/docs/framework/react/guides/important-defaults
+llms_txt: https://tanstack.com/llms.txt

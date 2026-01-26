@@ -1,0 +1,7 @@
+library: effect
+current_major: 3
+current_minor: 0
+last_updated: 2025-01-24
+docs_source: https://effect.website/docs
+best_practices_source: https://effect.website/docs/guides/essentials/using-generators
+llms_txt: https://effect.website/llms.txt

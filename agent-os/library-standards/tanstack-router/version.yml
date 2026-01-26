@@ -1,0 +1,7 @@
+library: "@tanstack/react-router"
+current_major: 1
+current_minor: 0
+last_updated: 2025-01-24
+docs_source: https://tanstack.com/router/latest
+best_practices_source: https://tanstack.com/router/latest/docs/framework/react/guide/code-splitting
+llms_txt: https://tanstack.com/llms.txt

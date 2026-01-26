@@ -1,0 +1,7 @@
+library: "@tanstack/start"
+current_major: 1
+current_minor: 0
+last_updated: 2025-01-24
+docs_source: https://tanstack.com/start/latest
+best_practices_source: https://tanstack.com/start/latest/docs/framework/react/guide/server-functions
+llms_txt: https://tanstack.com/llms.txt

@@ -1,0 +1,7 @@
+library: convex
+current_major: 1
+current_minor: 17
+last_updated: 2025-01-24
+docs_source: https://docs.convex.dev
+best_practices_source: https://docs.convex.dev/production/best-practices
+llms_txt: https://docs.convex.dev/llms.txt
