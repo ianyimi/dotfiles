@@ -66,6 +66,8 @@ alias spotifydl="spotify_dl -o ~/Downloads/ -s y -l"
 alias tmks="tmux kill-session"
 alias tmkS="tmux kill-server"
 
+alias tsUp="tailscale up --ssh --accept-routes --exit-node=isaiahs-mac-studio --exit-node-allow-lan-access"
+
 alias apConfig="ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass"
 
 alias cdConfig="cd ~/.config"

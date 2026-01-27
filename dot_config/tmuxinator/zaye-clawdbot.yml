@@ -1,0 +1,15 @@
+# /Users/zaye/.config/tmuxinator/zaye-dotfiles.yml
+
+name: zaye-clawdbot
+root: ~/.local/share/chezmoi/dot_config/private_dot_clawdbot/
+
+windows:
+  - nvim:
+      layout: tiled
+      panes:
+        - nv
+        - claudebot gateway
+  - agents:
+      layout: tiled
+      panes:
+        - claude
