@@ -1,5 +1,5 @@
 name: project-obsidian-agents-server
-root: ~/Documents/Obsidian/Vaults/The Dev Lab/.obsidian/plugins/obsidian-agents-server.git
+root: ~/Documents/Obsidian/Vaults/The Dev Lab/.obsidian/plugins/obsidian-agents-server.git/dev/
 
 windows:
   - Dev Vault:

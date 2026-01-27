@@ -1,0 +1,95 @@
+{
+  "wizard": {
+    "lastRunAt": "2026-01-20T06:42:43.320Z",
+    "lastRunVersion": "2026.1.16-2",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  },
+  "models": {
+    "providers": {
+      "Obsidian Agents Server": {
+        "baseUrl": "http://localhost:2345/v1",
+        "api": "openai-completions",
+        "models": []
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "fallbacks": []
+      },
+      "models": {},
+      "workspace": "/Users/zaye/clawd"
+    }
+  },
+  "tools": {
+    "media": {
+      "image": {
+        "providerOptions": {}
+      },
+      "audio": {
+        "providerOptions": {}
+      }
+    },
+    "agentToAgent": {
+      "enabled": false,
+      "allow": []
+    }
+  },
+  "messages": {
+    "inbound": {
+      "byChannel": {}
+    },
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "hooks": {
+    "gmail": {
+      "tailscale": {
+        "mode": "serve"
+      }
+    },
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "session-memory": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "channels": {
+    "imessage": {
+      "enabled": true,
+      "cliPath": "/opt/homebrew/Cellar/imsg/0.4.0",
+      "dmPolicy": "pairing",
+      "allowFrom": [
+        "+19162123890"
+      ],
+      "groupPolicy": "allowlist",
+      "includeAttachments": true
+    }
+  },
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "loopback",
+    "auth": {
+      "mode": "token",
+      "token": "a3eb59aed85c36496e812379fb9aef72ad56c1f176809232"
+    },
+    "tailscale": {
+      "mode": "serve",
+      "resetOnExit": false
+    }
+  },
+  "skills": {
+    "install": {
+      "nodeManager": "pnpm"
+    }
+  }
+}

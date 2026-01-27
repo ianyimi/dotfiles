@@ -1,0 +1,151 @@
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 67511)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-20.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[ws] webchat connected conn=b6ac57ef-5895-4f53-8b66-a464268a08e7 remote=127.0.0.1 client=clawdbot-control-ui webchat vdev
+[ws] webchat connected conn=82b7c371-a101-4488-b765-4ad3c26d27e7 remote=127.0.0.1 client=clawdbot-control-ui webchat vdev
+[ws] webchat disconnected code=1001 reason=n/a conn=b6ac57ef-5895-4f53-8b66-a464268a08e7
+[reload] config change detected; evaluating reload (agents.defaults.contextPruning, channels.imessage.includeAttachments)
+[gateway/channels] restarting imessage channel
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[reload] config hot reload applied (channels.imessage.includeAttachments)
+[ws] webchat disconnected code=1001 reason=n/a conn=82b7c371-a101-4488-b765-4ad3c26d27e7
+[ws] webchat connected conn=d60528fe-3fa4-434b-8c66-2ef7440dfaef remote=127.0.0.1 client=clawdbot-control-ui webchat vdev
+[reload] config change detected; evaluating reload (channels.imessage.allowFrom)
+[gateway/channels] restarting imessage channel
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[reload] config hot reload applied (channels.imessage.allowFrom)
+[ws] webchat disconnected code=1001 reason=n/a conn=d60528fe-3fa4-434b-8c66-2ef7440dfaef
+[ws] webchat connected conn=5c8f28b1-28a1-4475-90d6-82d1b5dd2772 remote=127.0.0.1 client=clawdbot-control-ui webchat vdev
+[reload] config change detected; evaluating reload (agents.defaults.model, agents.defaults.models, messages.inbound, hooks.gmail, models, tools)
+[gmail-watcher] gmail watcher stopped
+[reload] config hot reload applied (hooks.gmail)
+[gateway] signal SIGUSR1 received
+[gateway] received SIGUSR1; restarting
+[gmail-watcher] gmail watcher stopped
+[ws] webchat disconnected code=1012 reason=service restart conn=5c8f28b1-28a1-4475-90d6-82d1b5dd2772
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 67511)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-20.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[ws] webchat connected conn=df06dab0-1318-4298-9980-ad6434a3d3a4 remote=127.0.0.1 client=clawdbot-control-ui webchat vdev
+[ws] webchat disconnected code=1001 reason=n/a conn=df06dab0-1318-4298-9980-ad6434a3d3a4
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM; shutting down
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM during shutdown; ignoring
+[gmail-watcher] gmail watcher stopped
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 1455)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-20.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM; shutting down
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM during shutdown; ignoring
+[gmail-watcher] gmail watcher stopped
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 1228)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-20.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM; shutting down
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM during shutdown; ignoring
+[gmail-watcher] gmail watcher stopped
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 1183)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-20.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM; shutting down
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM during shutdown; ignoring
+[gmail-watcher] gmail watcher stopped
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 2101)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-20.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM; shutting down
+[gmail-watcher] gmail watcher stopped
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 51435)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-27.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[gateway] update available (latest): v2026.1.24-3 (current v2026.1.16-2). Run: clawdbot update
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM; shutting down
+[gmail-watcher] gmail watcher stopped
+[canvas] host mounted at http://127.0.0.1:18789/__clawdbot__/canvas/ (root /Users/zaye/clawd/canvas)
+[canvas] host listening on http://0.0.0.0:18793 (root /Users/zaye/clawd/canvas)
+[bridge] listening on tcp://0.0.0.0:18790 (node)
+[heartbeat] started
+[gateway] agent model: anthropic/claude-opus-4-5
+[gateway] listening on ws://127.0.0.1:18789 (PID 54095)
+[gateway] log file: /tmp/clawdbot/clawdbot-2026-01-27.log
+[tailscale] serve enabled
+[browser/server] Browser control listening on http://127.0.0.1:18791/
+[imessage] [default] starting provider (/opt/homebrew/Cellar/imsg/0.4.0)
+[reload] config change detected; evaluating reload (agents.defaults.contextPruning, channels.imessage.cliPath, channels.imessage.accounts)
+[gateway/channels] restarting imessage channel
+[imessage] [bot] starting provider (/Users/zaye/.local/bin/imsg-wrapper.sh)
+[reload] config hot reload applied (channels.imessage.cliPath, channels.imessage.accounts)
+[reload] config change detected; evaluating reload (channels.imessage.accounts, channels.imessage.cliPath)
+[gateway/channels] restarting imessage channel
+[imessage] [default] starting provider (/Users/zaye/.local/bin/imsg-wrapper.sh)
+[reload] config hot reload applied (channels.imessage.accounts, channels.imessage.cliPath)
+[reload] config change detected; evaluating reload (channels.imessage.remoteHost)
+[gateway/channels] restarting imessage channel
+[imessage] [default] starting provider (/Users/zaye/.local/bin/imsg-wrapper.sh)
+[reload] config hot reload applied (channels.imessage.remoteHost)
+[imessage] delivered reply to imessage:+19162123890
+[reload] config change detected; evaluating reload (models.providers.LM Studio, channels.imessage.dmPolicy)
+[gateway/channels] restarting imessage channel
+[imessage] [default] starting provider (/Users/zaye/.local/bin/imsg-wrapper.sh)
+[reload] config hot reload applied (channels.imessage.dmPolicy)
+[gateway] signal SIGTERM received
+[gateway] received SIGTERM; shutting down
+[gmail-watcher] gmail watcher stopped
