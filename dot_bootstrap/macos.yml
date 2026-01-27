@@ -188,6 +188,20 @@
         state: present
         update_homebrew: true
 
+    - name: Tap imsg
+      become: true
+      become_user: "{{ brew_user }}"
+      community.general.homebrew_tap:
+        name: steipete/tap
+        state: present
+
+    - name: Install imsg
+      become: true
+      become_user: "{{ brew_user }}"
+      community.general.homebrew:
+        name: steipete/tap/imsg
+        state: present
+
     - name: Check Install - Git
       community.general.homebrew:
         name: git
