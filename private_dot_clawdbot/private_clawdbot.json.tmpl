@@ -106,7 +106,7 @@
 		"bind": "loopback",
 		"auth": {
 			"mode": "token",
-			"token": "a3eb59aed85c36496e812379fb9aef72ad56c1f176809232"
+			"token": "{{ (bitwarden "item" "Clawdbot API Token").login.password }}"
 		},
 		"tailscale": {
 			"mode": "serve",

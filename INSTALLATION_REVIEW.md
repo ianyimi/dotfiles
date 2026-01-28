@@ -282,6 +282,15 @@ chezmoi init --apply https://github.com/ianyimi/dotfiles.git
 
 After the initial setup completes:
 
-1. **Configure project .env files** - Use Bitwarden templates for project secrets (see README)
-2. **Set up SSH keys** - Generate and add to GitHub/GitLab
-3. **Install additional apps** - Run `apConfig` for full system configuration
+1. **Add secrets to Bitwarden** - See [BITWARDEN_SETUP.md](./BITWARDEN_SETUP.md)
+2. **Configure project .env files** - Use templates for project secrets
+3. **Set up SSH keys** - Generate and add to GitHub/GitLab
+4. **Install additional apps** - Run `apConfig` for full system configuration
+
+---
+
+## Related Documentation
+
+- [BITWARDEN_SETUP.md](./BITWARDEN_SETUP.md) - Complete guide to adding secrets
+- [README.md](./README.md) - Repository overview
+- [Agent-OS Documentation](./agent-os-base/README.md) - Agent-OS usage guide
