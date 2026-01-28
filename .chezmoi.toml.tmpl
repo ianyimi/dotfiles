@@ -8,7 +8,7 @@
 {{- $bwEmail = promptString "Bitwarden email" (dig "bwEmail" "" .) -}}
 {{- end -}}
 {{- if and (eq $bwServer "") (stdinIsATTY) -}}
-{{- $bwServer = promptString "Bitwarden server URL" (dig "bwServer" "" .) -}}
+{{- $bwServer = promptString "Bitwarden server URL (e.g., https://vault.example.com)" (dig "bwServer" "" .) -}}
 {{- end -}}
 {{- if and (eq $githubUsername "") (stdinIsATTY) -}}
 {{- $githubUsername = promptString "GitHub username" (dig "githubUsername" "" .) -}}
