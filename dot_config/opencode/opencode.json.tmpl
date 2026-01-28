@@ -27,7 +27,7 @@
 				"-y",
 				"@upstash/context7-mcp",
 				"--api-key",
-				"ctx7sk-2e20a38c-b4f2-4c47-a283-17592cbbb0d9"
+				"{{ (bitwarden "item" "Context7 API Key").login.password }}"
 			],
 			"enabled": false
 		},
@@ -38,7 +38,7 @@
 				"ref-tools-mcp@latest"
 			],
 			"environment": {
-				"REF_API_KEY": "ref-db9443a57d1de0697a0b"
+        "REF_API_KEY": "{{ (bitwarden "item" "REF API Key").login.password }}"
 			},
 			"enabled": true
 		}
