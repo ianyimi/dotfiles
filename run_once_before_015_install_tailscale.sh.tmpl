@@ -1,0 +1,42 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -e
+
+echo "=== Installing Tailscale ==="
+
+# Check if Tailscale app is already installed
+if [ -d "/Applications/Tailscale.app" ]; then
+    echo "✓ Tailscale already installed"
+    echo ""
+    echo "ℹ️  Make sure you're connected to your Tailscale network"
+    echo "   (Click Tailscale in menu bar to connect if needed)"
+    echo ""
+    echo "=== Tailscale setup complete ==="
+    exit 0
+fi
+
+# Install Tailscale if not present
+echo "Installing Tailscale..."
+brew install --cask tailscale
+
+# Start Tailscale app
+echo "✓ Tailscale installed"
+echo ""
+echo "=== Tailscale Authentication Required ==="
+echo "Opening Tailscale app - please:"
+echo "  1. Click 'Connect' in the Tailscale app"
+echo "  2. Authenticate in your browser"
+echo "  3. Approve the device"
+echo ""
+
+open -a Tailscale
+sleep 2
+
+echo "Waiting for you to connect..."
+echo "(Script will continue once you close this terminal or press Ctrl+C)"
+echo ""
+echo "After connecting, you can continue with: chezmoi apply"
+echo ""
+echo "=== Tailscale setup complete ==="
+{{ end -}}

@@ -42,7 +42,7 @@ fi
 # Authenticate gh CLI using token from Bitwarden
 if ! gh auth status &>/dev/null; then
     echo "Authenticating GitHub CLI with token from Bitwarden..."
-    GITHUB_TOKEN=$(bw get password "GitHub Personal Access Token" --session "$BW_SESSION" 2>/dev/null)
+    GITHUB_TOKEN=$(bw get password "GitHub Personal Access Token" 2>/dev/null || bw get password "GitHub API Token" 2>/dev/null)
 
     if [ -z "$GITHUB_TOKEN" ]; then
         echo -e "${RED}✗${NC} Could not find GitHub token in Bitwarden."
