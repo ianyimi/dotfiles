@@ -3,9 +3,9 @@
 {{- $githubUsername := "" -}}
 
 {{- if stdinIsATTY -}}
-{{- $bwEmail = promptStringOnce . "bitwarden.email" "Bitwarden email" -}}
-{{- $bwServer = promptStringOnce . "bitwarden.server" "Bitwarden server URL (e.g., https://vault.example.com)" -}}
-{{- $githubUsername = promptStringOnce . "github.username" "GitHub username" -}}
+{{- $bwEmail = promptString "Bitwarden email" (default "" .bwEmail) -}}
+{{- $bwServer = promptString "Bitwarden server URL (e.g., https://vault.example.com)" (default "" .bwServer) -}}
+{{- $githubUsername = promptString "GitHub username" (default "" .githubUsername) -}}
 {{- else -}}
 {{- $bwEmail = env "BITWARDEN_EMAIL" -}}
 {{- $bwServer = env "BITWARDEN_SERVER" -}}
