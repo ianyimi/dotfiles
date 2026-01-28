@@ -1,0 +1,50 @@
+#!/bin/bash
+# Update Bitwarden email and server URL in chezmoi config
+
+CONFIG_FILE="$HOME/.config/chezmoi/chezmoi.toml"
+
+# Get current values
+CURRENT_EMAIL=$(grep 'bwEmail' "$CONFIG_FILE" | sed 's/.*= "\(.*\)"/\1/')
+CURRENT_SERVER=$(grep 'bwServer' "$CONFIG_FILE" | sed 's/.*= "\(.*\)"/\1/')
+
+echo "Current Bitwarden configuration:"
+echo "  Email: $CURRENT_EMAIL"
+echo "  Server: $CURRENT_SERVER"
+echo ""
+
+# Prompt for email
+echo -n "Enter new email (or press Enter to keep current): "
+read NEW_EMAIL
+if [ -z "$NEW_EMAIL" ]; then
+    NEW_EMAIL="$CURRENT_EMAIL"
+fi
+
+# Prompt for server
+echo -n "Enter new server URL (or press Enter to keep current): "
+read NEW_SERVER
+if [ -z "$NEW_SERVER" ]; then
+    NEW_SERVER="$CURRENT_SERVER"
+fi
+
+# Check if anything changed
+if [ "$NEW_EMAIL" = "$CURRENT_EMAIL" ] && [ "$NEW_SERVER" = "$CURRENT_SERVER" ]; then
+    echo "No changes made."
+    exit 0
+fi
+
+# Update the config file
+if [ "$NEW_EMAIL" != "$CURRENT_EMAIL" ]; then
+    sed -i '' "s|bwEmail = \".*\"|bwEmail = \"$NEW_EMAIL\"|" "$CONFIG_FILE"
+    echo "✓ Updated email to: $NEW_EMAIL"
+fi
+
+if [ "$NEW_SERVER" != "$CURRENT_SERVER" ]; then
+    sed -i '' "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+    echo "✓ Updated server to: $NEW_SERVER"
+    echo ""
+    echo "Reconfiguring Bitwarden CLI..."
+    bw config server "$NEW_SERVER"
+fi
+
+echo ""
+echo "✓ Configuration updated. You may need to login again with: bw login $NEW_EMAIL"

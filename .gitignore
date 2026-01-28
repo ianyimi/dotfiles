@@ -1,0 +1,20 @@
+# Clawdbot runtime data (not configuration)
+private_dot_clawdbot/agents/main/sessions/
+private_dot_clawdbot/logs/
+
+# Backup files
+*.bak
+*.bak.*
+
+# Chezmoi state (machine-specific)
+.chezmoi.yaml
+
+# macOS
+.DS_Store
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

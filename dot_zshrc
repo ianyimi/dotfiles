@@ -15,6 +15,26 @@ alias claude="unset ANTHROPIC_API_KEY && claude"
 
 alias aocp="~/agent-os/scripts/create-profile.sh && chezmoi add ~/agent-os && echo 'Added new profile to dotfiles'"
 alias aopi="~/agent-os/scripts/project-install.sh"
+alias bwcs="bw-config-server"
+alias bwc="bw-config"
+
+# Auto-load Bitwarden session if available and refresh if expired
+if [ -f ~/.bw-session ]; then
+    source ~/.bw-session
+    # Ensure it's exported for subprocesses (like chezmoi)
+    if [ -n "$BW_SESSION" ]; then
+        export BW_SESSION
+        # Silently check if session is still valid, refresh if not
+        if ! bw unlock --check --session "$BW_SESSION" &>/dev/null; then
+            # Session expired - clear it
+            unset BW_SESSION
+            rm -f ~/.bw-session
+        fi
+    fi
+fi
+
+# Utility alias to check/refresh session
+alias bwsr="bw-session-check"
 alias cpfd="cp -R"
 alias cm="chezmoi"
 alias cma="chezmoi apply && source ~/.zshrc"

@@ -1,2 +1,29 @@
 .config/aerospace-monitor/aerospace-monitor-daemon
 .config/aerospace-monitor/daemon.log
+
+# Base agent-os installation - synced to ~/agent-os via run_after script
+agent-os-base/
+
+# Project agent-os installation (managed separately after base install)
+agent-os/
+
+# Temporarily ignore bitwarden-dependent templates
+.config/secrets.env
+
+# Clawdbot runtime data and logs (not config)
+private_dot_clawdbot/agents/main/sessions/
+private_dot_clawdbot/logs/
+
+# Backup files (all directories)
+*.bak
+*.bak.*
+
+# Documentation files (for repo, not for home directory)
+*.md
+README.md
+SECRETS_AUDIT.md
+BITWARDEN_SETUP.md
+BITWARDEN_AUTH_EXPLAINED.md
+CLAWDBOT_FILES_EXPLAINED.md
+INSTALLATION_REVIEW.md
+SETUP_COMPLETE.md

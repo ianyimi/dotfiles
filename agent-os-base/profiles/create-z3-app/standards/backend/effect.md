@@ -600,7 +600,7 @@ import { Layer } from "effect";
 // Production: Export to OTLP endpoint (Grafana, Honeycomb, etc.)
 export const TracingLayer = NodeSdk.layer(() => ({
   resource: {
-    serviceName: "maprios-workflows",
+    serviceName: "your-app-workflows",
     serviceVersion: "1.0.0",
   },
   spanProcessor: new BatchSpanProcessor(
@@ -612,7 +612,7 @@ export const TracingLayer = NodeSdk.layer(() => ({
 
 // Development: Log spans to console
 export const ConsoleTracingLayer = NodeSdk.layer(() => ({
-  resource: { serviceName: "maprios-workflows" },
+  resource: { serviceName: "your-app-workflows" },
   spanProcessor: new BatchSpanProcessor(
     new (require("@opentelemetry/sdk-trace-base").ConsoleSpanExporter)()
   ),

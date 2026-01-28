@@ -1,0 +1,29 @@
+#!/bin/bash
+# Update Bitwarden server URL in chezmoi config
+
+CONFIG_FILE="$HOME/.config/chezmoi/chezmoi.toml"
+
+# Get current value
+CURRENT_SERVER=$(grep 'bwServer' "$CONFIG_FILE" | sed 's/.*= "\(.*\)"/\1/')
+
+echo "Current Bitwarden server: $CURRENT_SERVER"
+echo ""
+echo -n "Enter new server URL (or press Enter to keep current): "
+read NEW_SERVER
+
+# If empty, keep current
+if [ -z "$NEW_SERVER" ]; then
+    echo "No changes made."
+    exit 0
+fi
+
+# Update the config file
+sed -i '' "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+
+echo "✓ Updated Bitwarden server to: $NEW_SERVER"
+echo ""
+echo "Reconfiguring Bitwarden CLI..."
+bw config server "$NEW_SERVER"
+
+echo ""
+echo "✓ Configuration updated. You may need to login again with: bw login"

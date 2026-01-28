@@ -3,7 +3,7 @@
 ### Directory Structure
 
 ```
-maprios-app/
+your-app/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── (auth)/             # Auth-required routes (grouped)

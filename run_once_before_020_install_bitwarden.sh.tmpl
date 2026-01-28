@@ -1,0 +1,54 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+
+set -e
+
+echo "=== Installing Bitwarden CLI ==="
+
+# Check if already set up - if bw is installed, configured, and logged in, we're done
+if command -v bw &>/dev/null; then
+    CURRENT_SERVER=$(bw config server 2>/dev/null || echo "")
+    TARGET_SERVER="{{ .bwServer }}"
+
+    if [ "$CURRENT_SERVER" = "$TARGET_SERVER" ] && bw login --check &>/dev/null; then
+        echo "✓ Bitwarden CLI already installed, configured, and logged in"
+        echo "=== Bitwarden CLI setup complete ==="
+        exit 0
+    fi
+fi
+
+# Install Bitwarden CLI if not present
+if ! command -v bw &>/dev/null; then
+    echo "Installing Bitwarden CLI..."
+    brew install bitwarden-cli
+else
+    echo "✓ Bitwarden CLI already installed"
+fi
+
+# Configure Bitwarden server
+CURRENT_SERVER=$(bw config server 2>/dev/null || echo "")
+TARGET_SERVER="{{ .bwServer }}"
+
+if [ "$CURRENT_SERVER" != "$TARGET_SERVER" ]; then
+    echo "Configuring Bitwarden server: $TARGET_SERVER"
+
+    # Logout first if already logged in to different server
+    if bw login --check &>/dev/null; then
+        echo "Logging out to update server config..."
+        bw logout
+    fi
+
+    bw config server "$TARGET_SERVER"
+fi
+
+# Ensure logged in (required for chezmoi templates to work)
+if ! bw login --check &>/dev/null; then
+    echo ""
+    echo "Please log in to Bitwarden to continue:"
+    bw login {{ .bwEmail }}
+fi
+
+echo ""
+echo "✓ Bitwarden CLI setup complete"
+echo ""
+{{ end -}}

@@ -1,4 +1,51 @@
 ---
+- name: Prerequisites (Git, Brew, GitHub Auth)
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if Homebrew is installed
+      ansible.builtin.stat:
+        path: /opt/homebrew/bin/brew
+      register: homebrew_check
+
+    - name: Install Homebrew if not present
+      ansible.builtin.shell: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      when: not homebrew_check.stat.exists
+
+    - name: Ensure git is installed
+      community.general.homebrew:
+        name: git
+        state: present
+
+    - name: Configure git with GitHub token from Bitwarden
+      block:
+        - name: Check if gh CLI is installed
+          ansible.builtin.command: which gh
+          register: gh_check
+          failed_when: false
+          changed_when: false
+
+        - name: Install gh CLI if not present
+          community.general.homebrew:
+            name: gh
+            state: present
+          when: gh_check.rc != 0
+
+        - name: Check if gh is authenticated
+          ansible.builtin.command: gh auth status
+          register: gh_auth_status
+          failed_when: false
+          changed_when: false
+
+        - name: Authenticate gh with Bitwarden token
+          ansible.builtin.shell: |
+            bw get password "GitHub Personal Access Token" | gh auth login --with-token
+          environment:
+            BW_SESSION: "{{ lookup('env', 'BW_SESSION') }}"
+          when: gh_auth_status.rc != 0
+          no_log: true
+
 - name: Machine setup (MacOS)
   hosts: localhost
   become: true

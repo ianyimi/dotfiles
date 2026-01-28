@@ -1,0 +1,35 @@
+#!/bin/bash
+# Check and refresh Bitwarden session
+
+# Source existing session if available
+if [ -f ~/.bw-session ]; then
+    source ~/.bw-session
+fi
+
+# Check if session is valid
+if [ -n "$BW_SESSION" ] && bw unlock --check --session "$BW_SESSION" &>/dev/null; then
+    echo "✓ Bitwarden session is valid"
+    exit 0
+fi
+
+# Session invalid or missing
+echo "⚠️  Bitwarden session expired or missing"
+
+# Check if logged in
+if ! bw login --check &>/dev/null; then
+    echo "Not logged in. Run: bw login"
+    exit 1
+fi
+
+# Unlock and refresh session
+echo "Unlocking vault..."
+BW_SESSION=$(bw unlock --raw)
+if [ $? -eq 0 ]; then
+    echo "export BW_SESSION=\"$BW_SESSION\"" > ~/.bw-session
+    chmod 600 ~/.bw-session
+    source ~/.bw-session
+    echo "✓ Session refreshed"
+else
+    echo "✗ Failed to unlock"
+    exit 1
+fi

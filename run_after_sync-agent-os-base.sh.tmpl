@@ -1,0 +1,40 @@
+#!/bin/bash
+# Auto-sync agent-os-base to ~/agent-os after chezmoi apply
+# This enables agent-os-base/ in chezmoi to be the source of truth for ~/agent-os
+
+set -e
+
+SOURCE_DIR="{{ .chezmoi.sourceDir }}/agent-os-base"
+TARGET_DIR="$HOME/agent-os"
+
+# Only sync if source exists
+if [ ! -d "$SOURCE_DIR" ]; then
+    exit 0
+fi
+
+# Create target directory if it doesn't exist
+mkdir -p "$TARGET_DIR"
+
+# Sync using rsync (preserves permissions, only updates changed files)
+if command -v rsync &> /dev/null; then
+    rsync -a --delete "$SOURCE_DIR/" "$TARGET_DIR/"
+else
+    # Fallback to cp if rsync not available
+    rm -rf "$TARGET_DIR"
+    cp -R "$SOURCE_DIR" "$TARGET_DIR"
+fi
+
+# Ensure scripts are executable
+chmod +x "$TARGET_DIR/scripts/"*.sh 2>/dev/null || true
+
+# Create symlinks without executable_ prefix for easier aliases
+cd "$TARGET_DIR/scripts" 2>/dev/null || exit 0
+for file in executable_*.sh; do
+    if [ -f "$file" ]; then
+        link_name="${file#executable_}"
+        ln -sf "$file" "$link_name"
+    fi
+done
+cd - > /dev/null
+
+echo "✓ Synced agent-os-base → ~/agent-os"
