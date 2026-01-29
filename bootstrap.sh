@@ -46,6 +46,8 @@ install_chezmoi() {
             else
                 # Use official installer if brew not available
                 sh -c "$(curl -fsLS get.chezmoi.io)"
+                # Add ~/bin to PATH for this session (where get.chezmoi.io installs it)
+                export PATH="$HOME/bin:$PATH"
             fi
             ;;
         Linux*)
@@ -65,6 +67,8 @@ install_chezmoi() {
             else
                 # Fallback to official installer
                 sh -c "$(curl -fsLS get.chezmoi.io)"
+                # Add ~/bin to PATH for this session (where get.chezmoi.io installs it)
+                export PATH="$HOME/bin:$PATH"
             fi
             ;;
         MINGW*|MSYS*|CYGWIN*)
