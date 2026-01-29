@@ -360,7 +360,7 @@ Original setup forked from [Logan Donley's dotfiles](https://github.com/logandon
 Use this command to bypass GitHub's CDN cache when testing changes:
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" | bash
+curl -H "Cache-Control: no-cache" -H "Pragma: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?t=$(date +%s)&r=$RANDOM" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh
 ```
 
 ### Reset script
