@@ -18,6 +18,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  --dotfiles      Remove chezmoi source, config, and applied dotfiles"
+    echo "  --apps          Remove all brew-installed apps (Ghostty, Discord, Spotify, etc.)"
     echo "  --wm            Remove window manager (Aerospace, SketchyBar, JankyBorders)"
     echo "  --tailscale     Remove Tailscale app and config"
     echo "  --bitwarden     Remove Bitwarden CLI and session"
@@ -29,8 +30,8 @@ show_help() {
     echo "Examples:"
     echo "  reset.sh                          # Interactive menu"
     echo "  reset.sh --dotfiles               # Quick reset (dotfiles only)"
+    echo "  reset.sh --apps                   # Remove installed applications"
     echo "  reset.sh --wm                     # Remove window manager tools"
-    echo "  reset.sh --tailscale --bitwarden  # Reset Tailscale + Bitwarden"
     echo "  reset.sh --all                    # Full reset (everything)"
 }
 
@@ -44,7 +45,7 @@ show_interactive_menu() {
     echo ""
     echo "  1) Simple reset (recommended)"
     echo "     - Removes dotfiles, chezmoi config, applied configs"
-    echo "     - Keeps Homebrew, Tailscale, Bitwarden, Xcode CLT"
+    echo "     - Keeps Homebrew, Tailscale, Bitwarden, Xcode CLT, Apps"
     echo ""
     echo "  2) Select components"
     echo "     - Choose which components to remove"
@@ -64,6 +65,7 @@ show_interactive_menu() {
             ;;
         3)
             RESET_DOTFILES=true
+            RESET_APPS=true
             RESET_WM=true
             RESET_TAILSCALE=true
             RESET_BITWARDEN=true
@@ -87,6 +89,9 @@ select_components() {
     read -p "  Dotfiles & chezmoi config? [Y/n]: " ans
     [[ ! "$ans" =~ ^[Nn]$ ]] && RESET_DOTFILES=true
 
+    read -p "  Installed Apps (Ghostty, Discord, Spotify, etc.)? [y/N]: " ans
+    [[ "$ans" =~ ^[Yy]$ ]] && RESET_APPS=true
+
     read -p "  Window Manager (Aerospace, SketchyBar, JankyBorders)? [y/N]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_WM=true
 
@@ -105,6 +110,7 @@ select_components() {
 
 # Default flags
 RESET_DOTFILES=false
+RESET_APPS=false
 RESET_WM=false
 RESET_TAILSCALE=false
 RESET_BITWARDEN=false
@@ -118,6 +124,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --dotfiles)
             RESET_DOTFILES=true
+            shift
+            ;;
+        --apps)
+            RESET_APPS=true
             shift
             ;;
         --wm)
@@ -142,6 +152,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --all)
             RESET_DOTFILES=true
+            RESET_APPS=true
             RESET_WM=true
             RESET_TAILSCALE=true
             RESET_BITWARDEN=true
@@ -175,7 +186,7 @@ if [ "$USE_FLAGS" = true ]; then
 fi
 
 # Check if anything selected
-if ! $RESET_DOTFILES && ! $RESET_WM && ! $RESET_TAILSCALE && ! $RESET_BITWARDEN && ! $RESET_HOMEBREW && ! $RESET_XCODE; then
+if ! $RESET_DOTFILES && ! $RESET_APPS && ! $RESET_WM && ! $RESET_TAILSCALE && ! $RESET_BITWARDEN && ! $RESET_HOMEBREW && ! $RESET_XCODE; then
     echo -e "${YELLOW}Nothing selected to remove.${NC}"
     exit 0
 fi
@@ -184,6 +195,7 @@ fi
 echo ""
 echo -e "${YELLOW}This will remove:${NC}"
 $RESET_DOTFILES && echo "  - Chezmoi source, config, and applied dotfiles"
+$RESET_APPS && echo "  - Installed Apps (Ghostty, Discord, Spotify, Arc, Obsidian, etc.)"
 $RESET_WM && echo "  - Window Manager (Aerospace, SketchyBar, JankyBorders)"
 $RESET_TAILSCALE && echo "  - Tailscale app and config"
 $RESET_BITWARDEN && echo "  - Bitwarden CLI and session"
@@ -197,6 +209,78 @@ if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
 fi
 
 echo ""
+
+# Reset Apps (before homebrew so we can use brew to uninstall)
+if $RESET_APPS; then
+    echo -e "${YELLOW}→${NC} Removing installed applications..."
+
+    if command -v brew &>/dev/null; then
+        # Quit running apps first
+        for app in Ghostty Discord Spotify Arc Obsidian "Plex Media Player" Handbrake "LM Studio" Syncthing; do
+            osascript -e "quit app \"$app\"" 2>/dev/null || true
+        done
+
+        # Uninstall cask apps
+        CASK_APPS=(
+            ghostty
+            discord
+            spotify
+            arc
+            obsidian
+            plex
+            handbrake
+            lm-studio
+            syncthing
+            keymapp
+            raycast
+        )
+
+        for app in "${CASK_APPS[@]}"; do
+            echo "  Removing $app..."
+            brew uninstall --cask "$app" 2>/dev/null || true
+        done
+
+        # Uninstall CLI tools installed by playbook
+        CLI_TOOLS=(
+            tmux
+            tmuxinator
+            lazygit
+            lazydocker
+            fzf
+            ripgrep
+            bat
+            neofetch
+            starship
+            kubectl
+            k9s
+            k6
+            azure-cli
+            mongosh
+            lua
+            luarocks
+            go
+            fnm
+            pnpm
+            gh
+        )
+
+        for tool in "${CLI_TOOLS[@]}"; do
+            echo "  Removing $tool..."
+            brew uninstall "$tool" 2>/dev/null || true
+        done
+    else
+        echo "  Homebrew not found, skipping brew uninstalls"
+    fi
+
+    # Remove app data directories
+    rm -rf ~/Library/Application\ Support/Ghostty
+    rm -rf ~/Library/Application\ Support/discord
+    rm -rf ~/Library/Application\ Support/Spotify
+    rm -rf ~/Library/Application\ Support/Arc
+    rm -rf ~/Library/Application\ Support/obsidian
+
+    echo -e "${GREEN}✓${NC} Applications removed"
+fi
 
 # Reset Window Manager (before dotfiles so configs are still accessible)
 if $RESET_WM; then

@@ -377,6 +377,7 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 | Flag | Description |
 |------|-------------|
 | `--dotfiles` | Remove chezmoi source, config, and applied dotfiles (resets shell to bash) |
+| `--apps` | Remove all brew-installed apps and CLI tools (Ghostty, Discord, Spotify, etc.) |
 | `--wm` | Remove window manager (Aerospace, SketchyBar, JankyBorders) |
 | `--tailscale` | Remove Tailscale app and config |
 | `--bitwarden` | Remove Bitwarden CLI and session |
@@ -391,17 +392,17 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles && rm /tmp/reset.sh
 ```
 
+`--apps` - Remove all installed applications (Ghostty, Discord, Spotify, Arc, etc.) and CLI tools.
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --apps && rm /tmp/reset.sh
+```
+
 `--wm` - Remove window manager tools (Aerospace, SketchyBar, JankyBorders). Restores default macOS menu bar and dock.
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --wm && rm /tmp/reset.sh
 ```
 
-`--tailscale --bitwarden` - Remove multiple components. Combine any flags.
-```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --tailscale --bitwarden && rm /tmp/reset.sh
-```
-
-`--all` - Full factory reset. Removes everything including Homebrew and Xcode CLT.
+`--all` - Full factory reset. Removes everything including apps, Homebrew, and Xcode CLT.
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --all && rm /tmp/reset.sh
 ```
