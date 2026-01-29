@@ -162,21 +162,20 @@ setup_tailscale() {
         echo -e "${GREEN}✓${NC} Tailscale already installed"
     fi
 
-    # Check if already connected - tailscale status shows IPs when connected
-    TAILSCALE_STATUS=$(tailscale status 2>&1 || true)
-    if echo "$TAILSCALE_STATUS" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"; then
+    # Check if already connected - tailscale status returns 0 when connected
+    if tailscale status &>/dev/null; then
         echo -e "${GREEN}✓${NC} Tailscale already connected"
         return 0
     fi
 
-    # Check if tailscale daemon is already running (no sudo needed for pgrep)
-    # On macOS with brew, the process is named "io.tailscale.ipn.macos.network-extension"
-    if pgrep -f "io.tailscale" &>/dev/null || pgrep -f "tailscaled" &>/dev/null; then
-        echo -e "${GREEN}✓${NC} Tailscale service already running"
-    else
+    # Not connected - need to start service and authenticate
+    # Only start service if not already running (check without sudo to avoid password prompt)
+    if ! pgrep -f "io.tailscale" &>/dev/null && ! pgrep -f "tailscaled" &>/dev/null; then
         echo -e "${YELLOW}→${NC} Starting Tailscale service..."
         sudo brew services start tailscale
         sleep 2
+    else
+        echo -e "${GREEN}✓${NC} Tailscale service already running"
     fi
 
     # Authenticate with Tailscale
