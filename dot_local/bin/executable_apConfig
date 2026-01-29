@@ -17,15 +17,8 @@ echo -e "${BLUE}    System Configuration Bootstrap     ${NC}"
 echo -e "${BLUE}═══════════════════════════════════════${NC}"
 echo ""
 
-# Check if we should skip project cloning
-SKIP_PROJECTS=false
-if [[ "$1" == "--skip-projects" ]] || [[ "$1" == "-s" ]]; then
-    SKIP_PROJECTS=true
-    echo -e "${YELLOW}⏭  Skipping project cloning${NC}"
-fi
-
 # Step 1: Get sudo password early
-echo -e "${BLUE}[1/4]${NC} Checking sudo access..."
+echo -e "${BLUE}[1/3]${NC} Checking sudo access..."
 sudo -v
 # Keep sudo alive in background
 while true; do sudo -n true; sleep 30; kill -0 "$$" || exit; done 2>/dev/null &
@@ -34,7 +27,7 @@ echo -e "${GREEN}✓${NC} Sudo access confirmed"
 echo ""
 
 # Step 2: Verify Bitwarden session (should already be set by bootstrap.sh)
-echo -e "${BLUE}[2/4]${NC} Checking Bitwarden session..."
+echo -e "${BLUE}[2/3]${NC} Checking Bitwarden session..."
 if [ -f ~/.bw-session ]; then
     source ~/.bw-session
 fi
@@ -63,25 +56,8 @@ else
 fi
 echo ""
 
-# Step 3: Project cloning (unless skipped)
-if [ "$SKIP_PROJECTS" = false ]; then
-    echo -e "${BLUE}[3/4]${NC} Project Setup"
-    echo ""
-
-    if command -v apCloneProjects &>/dev/null; then
-        apCloneProjects
-    else
-        echo -e "${YELLOW}⚠${NC}  apCloneProjects command not found yet. It will be available after chezmoi apply."
-        echo "You can run it manually later with: apCloneProjects"
-    fi
-    echo ""
-else
-    echo -e "${BLUE}[3/4]${NC} Skipping project setup"
-    echo ""
-fi
-
-# Step 4: Run Ansible playbook
-echo -e "${BLUE}[4/4]${NC} Running system configuration (ansible)..."
+# Step 3: Run Ansible playbook
+echo -e "${BLUE}[3/3]${NC} Running system configuration (ansible)..."
 echo "This will install all applications and CLI tools..."
 echo ""
 
@@ -112,5 +88,4 @@ echo ""
 echo "Next steps:"
 echo "  1. Restart your terminal or run: source ~/.zshrc"
 echo "  2. Your secrets are available in: ~/.config/secrets.env"
-echo "  3. Run 'apCloneProjects' anytime to clone more repos"
 echo ""
