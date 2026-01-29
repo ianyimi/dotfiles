@@ -169,15 +169,11 @@ setup_tailscale() {
         return 0
     fi
 
-    # Not connected - check if service needs to be started
-    if echo "$TAILSCALE_STATUS" | grep -qi "stopped\|not running\|failed to connect"; then
-        if ! brew services list | grep -E "tailscale\s+started" &>/dev/null; then
-            echo -e "${YELLOW}→${NC} Starting Tailscale service..."
-            sudo brew services start tailscale
-            sleep 2
-        else
-            echo -e "${GREEN}✓${NC} Tailscale service already running"
-        fi
+    # Start service if not running (check without sudo first)
+    if ! brew services list | grep -q "tailscale.*started"; then
+        echo -e "${YELLOW}→${NC} Starting Tailscale service..."
+        sudo brew services start tailscale
+        sleep 2
     fi
 
     # Authenticate with Tailscale
