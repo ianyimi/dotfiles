@@ -369,7 +369,7 @@ Interactive reset script with menu or flags.
 
 **Interactive menu (recommended):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash
 ```
 
 **Available flags:**
@@ -387,17 +387,17 @@ curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | 
 
 `--dotfiles` - Quick reset, removes only dotfiles and chezmoi config. Keeps all installed tools.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --dotfiles
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --dotfiles
 ```
 
 `--tailscale` - Remove Tailscale app, config, and re-test Tailscale authentication flow.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --tailscale
 ```
 
 `--tailscale --bitwarden` - Remove multiple components. Combine any flags.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale --bitwarden
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --tailscale --bitwarden
 ```
 
 `--all` - Full factory reset. Removes everything including Homebrew and Xcode CLT.
