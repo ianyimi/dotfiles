@@ -270,10 +270,10 @@ init_chezmoi() {
     CHEZMOI_CONFIG="$HOME/.config/chezmoi/chezmoi.toml"
 
     if [ -f "$CHEZMOI_CONFIG" ]; then
-        # Read from config file - extract value between quotes
-        DEFAULT_BW_EMAIL=$(sed -n 's/.*bwEmail *= *"\([^"]*\)".*/\1/p' "$CHEZMOI_CONFIG" | head -1)
-        DEFAULT_BW_SERVER=$(sed -n 's/.*bwServer *= *"\([^"]*\)".*/\1/p' "$CHEZMOI_CONFIG" | head -1)
-        DEFAULT_GITHUB_USER=$(sed -n 's/.*githubUsername *= *"\([^"]*\)".*/\1/p' "$CHEZMOI_CONFIG" | head -1)
+        # Read from config file using grep + awk (portable across macOS/Linux)
+        DEFAULT_BW_EMAIL=$(grep 'bwEmail' "$CHEZMOI_CONFIG" 2>/dev/null | awk -F'"' '{print $2}' | head -1)
+        DEFAULT_BW_SERVER=$(grep 'bwServer' "$CHEZMOI_CONFIG" 2>/dev/null | awk -F'"' '{print $2}' | head -1)
+        DEFAULT_GITHUB_USER=$(grep 'githubUsername' "$CHEZMOI_CONFIG" 2>/dev/null | awk -F'"' '{print $2}' | head -1)
     fi
 
     # Fallbacks if config file parsing failed
