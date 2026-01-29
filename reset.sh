@@ -86,25 +86,25 @@ select_components() {
     echo "(Press Enter for default, or type y/n)"
     echo ""
 
-    read -p "  Dotfiles & chezmoi config? [Y/n]: " ans
+    read -p "  Dotfiles & chezmoi config? [y/n]: " ans
     [[ ! "$ans" =~ ^[Nn]$ ]] && RESET_DOTFILES=true
 
-    read -p "  Installed Apps (Ghostty, Discord, Spotify, etc.)? [y/N]: " ans
+    read -p "  Installed Apps (Ghostty, Discord, Spotify, etc.)? [y/n]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_APPS=true
 
-    read -p "  Window Manager (Aerospace, SketchyBar, JankyBorders)? [y/N]: " ans
+    read -p "  Window Manager (Aerospace, SketchyBar, JankyBorders)? [y/n]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_WM=true
 
-    read -p "  Tailscale? [y/N]: " ans
+    read -p "  Tailscale? [y/n]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_TAILSCALE=true
 
-    read -p "  Bitwarden CLI? [y/N]: " ans
+    read -p "  Bitwarden CLI? [y/n]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_BITWARDEN=true
 
-    read -p "  Homebrew & all packages? [y/N]: " ans
+    read -p "  Homebrew & all packages? [y/n]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_HOMEBREW=true
 
-    read -p "  Xcode Command Line Tools? [y/N]: " ans
+    read -p "  Xcode Command Line Tools? [y/n]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_XCODE=true
 }
 
@@ -202,7 +202,7 @@ $RESET_BITWARDEN && echo "  - Bitwarden CLI and session"
 $RESET_HOMEBREW && echo "  - Homebrew and all packages"
 $RESET_XCODE && echo "  - Xcode Command Line Tools"
 echo ""
-read -p "Continue? (y/N): " CONFIRM
+read -p "Continue? (y/n): " CONFIRM
 if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
     echo "Cancelled."
     exit 0

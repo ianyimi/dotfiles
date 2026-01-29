@@ -294,7 +294,7 @@ init_chezmoi() {
 
     if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
         echo -e "${YELLOW}⚠${NC}  Chezmoi source directory already exists"
-        read -p "Do you want to reinitialize? (y/N): " REINIT
+        read -p "Do you want to reinitialize? (y/n): " REINIT
         if [[ ! "$REINIT" =~ ^[Yy]$ ]]; then
             echo "Skipping initialization"
             return 0
@@ -365,7 +365,7 @@ run_os_setup() {
             APCONFIG_PATH="$HOME/.local/bin/apConfig"
             if [ -x "$APCONFIG_PATH" ]; then
                 echo -e "${YELLOW}→${NC} Found apConfig script"
-                read -p "Do you want to run the full system configuration now? (Y/n): " RUN_CONFIG
+                read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG
                 if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
                     "$APCONFIG_PATH"
                 fi
@@ -393,7 +393,7 @@ main() {
     echo "  2. Clone your dotfiles from: $REPO_URL"
     echo "  3. Initialize your system configuration"
     echo ""
-    read -p "Continue? (Y/n): " CONTINUE
+    read -p "Continue? (y/n): " CONTINUE
     if [[ "$CONTINUE" =~ ^[Nn]$ ]]; then
         echo "Cancelled."
         exit 0
