@@ -221,8 +221,8 @@ if $RESET_APPS; then
             echo "  Removing cask apps..."
             for cask in $INSTALLED_CASKS; do
                 echo "    Removing $cask..."
-                # Use --force to handle running apps and --zap to remove all associated files
-                brew uninstall --cask --force --zap "$cask" 2>&1 || echo "      Warning: failed to fully remove $cask"
+                # Use --force to handle running apps, --zap to remove all associated files, --ignore-dependencies to skip dependency checks
+                brew uninstall --cask --force --zap --ignore-dependencies "$cask" 2>&1 || echo "      Warning: failed to fully remove $cask"
             done
         fi
 
@@ -232,7 +232,7 @@ if $RESET_APPS; then
             echo "  Removing CLI tools..."
             for formula in $INSTALLED_FORMULAE; do
                 echo "    Removing $formula..."
-                brew uninstall --force "$formula" 2>&1 || echo "      Warning: failed to remove $formula"
+                brew uninstall --force --ignore-dependencies "$formula" 2>&1 || echo "      Warning: failed to remove $formula"
             done
         fi
 
