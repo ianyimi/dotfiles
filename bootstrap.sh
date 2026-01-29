@@ -143,16 +143,17 @@ run_os_setup() {
             # macOS
             echo "Running macOS setup..."
 
-            # The run_once scripts should have already executed during chezmoi apply
-            # But we can also manually trigger the main setup
-            if command -v apConfig &>/dev/null; then
-                echo -e "${YELLOW}→${NC} apConfig command is available"
+            # Run apConfig directly by path (PATH won't have ~/.local/bin yet)
+            APCONFIG_PATH="$HOME/.local/bin/apConfig"
+            if [ -x "$APCONFIG_PATH" ]; then
+                echo -e "${YELLOW}→${NC} Found apConfig script"
                 read -p "Do you want to run the full system configuration now? (Y/n): " RUN_CONFIG
                 if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
-                    apConfig
+                    "$APCONFIG_PATH"
                 fi
             else
-                echo -e "${YELLOW}⚠${NC}  apConfig not yet in PATH. Reload your shell and run 'apConfig' to complete setup."
+                echo -e "${YELLOW}⚠${NC}  apConfig not found at $APCONFIG_PATH"
+                echo "    Reload your shell and run 'apConfig' to complete setup."
             fi
             ;;
         Linux*)
