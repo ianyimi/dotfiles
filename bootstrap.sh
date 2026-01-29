@@ -24,6 +24,16 @@ echo ""
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
+# Setup PATH for tools that might already be installed
+# This ensures command -v checks work even when running via curl | bash
+if [[ "$ARCH" == "arm64" ]] && [[ -f /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -f /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+fi
+[[ -d "$HOME/bin" ]] && export PATH="$HOME/bin:$PATH"
+[[ -d "$HOME/.local/bin" ]] && export PATH="$HOME/.local/bin:$PATH"
+
 echo -e "${BLUE}Detected System:${NC}"
 echo "  OS: $OS"
 echo "  Architecture: $ARCH"
@@ -53,6 +63,13 @@ install_xcode_clt() {
 
 # Function to install Homebrew (macOS)
 install_homebrew() {
+    # Add brew to PATH first (in case shell doesn't have it yet)
+    if [[ "$ARCH" == "arm64" ]] && [[ -f /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -f /usr/local/bin/brew ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+
     if command -v brew &>/dev/null; then
         echo -e "${GREEN}✓${NC} Homebrew already installed"
         return 0
