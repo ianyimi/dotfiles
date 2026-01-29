@@ -364,10 +364,18 @@
   become: true
   connection: local
   tasks:
-    - name: Add Hyprland PPA
+    - name: Check if Hyprland is available in main repos
+      ansible.builtin.shell: apt-cache show hyprland 2>/dev/null
+      register: hyprland_in_repos
+      failed_when: false
+      changed_when: false
+
+    - name: Add Hyprland PPA (only if not in main repos)
       ansible.builtin.apt_repository:
         repo: ppa:hyprwm/hyprland
         state: present
+      when: hyprland_in_repos.rc != 0
+      ignore_errors: true
 
     - name: Install Hyprland and related packages
       ansible.builtin.apt:
@@ -384,8 +392,11 @@
           - brightnessctl
           - pavucontrol
           - libnotify-bin
+          - xdg-desktop-portal-hyprland
+          - polkit-gnome
         state: present
         update_cache: true
+      ignore_errors: true
 
 - name: Snap Install (GUI Apps)
   hosts: localhost
