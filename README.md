@@ -365,41 +365,44 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.
 
 ### Reset script
 
-Interactive reset script with menu or flags:
+Interactive reset script with menu or flags.
 
+**Interactive menu (recommended):**
 ```bash
-# Interactive menu (recommended)
 curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash
 ```
 
-```bash
-# Or use flags to skip the menu:
-#   --dotfiles      Remove chezmoi source, config, and applied dotfiles
-#   --tailscale     Remove Tailscale app and config
-#   --bitwarden     Remove Bitwarden CLI and session
-#   --homebrew      Remove Homebrew and all packages
-#   --xcode         Remove Xcode Command Line Tools
-#   --all           Remove everything (full reset)
+**Available flags:**
 
-# Examples with flags:
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --dotfiles              # Quick reset
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale             # Tailscale only
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale --bitwarden # Multiple components
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --all                   # Full reset
+| Flag | Description |
+|------|-------------|
+| `--dotfiles` | Remove chezmoi source, config, and applied dotfiles |
+| `--tailscale` | Remove Tailscale app and config |
+| `--bitwarden` | Remove Bitwarden CLI and session |
+| `--homebrew` | Remove Homebrew and all packages |
+| `--xcode` | Remove Xcode Command Line Tools |
+| `--all` | Remove everything (full reset) |
+
+**Examples with flags:**
+
+`--dotfiles` - Quick reset, removes only dotfiles and chezmoi config. Keeps all installed tools.
+```bash
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --dotfiles
 ```
 
+`--tailscale` - Remove Tailscale app, config, and re-test Tailscale authentication flow.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --dotfiles              # Quick reset
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale
 ```
+
+`--tailscale --bitwarden` - Remove multiple components. Combine any flags.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale             # Tailscale only
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale --bitwarden
 ```
+
+`--all` - Full factory reset. Removes everything including Homebrew and Xcode CLT.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale --bitwarden # Multiple components
-```
-```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --all                   # Full reset
-```
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --all
 ```
 
 ---
