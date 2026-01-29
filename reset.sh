@@ -215,13 +215,13 @@ if $RESET_APPS; then
     echo -e "${YELLOW}→${NC} Removing all brew-installed applications..."
 
     # Apps controlled by other flags - skip unless those flags are also set
-    SKIP_CASKS=""
-    SKIP_FORMULAE=""
+    SKIP_CASKS=()
+    SKIP_FORMULAE=()
     if ! $RESET_TAILSCALE; then
-        SKIP_CASKS="$SKIP_CASKS tailscale"
+        SKIP_CASKS+=("tailscale")
     fi
     if ! $RESET_BITWARDEN; then
-        SKIP_FORMULAE="$SKIP_FORMULAE bitwarden-cli"
+        SKIP_FORMULAE+=("bitwarden-cli")
     fi
 
     if command -v brew &>/dev/null; then
@@ -231,8 +231,15 @@ if $RESET_APPS; then
             echo "  Removing cask apps..."
             for cask in $INSTALLED_CASKS; do
                 # Skip if in exclusion list
-                if echo "$SKIP_CASKS" | grep -qw "$cask"; then
-                    echo "    Skipping $cask (controlled by separate flag)"
+                skip=false
+                for skip_cask in "${SKIP_CASKS[@]}"; do
+                    if [ "$cask" = "$skip_cask" ]; then
+                        echo "    Skipping $cask (controlled by separate flag)"
+                        skip=true
+                        break
+                    fi
+                done
+                if $skip; then
                     continue
                 fi
                 echo "    Removing $cask..."
@@ -247,8 +254,15 @@ if $RESET_APPS; then
             echo "  Removing CLI tools..."
             for formula in $INSTALLED_FORMULAE; do
                 # Skip if in exclusion list
-                if echo "$SKIP_FORMULAE" | grep -qw "$formula"; then
-                    echo "    Skipping $formula (controlled by separate flag)"
+                skip=false
+                for skip_formula in "${SKIP_FORMULAE[@]}"; do
+                    if [ "$formula" = "$skip_formula" ]; then
+                        echo "    Skipping $formula (controlled by separate flag)"
+                        skip=true
+                        break
+                    fi
+                done
+                if $skip; then
                     continue
                 fi
                 echo "    Removing $formula..."
