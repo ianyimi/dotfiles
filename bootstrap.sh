@@ -276,9 +276,15 @@ init_chezmoi() {
         DEFAULT_GITHUB_USER=$(sed -n 's/.*githubUsername *= *"\([^"]*\)".*/\1/p' "$CHEZMOI_CONFIG" | head -1)
     fi
 
-    # Fallback to bw config for server if not found
+    # Fallbacks if config file parsing failed
+    if [ -z "$DEFAULT_BW_EMAIL" ] && command -v bw &>/dev/null; then
+        DEFAULT_BW_EMAIL=$(bw status 2>/dev/null | grep -o '"userEmail":"[^"]*"' | cut -d'"' -f4)
+    fi
     if [ -z "$DEFAULT_BW_SERVER" ] && command -v bw &>/dev/null; then
         DEFAULT_BW_SERVER=$(bw config server 2>/dev/null || echo "")
+    fi
+    if [ -z "$DEFAULT_GITHUB_USER" ] && command -v gh &>/dev/null; then
+        DEFAULT_GITHUB_USER=$(gh api user 2>/dev/null | grep -o '"login": *"[^"]*"' | head -1 | cut -d'"' -f4)
     fi
 
     if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
