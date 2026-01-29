@@ -264,20 +264,90 @@ if $RESET_APPS; then
         echo "  Homebrew not found, skipping brew uninstalls"
     fi
 
-    # Remove all apps from /Applications except those controlled by other flags
+    # Remove all apps from /Applications except macOS defaults and flag-controlled apps
     echo "  Removing apps from /Applications..."
-    SKIP_APPS=""
+
+    # Default macOS apps to always keep (factory reset state)
+    DEFAULT_APPS=(
+        "App Store.app"
+        "Automator.app"
+        "Books.app"
+        "Calculator.app"
+        "Calendar.app"
+        "Chess.app"
+        "Clock.app"
+        "Contacts.app"
+        "Dictionary.app"
+        "FaceTime.app"
+        "Finder.app"
+        "Font Book.app"
+        "Freeform.app"
+        "Home.app"
+        "Image Capture.app"
+        "Keynote.app"
+        "Launchpad.app"
+        "Mail.app"
+        "Maps.app"
+        "Messages.app"
+        "Migration Assistant.app"
+        "Music.app"
+        "News.app"
+        "Notes.app"
+        "Numbers.app"
+        "Pages.app"
+        "Passwords.app"
+        "Photo Booth.app"
+        "Photos.app"
+        "Podcasts.app"
+        "Preview.app"
+        "QuickTime Player.app"
+        "Reminders.app"
+        "Safari.app"
+        "Shortcuts.app"
+        "Siri.app"
+        "Stickies.app"
+        "Stocks.app"
+        "System Preferences.app"
+        "System Settings.app"
+        "TextEdit.app"
+        "Time Machine.app"
+        "TV.app"
+        "Utilities"
+        "VoiceMemos.app"
+        "Weather.app"
+    )
+
+    # Apps controlled by other flags
+    SKIP_APPS=()
     if ! $RESET_TAILSCALE; then
-        SKIP_APPS="$SKIP_APPS Tailscale.app"
+        SKIP_APPS+=("Tailscale.app")
     fi
 
-    for app in /Applications/*.app; do
+    for app in /Applications/*.app /Applications/Utilities/*.app; do
         [ -d "$app" ] || continue
         app_name=$(basename "$app")
 
-        # Skip if in exclusion list
-        if echo "$SKIP_APPS" | grep -qw "$app_name"; then
-            echo "    Skipping $app_name (controlled by separate flag)"
+        # Skip default macOS apps
+        skip=false
+        for default_app in "${DEFAULT_APPS[@]}"; do
+            if [ "$app_name" = "$default_app" ]; then
+                skip=true
+                break
+            fi
+        done
+        if $skip; then
+            continue
+        fi
+
+        # Skip apps controlled by other flags
+        for skip_app in "${SKIP_APPS[@]}"; do
+            if [ "$app_name" = "$skip_app" ]; then
+                echo "    Skipping $app_name (controlled by separate flag)"
+                skip=true
+                break
+            fi
+        done
+        if $skip; then
             continue
         fi
 
