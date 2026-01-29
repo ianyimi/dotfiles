@@ -608,6 +608,7 @@
       changed_when: false
 
     - name: Start Aerospace if not running
-      shell: "open -a Aerospace"
+      shell: "open -a AeroSpace"
       when: aerospace_status.rc != 0
+      ignore_errors: true
 
