@@ -51,6 +51,29 @@ install_xcode_clt() {
     echo -e "${GREEN}✓${NC} Xcode Command Line Tools installed"
 }
 
+# Function to install Homebrew (macOS)
+install_homebrew() {
+    if command -v brew &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Homebrew already installed"
+        return 0
+    fi
+
+    echo -e "${YELLOW}→${NC} Installing Homebrew..."
+    echo -e "${YELLOW}  You may be prompted for your password.${NC}"
+
+    # Run Homebrew installer with proper TTY handling
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty
+
+    # Add brew to PATH for this session
+    if [[ "$ARCH" == "arm64" ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    else
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
+
+    echo -e "${GREEN}✓${NC} Homebrew installed"
+}
+
 # Function to install chezmoi
 install_chezmoi() {
     if command -v chezmoi &>/dev/null; then
@@ -182,21 +205,25 @@ main() {
     fi
 
     echo ""
-    # On macOS, ensure Xcode CLT is installed first (provides git)
+    # On macOS, install prerequisites first
     if [[ "$OS" == "Darwin"* ]]; then
-        echo -e "${CYAN}${BOLD}[1/4] Installing Xcode Command Line Tools...${NC}"
+        echo -e "${CYAN}${BOLD}[1/5] Installing Xcode Command Line Tools...${NC}"
         install_xcode_clt
 
         echo ""
-        echo -e "${CYAN}${BOLD}[2/4] Installing chezmoi...${NC}"
+        echo -e "${CYAN}${BOLD}[2/5] Installing Homebrew...${NC}"
+        install_homebrew
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[3/5] Installing chezmoi...${NC}"
         install_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[3/4] Initializing dotfiles...${NC}"
+        echo -e "${CYAN}${BOLD}[4/5] Initializing dotfiles...${NC}"
         init_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[4/4] Running OS-specific setup...${NC}"
+        echo -e "${CYAN}${BOLD}[5/5] Running OS-specific setup...${NC}"
         run_os_setup
     else
         echo -e "${CYAN}${BOLD}[1/3] Installing chezmoi...${NC}"
