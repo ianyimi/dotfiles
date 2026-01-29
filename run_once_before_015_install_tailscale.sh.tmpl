@@ -6,7 +6,7 @@ set -e
 echo "=== Installing Tailscale ==="
 
 # Install Tailscale if not present
-if [ ! -d "/Applications/Tailscale.app" ]; then
+if ! brew list --cask tailscale &>/dev/null; then
     echo "Installing Tailscale..."
     brew install --cask tailscale
     echo "✓ Tailscale installed"
@@ -14,30 +14,32 @@ else
     echo "✓ Tailscale already installed"
 fi
 
+# Define the Tailscale CLI path
+TAILSCALE="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+
 # Check if already connected
-if /Applications/Tailscale.app/Contents/MacOS/Tailscale status &>/dev/null; then
+if "$TAILSCALE" status &>/dev/null; then
     echo "✓ Tailscale already connected"
     echo "=== Tailscale setup complete ==="
     exit 0
 fi
 
-# Start Tailscale app and wait for connection
+# Start Tailscale app first (needed to start the daemon on macOS)
 echo ""
 echo "=== Tailscale Authentication Required ==="
-echo "Opening Tailscale app - please:"
-echo "  1. Click 'Connect' in the Tailscale app"
-echo "  2. Authenticate in your browser"
-echo "  3. Approve the device"
+echo "Starting Tailscale and opening browser for authentication..."
+echo "Please approve the device in your browser."
 echo ""
 
+# Open the app to start the system extension/daemon
 open /Applications/Tailscale.app
-sleep 2
+sleep 3
 
-echo "Waiting for Tailscale to connect..."
-while ! /Applications/Tailscale.app/Contents/MacOS/Tailscale status &>/dev/null; do
-    sleep 3
-done
+# Use tailscale up which will open browser and wait for auth
+# The --accept-routes flag accepts subnet routes from your tailnet
+"$TAILSCALE" up --accept-routes
 
+echo ""
 echo "✓ Tailscale connected"
 echo "=== Tailscale setup complete ==="
 {{ end -}}
