@@ -208,8 +208,11 @@ if $RESET_TAILSCALE; then
     if command -v brew &>/dev/null; then
         brew uninstall --cask tailscale 2>/dev/null || true
     fi
-    # Remove app manually if still present
-    rm -rf /Applications/Tailscale.app
+    # Remove app manually if still present (requires sudo for protected files)
+    if [ -d "/Applications/Tailscale.app" ]; then
+        echo -e "${YELLOW}  Removing /Applications/Tailscale.app (requires password)...${NC}"
+        sudo rm -rf /Applications/Tailscale.app
+    fi
     # Remove Tailscale config
     rm -rf ~/Library/Containers/io.tailscale.ipn.macos
     rm -rf ~/Library/Group\ Containers/*.tailscale.*
