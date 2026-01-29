@@ -363,10 +363,27 @@ Use this command to bypass GitHub's CDN cache when testing changes:
 curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" | bash
 ```
 
-### Reset VM for fresh install (keeps Homebrew, Xcode CLT, Tailscale)
+### Reset script
+
+Interactive reset script with menu or flags:
 
 ```bash
-rm -rf ~/.local/share/chezmoi ~/.config ~/.local/bin ~/.zshrc ~/.bashrc ~/.gitconfig ~/.zprofile ~/.bootstrap ~/bin/chezmoi ~/.bw-session ~/.chezmoi.toml
+# Interactive menu (recommended)
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash
+
+# Or use flags to skip the menu:
+#   --dotfiles      Remove chezmoi source, config, and applied dotfiles
+#   --tailscale     Remove Tailscale app and config
+#   --bitwarden     Remove Bitwarden CLI and session
+#   --homebrew      Remove Homebrew and all packages
+#   --xcode         Remove Xcode Command Line Tools
+#   --all           Remove everything (full reset)
+
+# Examples with flags:
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --dotfiles              # Quick reset
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale             # Tailscale only
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale --bitwarden # Multiple components
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --all                   # Full reset
 ```
 
 ---
