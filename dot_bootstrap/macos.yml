@@ -373,28 +373,6 @@
         name: ripgrep
         state: present
 
-    - name: Check Install - Aerospace
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
-      community.general.homebrew_cask:
-        name:
-          - nikitabobko/tap/aerospace
-        state: latest
-      ignore_errors: true
-
-    - name: Check if Aerospace is running
-      become: false
-      shell: "pgrep -f 'Aerospace'"
-      register: aerospace_status
-      failed_when: false
-      changed_when: false
-
-    - name: Start Aerospace if not running
-      become: false
-      shell: "open -a Aerospace"
-      when: aerospace_status.rc != 0
-
     - name: Set Dock to auto-hide
       become: false
       shell: "defaults write com.apple.dock autohide -bool true && killall Dock"
@@ -608,4 +586,28 @@
       community.general.homebrew_cask:
         name: font-jetbrains-mono-nerd-font
         state: present
+
+- name: Install and Start Aerospace (last - so borders config loads properly)
+  hosts: localhost
+  become: false
+  gather_facts: false
+  environment:
+    HOMEBREW_NO_ANALYTICS: "1"
+  tasks:
+    - name: Check Install - Aerospace
+      community.general.homebrew_cask:
+        name:
+          - nikitabobko/tap/aerospace
+        state: latest
+      ignore_errors: true
+
+    - name: Check if Aerospace is running
+      shell: "pgrep -f 'Aerospace'"
+      register: aerospace_status
+      failed_when: false
+      changed_when: false
+
+    - name: Start Aerospace if not running
+      shell: "open -a Aerospace"
+      when: aerospace_status.rc != 0
 
