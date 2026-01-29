@@ -178,7 +178,7 @@ $RESET_BITWARDEN && echo "  - Bitwarden CLI and session"
 $RESET_HOMEBREW && echo "  - Homebrew and all packages"
 $RESET_XCODE && echo "  - Xcode Command Line Tools"
 echo ""
-read -p "Continue? (y/N): " CONFIRM
+read -p "Continue? (y/N): " CONFIRM </dev/tty
 if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
     echo "Cancelled."
     exit 0
