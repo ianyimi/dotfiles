@@ -146,9 +146,19 @@ init_chezmoi() {
         rm -rf "$HOME/.local/share/chezmoi"
     fi
 
-    # Initialize and apply dotfiles
-    # Use --prompt to force prompts and </dev/tty so chezmoi can read from terminal
-    if chezmoi init --apply --prompt "$REPO_URL" </dev/tty; then
+    # Prompt for chezmoi template values
+    echo ""
+    echo -e "${BLUE}Please provide configuration values:${NC}"
+    read -p "Bitwarden email: " BW_EMAIL </dev/tty
+    read -p "Bitwarden server URL (e.g., https://vault.example.com): " BW_SERVER </dev/tty
+    read -p "GitHub username: " GITHUB_USER </dev/tty
+
+    # Initialize and apply dotfiles with values passed via flags
+    if chezmoi init --apply \
+        --promptString "bwEmail=$BW_EMAIL" \
+        --promptString "bwServer=$BW_SERVER" \
+        --promptString "githubUsername=$GITHUB_USER" \
+        "$REPO_URL"; then
         echo -e "${GREEN}✓${NC} Dotfiles initialized and applied"
     else
         echo -e "${RED}✗${NC} Failed to initialize dotfiles"
