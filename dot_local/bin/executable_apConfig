@@ -94,6 +94,11 @@ if [ ! -f ~/.bootstrap/macos.yml ]; then
     chezmoi apply
 fi
 
+# Source Bitwarden session for ansible tasks that need it
+if [ -f ~/.bw-session ]; then
+    source ~/.bw-session
+fi
+
 ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass </dev/tty
 
 echo ""
