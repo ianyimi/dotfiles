@@ -37,7 +37,7 @@ fi
 alias bwsr="bw-session-check"
 alias cpfd="cp -R"
 alias cm="chezmoi"
-alias cma="chezmoi apply && source ~/.zshrc"
+alias cma="bw-session-check && source ~/.bw-session 2>/dev/null && NODE_OPTIONS='--no-deprecation' chezmoi apply && source ~/.zshrc"
 alias cme="chezmoi edit --watch"
 alias tm="tmux"
 alias tma="tmux attach"
