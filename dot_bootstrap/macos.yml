@@ -115,11 +115,11 @@
     #     name: zen-browser
     #     state: present
 
-    - name: Check Install - Docker Desktop
-      community.general.homebrew_cask:
-        name: docker-desktop
-        state: present
-      ignore_errors: true
+    # - name: Check Install - Docker Desktop
+    #   community.general.homebrew_cask:
+    #     name: docker-desktop
+    #     state: present
+    #   ignore_errors: true
 
     - name: Check Install - Handbrake
       community.general.homebrew_cask:
