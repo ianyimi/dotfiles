@@ -369,7 +369,7 @@ Interactive reset script with menu or flags.
 
 **Interactive menu (recommended):**
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh && rm /tmp/reset.sh
 ```
 
 **Available flags:**
@@ -387,22 +387,22 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 
 `--dotfiles` - Quick reset, removes only dotfiles and chezmoi config. Keeps all installed tools.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --dotfiles
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles && rm /tmp/reset.sh
 ```
 
 `--tailscale` - Remove Tailscale app, config, and re-test Tailscale authentication flow.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --tailscale
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --tailscale && rm /tmp/reset.sh
 ```
 
 `--tailscale --bitwarden` - Remove multiple components. Combine any flags.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --tailscale --bitwarden
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --tailscale --bitwarden && rm /tmp/reset.sh
 ```
 
 `--all` - Full factory reset. Removes everything including Homebrew and Xcode CLT.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --all
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --all && rm /tmp/reset.sh
 ```
 
 ---
