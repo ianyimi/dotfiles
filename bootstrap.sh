@@ -246,18 +246,20 @@ init_chezmoi() {
     echo ""
     echo -e "${BLUE}Initializing chezmoi with dotfiles...${NC}"
 
-    # Get existing values from chezmoi config BEFORE any deletion
+    # Get existing values from chezmoi data (most reliable method)
     DEFAULT_BW_EMAIL=""
     DEFAULT_BW_SERVER=""
     DEFAULT_GITHUB_USER=""
-    CHEZMOI_CONFIG="$HOME/.config/chezmoi/chezmoi.toml"
-    if [ -f "$CHEZMOI_CONFIG" ]; then
-        # Read directly from TOML file - extract value between quotes after =
-        DEFAULT_BW_EMAIL=$(awk -F'"' '/bwEmail/ {print $2}' "$CHEZMOI_CONFIG" 2>/dev/null)
-        DEFAULT_BW_SERVER=$(awk -F'"' '/bwServer/ {print $2}' "$CHEZMOI_CONFIG" 2>/dev/null)
-        DEFAULT_GITHUB_USER=$(awk -F'"' '/githubUsername/ {print $2}' "$CHEZMOI_CONFIG" 2>/dev/null)
+
+    # Try chezmoi data first (works if chezmoi is configured)
+    if command -v chezmoi &>/dev/null; then
+        CHEZMOI_DATA=$(chezmoi data --format json 2>/dev/null || echo "{}")
+        DEFAULT_BW_EMAIL=$(echo "$CHEZMOI_DATA" | grep -o '"bwEmail":"[^"]*"' | cut -d'"' -f4)
+        DEFAULT_BW_SERVER=$(echo "$CHEZMOI_DATA" | grep -o '"bwServer":"[^"]*"' | cut -d'"' -f4)
+        DEFAULT_GITHUB_USER=$(echo "$CHEZMOI_DATA" | grep -o '"githubUsername":"[^"]*"' | cut -d'"' -f4)
     fi
-    # Also try to get server from bw config if not found
+
+    # Fallback to bw config for server if not found
     if [ -z "$DEFAULT_BW_SERVER" ] && command -v bw &>/dev/null; then
         DEFAULT_BW_SERVER=$(bw config server 2>/dev/null || echo "")
     fi

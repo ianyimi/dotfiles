@@ -43,7 +43,9 @@
             bw get password "GitHub Personal Access Token" | gh auth login --with-token
           environment:
             BW_SESSION: "{{ lookup('env', 'BW_SESSION') }}"
+            NODE_OPTIONS: "--no-deprecation"
           when: gh_auth_status.rc != 0
+          timeout: 30
           no_log: true
 
 - name: Machine setup (MacOS)
