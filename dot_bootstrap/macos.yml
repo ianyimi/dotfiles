@@ -276,9 +276,9 @@
         - name: Install pnpm if not installed
           ansible.builtin.shell: "curl -fsSL https://get.pnpm.io/install.sh | sh -"
           args:
-            creates: "{{ ansible_env.HOME }}/.local/share/pnpm"
+            creates: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
           environment:
-            PNPM_HOME: "{{ ansible_env.HOME }}/.local/share/pnpm"
+            PNPM_HOME: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
           when: pnpm_check.rc != 0
 
         - name: Ensure pnpm is in the PATH
@@ -466,20 +466,20 @@
   tasks:
     - name: Ensure packages directory exists
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/packages"
+        path: "{{ ansible_facts['env']['HOME'] }}/packages"
         state: directory
         mode: "0755"
 
     - name: Check if sketchybar-app-font repository exists
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/packages/sketchybar-app-font"
+        path: "{{ ansible_facts['env']['HOME'] }}/packages/sketchybar-app-font"
       register: sketchybar_app_font_stat
 
     - name: Clone sketchybar-app-font repository
       ignore_errors: true
       ansible.builtin.git:
         repo: "https://github.com/kvndrsslr/sketchybar-app-font.git"
-        dest: "{{ ansible_env.HOME }}/packages/sketchybar-app-font"
+        dest: "{{ ansible_facts['env']['HOME'] }}/packages/sketchybar-app-font"
         version: "HEAD"
         force: no
       when: not sketchybar_app_font_stat.stat.exists
@@ -492,19 +492,19 @@
       when: not sketchybar_app_font_stat.stat.exists
       ansible.builtin.command: pnpm install
       args:
-        chdir: "{{ ansible_env.HOME }}/packages/sketchybar-app-font"
+        chdir: "{{ ansible_facts['env']['HOME'] }}/packages/sketchybar-app-font"
       environment:
-        PATH: "{{ ansible_env.HOME }}/.local/share/pnpm:{{ ansible_env.PATH }}"
+        PATH: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm:{{ ansible_facts['env']['PATH'] }}"
     - name: Ensure sketchybar scripts directory exists
       when: not sketchybar_app_font_stat.stat.exists
       ansible.builtin.file:
-        path: "{{ ansible_env.HOME }}/.config/sketchybar/scripts"
+        path: "{{ ansible_facts['env']['HOME'] }}/.config/sketchybar/scripts"
         state: directory
         mode: "0755"
     - name: Ensure my-script.sh exists with icon map markers
       when: not sketchybar_app_font_stat.stat.exists
       ansible.builtin.copy:
-        dest: "{{ ansible_env.HOME }}/.config/sketchybar/scripts/my-script.sh"
+        dest: "{{ ansible_facts['env']['HOME'] }}/.config/sketchybar/scripts/my-script.sh"
         content: |
           ### START-OF-ICON-MAP
           # Here be the function
@@ -512,11 +512,11 @@
         mode: "0755"
     - name: Build and install latest sketchybar-app-font and update icon map script
       when: not sketchybar_app_font_stat.stat.exists
-      ansible.builtin.command: pnpm run build:install "{{ ansible_env.HOME }}/.config/sketchybar/scripts/my-script.sh"
+      ansible.builtin.command: pnpm run build:install "{{ ansible_facts['env']['HOME'] }}/.config/sketchybar/scripts/my-script.sh"
       args:
-        chdir: "{{ ansible_env.HOME }}/packages/sketchybar-app-font"
+        chdir: "{{ ansible_facts['env']['HOME'] }}/packages/sketchybar-app-font"
       environment:
-        PATH: "{{ ansible_env.HOME }}/.local/share/pnpm:{{ ansible_env.PATH }}"
+        PATH: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm:{{ ansible_facts['env']['PATH'] }}"
 
 - name: Generate app_icons.lua file from icon_map.lua in dist folder
   hosts: localhost
@@ -525,14 +525,14 @@
     - name: Ensure ~/.config/sketchybar/helpers directory exists
       when: not sketchybar_app_font_stat.stat.exists
       file:
-        path: "{{ ansible_env.HOME }}/.config/sketchybar/helpers"
+        path: "{{ ansible_facts['env']['HOME'] }}/.config/sketchybar/helpers"
         state: directory
         mode: "0755"
     - name: Copy icon_map.lua to app_icons.lua in helpers folder
       when: not sketchybar_app_font_stat.stat.exists
       copy:
-        src: "{{ ansible_env.HOME }}/packages/sketchybar-app-font/dist/icon_map.lua"
-        dest: "{{ ansible_env.HOME }}/.config/sketchybar/helpers/app_icons.lua"
+        src: "{{ ansible_facts['env']['HOME'] }}/packages/sketchybar-app-font/dist/icon_map.lua"
+        dest: "{{ ansible_facts['env']['HOME'] }}/.config/sketchybar/helpers/app_icons.lua"
         mode: "0644"
     - name: Restart SketchyBar to apply new icon configurations
       ansible.builtin.shell: "sketchybar --reload"
@@ -606,7 +606,7 @@
 
     - name: Check if SSH key already exists
       ansible.builtin.stat:
-        path: "{{ ansible_env.HOME }}/.ssh/id_ed25519"
+        path: "{{ ansible_facts['env']['HOME'] }}/.ssh/id_ed25519"
       register: ssh_key
 
     - name: Set up GitHub SSH key (only if no Git user and no SSH key)
@@ -619,7 +619,7 @@
 
         - name: Generate a new SSH key
           ansible.builtin.command:
-            cmd: "ssh-keygen -t ed25519 -C '{{ github_email.user_input }}' -f {{ ansible_env.HOME }}/.ssh/id_ed25519 -N ''"
+            cmd: "ssh-keygen -t ed25519 -C '{{ github_email.user_input }}' -f {{ ansible_facts['env']['HOME'] }}/.ssh/id_ed25519 -N ''"
           register: keygen_output
           changed_when: keygen_output.rc == 0
 
@@ -629,12 +629,12 @@
 
         - name: Add SSH key to the macOS Keychain
           ansible.builtin.command:
-            cmd: "ssh-add --apple-use-keychain {{ ansible_env.HOME }}/.ssh/id_ed25519"
+            cmd: "ssh-add --apple-use-keychain {{ ansible_facts['env']['HOME'] }}/.ssh/id_ed25519"
           changed_when: false
 
         - name: Read the SSH public key
           ansible.builtin.command:
-            cmd: "cat {{ ansible_env.HOME }}/.ssh/id_ed25519.pub"
+            cmd: "cat {{ ansible_facts['env']['HOME'] }}/.ssh/id_ed25519.pub"
           register: ssh_pub_key
 
         - name: Print the SSH public key
