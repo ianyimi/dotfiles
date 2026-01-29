@@ -381,6 +381,7 @@
         name:
           - nikitabobko/tap/aerospace
         state: latest
+      ignore_errors: true
 
     - name: Check if Aerospace is running
       become: false
