@@ -79,7 +79,7 @@ install_homebrew() {
     echo -e "${YELLOW}  You may be prompted for your password.${NC}"
 
     # Run Homebrew installer with proper TTY handling
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
     # Add brew to PATH for this session
     if [[ "$ARCH" == "arm64" ]]; then
@@ -239,12 +239,12 @@ setup_bitwarden() {
     if ! bw login --check &>/dev/null; then
         echo ""
         echo -e "${YELLOW}→${NC} Please log in to Bitwarden:"
-        BW_SESSION=$(bw login "$bw_email" --raw </dev/tty)
+        BW_SESSION=$(bw login "$bw_email" --raw)
     else
         # Already logged in, just unlock
         echo -e "${GREEN}✓${NC} Bitwarden already logged in"
         echo -e "${YELLOW}→${NC} Unlocking Bitwarden vault..."
-        BW_SESSION=$(bw unlock --raw </dev/tty)
+        BW_SESSION=$(bw unlock --raw)
     fi
 
     if [ -n "$BW_SESSION" ]; then
@@ -296,7 +296,7 @@ init_chezmoi() {
 
     if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
         echo -e "${YELLOW}⚠${NC}  Chezmoi source directory already exists"
-        read -p "Do you want to reinitialize? (y/N): " REINIT </dev/tty
+        read -p "Do you want to reinitialize? (y/N): " REINIT
         if [[ ! "$REINIT" =~ ^[Yy]$ ]]; then
             echo "Skipping initialization"
             return 0
@@ -314,24 +314,24 @@ init_chezmoi() {
 
     # Always show what the default is, even in the prompt format
     if [ -n "$DEFAULT_BW_EMAIL" ]; then
-        read -p "Bitwarden email [$DEFAULT_BW_EMAIL]: " BW_EMAIL </dev/tty
+        read -p "Bitwarden email [$DEFAULT_BW_EMAIL]: " BW_EMAIL
         BW_EMAIL=${BW_EMAIL:-$DEFAULT_BW_EMAIL}
     else
-        read -p "Bitwarden email: " BW_EMAIL </dev/tty
+        read -p "Bitwarden email: " BW_EMAIL
     fi
 
     if [ -n "$DEFAULT_BW_SERVER" ]; then
-        read -p "Bitwarden server URL [$DEFAULT_BW_SERVER]: " BW_SERVER </dev/tty
+        read -p "Bitwarden server URL [$DEFAULT_BW_SERVER]: " BW_SERVER
         BW_SERVER=${BW_SERVER:-$DEFAULT_BW_SERVER}
     else
-        read -p "Bitwarden server URL: " BW_SERVER </dev/tty
+        read -p "Bitwarden server URL: " BW_SERVER
     fi
 
     if [ -n "$DEFAULT_GITHUB_USER" ]; then
-        read -p "GitHub username [$DEFAULT_GITHUB_USER]: " GITHUB_USER </dev/tty
+        read -p "GitHub username [$DEFAULT_GITHUB_USER]: " GITHUB_USER
         GITHUB_USER=${GITHUB_USER:-$DEFAULT_GITHUB_USER}
     else
-        read -p "GitHub username: " GITHUB_USER </dev/tty
+        read -p "GitHub username: " GITHUB_USER
     fi
 
     # Setup Bitwarden before chezmoi init so BW_SESSION is available for templates
@@ -367,7 +367,7 @@ run_os_setup() {
             APCONFIG_PATH="$HOME/.local/bin/apConfig"
             if [ -x "$APCONFIG_PATH" ]; then
                 echo -e "${YELLOW}→${NC} Found apConfig script"
-                read -p "Do you want to run the full system configuration now? (Y/n): " RUN_CONFIG </dev/tty
+                read -p "Do you want to run the full system configuration now? (Y/n): " RUN_CONFIG
                 if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
                     "$APCONFIG_PATH"
                 fi
@@ -395,7 +395,7 @@ main() {
     echo "  2. Clone your dotfiles from: $REPO_URL"
     echo "  3. Initialize your system configuration"
     echo ""
-    read -p "Continue? (Y/n): " CONTINUE </dev/tty
+    read -p "Continue? (Y/n): " CONTINUE
     if [[ "$CONTINUE" =~ ^[Nn]$ ]]; then
         echo "Cancelled."
         exit 0

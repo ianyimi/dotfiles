@@ -51,7 +51,7 @@ show_interactive_menu() {
     echo "  3) Complete reset"
     echo "     - Removes everything (full factory reset)"
     echo ""
-    read -p "Enter choice [1-3] (default: 1): " CHOICE </dev/tty
+    read -p "Enter choice [1-3] (default: 1): " CHOICE
     CHOICE=${CHOICE:-1}
 
     case $CHOICE in
@@ -82,19 +82,19 @@ select_components() {
     echo "(Press Enter for default, or type y/n)"
     echo ""
 
-    read -p "  Dotfiles & chezmoi config? [Y/n]: " ans </dev/tty
+    read -p "  Dotfiles & chezmoi config? [Y/n]: " ans
     [[ ! "$ans" =~ ^[Nn]$ ]] && RESET_DOTFILES=true
 
-    read -p "  Tailscale? [y/N]: " ans </dev/tty
+    read -p "  Tailscale? [y/N]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_TAILSCALE=true
 
-    read -p "  Bitwarden CLI? [y/N]: " ans </dev/tty
+    read -p "  Bitwarden CLI? [y/N]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_BITWARDEN=true
 
-    read -p "  Homebrew & all packages? [y/N]: " ans </dev/tty
+    read -p "  Homebrew & all packages? [y/N]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_HOMEBREW=true
 
-    read -p "  Xcode Command Line Tools? [y/N]: " ans </dev/tty
+    read -p "  Xcode Command Line Tools? [y/N]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_XCODE=true
 }
 
@@ -178,7 +178,7 @@ $RESET_BITWARDEN && echo "  - Bitwarden CLI and session"
 $RESET_HOMEBREW && echo "  - Homebrew and all packages"
 $RESET_XCODE && echo "  - Xcode Command Line Tools"
 echo ""
-read -p "Continue? (y/N): " CONFIRM </dev/tty
+read -p "Continue? (y/N): " CONFIRM
 if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
     echo "Cancelled."
     exit 0
@@ -237,7 +237,7 @@ if $RESET_HOMEBREW; then
     echo -e "${YELLOW}→${NC} Removing Homebrew (this may take a while)..."
     if command -v brew &>/dev/null; then
         # Homebrew uninstaller needs TTY for prompts
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" </dev/tty
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
     else
         echo "  Homebrew not found, skipping"
     fi

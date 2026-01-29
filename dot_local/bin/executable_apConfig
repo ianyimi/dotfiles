@@ -26,7 +26,7 @@ fi
 
 # Step 1: Get sudo password early
 echo -e "${BLUE}[1/4]${NC} Checking sudo access..."
-sudo -v </dev/tty
+sudo -v
 # Keep sudo alive in background
 while true; do sudo -n true; sleep 30; kill -0 "$$" || exit; done 2>/dev/null &
 SUDO_KEEPALIVE_PID=$!
@@ -50,10 +50,10 @@ else
         # Fallback if helper script not available
         if ! bw login --check &>/dev/null; then
             echo "Please login to Bitwarden:"
-            BW_SESSION=$(bw login --raw </dev/tty)
+            BW_SESSION=$(bw login --raw)
         else
             echo "Unlocking Bitwarden vault..."
-            BW_SESSION=$(bw unlock --raw </dev/tty)
+            BW_SESSION=$(bw unlock --raw)
         fi
         echo "export BW_SESSION=\"$BW_SESSION\"" > ~/.bw-session
         chmod 600 ~/.bw-session
@@ -102,7 +102,7 @@ if [ -z "$BW_SESSION" ]; then
 fi
 
 # Run ansible with --ask-become-pass for plays that need sudo
-ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass </dev/tty
+ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════${NC}"

@@ -7,7 +7,7 @@ Complete system configuration using chezmoi + Bitwarden for secure secret manage
 On a **brand new Mac** with nothing installed, run this single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 Or use chezmoi directly:
@@ -360,7 +360,7 @@ Original setup forked from [Logan Donley's dotfiles](https://github.com/logandon
 Use this command to bypass GitHub's CDN cache when testing changes:
 
 ```bash
-curl -H "Cache-Control: no-cache" -H "Pragma: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?t=$(date +%s)&r=$RANDOM" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh
+curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 ### Reset script
