@@ -94,59 +94,34 @@
     HOMEBREW_NO_ANALYTICS: "1"
   tasks:
     - name: Check Install - Spotify
-      community.general.homebrew:
+      community.general.homebrew_cask:
         name: spotify
         state: present
-      ignore_errors: true
-
-    # - name: Check Install - Vivaldi
-    #   community.general.homebrew_cask:
-    #     name: vivaldi
-    #     state: present
 
     - name: Check Install - Arc Browser
-      community.general.homebrew:
+      community.general.homebrew_cask:
         name: arc
         state: present
-      ignore_errors: true
-
-    # - name: Check Install - Zen Browser
-    #   community.general.homebrew_cask:
-    #     name: zen-browser
-    #     state: present
-
-    # - name: Check Install - Docker Desktop
-    #   community.general.homebrew_cask:
-    #     name: docker-desktop
-    #     state: present
-    #   ignore_errors: true
 
     - name: Check Install - Handbrake
       community.general.homebrew_cask:
         name: handbrake
-        state: latest
+        state: present
 
     - name: Check Install - Keymapp
-      community.general.homebrew:
+      community.general.homebrew_cask:
         name: keymapp
         state: present
-      ignore_errors: true
 
     - name: Check Install - Obsidian
-      community.general.homebrew:
+      community.general.homebrew_cask:
         name: obsidian
         state: present
-      ignore_errors: true
 
     - name: Check Install - Ghostty
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
       community.general.homebrew_cask:
-        name:
-          - ghostty
+        name: ghostty
         state: present
-      ignore_errors: true
 
     - name: Check Install - Plex
       community.general.homebrew_cask:
@@ -156,7 +131,7 @@
     - name: Check Install - Mouseless
       community.general.homebrew_cask:
         name: mouseless
-        state: latest
+        state: present
 
     - name: Check Install - Responsively
       community.general.homebrew_cask:
@@ -164,23 +139,19 @@
         state: present
 
     - name: Check Install - Syncthing
-      community.general.homebrew:
+      community.general.homebrew_cask:
         name: syncthing
         state: present
 
     - name: Check Install - Discord
-      community.general.homebrew:
+      community.general.homebrew_cask:
         name: discord
         state: present
 
     - name: Check Install - LMStudio
-      become: false
-      environment:
-        HOMEBREW_NO_ANALYTICS: "1"
       community.general.homebrew_cask:
-        name:
-          - lm-studio
-        state: latest
+        name: lm-studio
+        state: present
 
 - name: Brew Install (CLI)
   hosts: localhost
