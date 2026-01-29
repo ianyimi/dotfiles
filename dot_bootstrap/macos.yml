@@ -88,7 +88,7 @@
 
 - name: Brew Install (Apps)
   hosts: localhost
-  become: false
+  become: true
   gather_facts: false
   environment:
     HOMEBREW_NO_ANALYTICS: "1"
