@@ -214,12 +214,27 @@ echo ""
 if $RESET_APPS; then
     echo -e "${YELLOW}→${NC} Removing all brew-installed applications..."
 
+    # Apps controlled by other flags - skip unless those flags are also set
+    SKIP_CASKS=""
+    SKIP_FORMULAE=""
+    if ! $RESET_TAILSCALE; then
+        SKIP_CASKS="$SKIP_CASKS tailscale"
+    fi
+    if ! $RESET_BITWARDEN; then
+        SKIP_FORMULAE="$SKIP_FORMULAE bitwarden-cli"
+    fi
+
     if command -v brew &>/dev/null; then
         # Get all installed casks and uninstall them
         INSTALLED_CASKS=$(brew list --cask 2>/dev/null)
         if [ -n "$INSTALLED_CASKS" ]; then
             echo "  Removing cask apps..."
             for cask in $INSTALLED_CASKS; do
+                # Skip if in exclusion list
+                if echo "$SKIP_CASKS" | grep -qw "$cask"; then
+                    echo "    Skipping $cask (controlled by separate flag)"
+                    continue
+                fi
                 echo "    Removing $cask..."
                 # Use --force to handle running apps, --zap to remove all associated files, --ignore-dependencies to skip dependency checks
                 brew uninstall --cask --force --zap --ignore-dependencies "$cask" 2>&1 || echo "      Warning: failed to fully remove $cask"
@@ -231,6 +246,11 @@ if $RESET_APPS; then
         if [ -n "$INSTALLED_FORMULAE" ]; then
             echo "  Removing CLI tools..."
             for formula in $INSTALLED_FORMULAE; do
+                # Skip if in exclusion list
+                if echo "$SKIP_FORMULAE" | grep -qw "$formula"; then
+                    echo "    Skipping $formula (controlled by separate flag)"
+                    continue
+                fi
                 echo "    Removing $formula..."
                 brew uninstall --force --ignore-dependencies "$formula" 2>&1 || echo "      Warning: failed to remove $formula"
             done
@@ -243,6 +263,31 @@ if $RESET_APPS; then
     else
         echo "  Homebrew not found, skipping brew uninstalls"
     fi
+
+    # Remove known managed apps from /Applications that may not have been installed via brew
+    # This handles apps that were manually installed or came from elsewhere
+    echo "  Removing managed apps from /Applications..."
+    MANAGED_APPS=(
+        "Spotify.app"
+        "Arc.app"
+        "HandBrake.app"
+        "Keymapp.app"
+        "Obsidian.app"
+        "Ghostty.app"
+        "Plex.app"
+        "Mouseless.app"
+        "Responsively.app"
+        "Syncthing.app"
+        "Discord.app"
+        "LM Studio.app"
+        "Docker.app"
+    )
+    for app in "${MANAGED_APPS[@]}"; do
+        if [ -d "/Applications/$app" ]; then
+            echo "    Removing /Applications/$app..."
+            rm -rf "/Applications/$app" 2>/dev/null || sudo rm -rf "/Applications/$app" 2>/dev/null || echo "      Warning: failed to remove $app"
+        fi
+    done
 
     echo -e "${GREEN}✓${NC} Applications removed"
 fi
