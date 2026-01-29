@@ -413,6 +413,11 @@
       shell: "open -a Aerospace"
       when: aerospace_status.rc != 0
 
+    - name: Set Dock to auto-hide
+      become: false
+      shell: "defaults write com.apple.dock autohide -bool true && killall Dock"
+      changed_when: false
+
     - name: Tap FelixKratz formulae
       become: false
       community.general.homebrew_tap:
@@ -449,6 +454,11 @@
       become: false
       shell: "sketchybar --restart"
       when: sketchybar_status.rc != 0
+
+    - name: Set menu bar to auto-hide
+      become: false
+      shell: "defaults write NSGlobalDomain _HIHideMenuBar -bool true"
+      changed_when: false
 
 - name: Clone SketchyBar App Font Repository
   hosts: localhost
