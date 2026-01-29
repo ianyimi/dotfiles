@@ -376,7 +376,8 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 
 | Flag | Description |
 |------|-------------|
-| `--dotfiles` | Remove chezmoi source, config, and applied dotfiles |
+| `--dotfiles` | Remove chezmoi source, config, and applied dotfiles (resets shell to bash) |
+| `--wm` | Remove window manager (Aerospace, SketchyBar, JankyBorders) |
 | `--tailscale` | Remove Tailscale app and config |
 | `--bitwarden` | Remove Bitwarden CLI and session |
 | `--homebrew` | Remove Homebrew and all packages |
@@ -385,14 +386,14 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 
 **Examples with flags:**
 
-`--dotfiles` - Quick reset, removes only dotfiles and chezmoi config. Keeps all installed tools.
+`--dotfiles` - Quick reset, removes only dotfiles and chezmoi config. Resets shell to bash.
 ```bash
 curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles && rm /tmp/reset.sh
 ```
 
-`--tailscale` - Remove Tailscale app, config, and re-test Tailscale authentication flow.
+`--wm` - Remove window manager tools (Aerospace, SketchyBar, JankyBorders). Restores default macOS menu bar and dock.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --tailscale && rm /tmp/reset.sh
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --wm && rm /tmp/reset.sh
 ```
 
 `--tailscale --bitwarden` - Remove multiple components. Combine any flags.

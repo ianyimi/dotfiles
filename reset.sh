@@ -18,6 +18,7 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  --dotfiles      Remove chezmoi source, config, and applied dotfiles"
+    echo "  --wm            Remove window manager (Aerospace, SketchyBar, JankyBorders)"
     echo "  --tailscale     Remove Tailscale app and config"
     echo "  --bitwarden     Remove Bitwarden CLI and session"
     echo "  --homebrew      Remove Homebrew and all packages"
@@ -28,8 +29,8 @@ show_help() {
     echo "Examples:"
     echo "  reset.sh                          # Interactive menu"
     echo "  reset.sh --dotfiles               # Quick reset (dotfiles only)"
-    echo "  reset.sh --tailscale              # Reset dotfiles + Tailscale"
-    echo "  reset.sh --tailscale --bitwarden  # Reset dotfiles + Tailscale + Bitwarden"
+    echo "  reset.sh --wm                     # Remove window manager tools"
+    echo "  reset.sh --tailscale --bitwarden  # Reset Tailscale + Bitwarden"
     echo "  reset.sh --all                    # Full reset (everything)"
 }
 
@@ -63,6 +64,7 @@ show_interactive_menu() {
             ;;
         3)
             RESET_DOTFILES=true
+            RESET_WM=true
             RESET_TAILSCALE=true
             RESET_BITWARDEN=true
             RESET_HOMEBREW=true
@@ -85,6 +87,9 @@ select_components() {
     read -p "  Dotfiles & chezmoi config? [Y/n]: " ans
     [[ ! "$ans" =~ ^[Nn]$ ]] && RESET_DOTFILES=true
 
+    read -p "  Window Manager (Aerospace, SketchyBar, JankyBorders)? [y/N]: " ans
+    [[ "$ans" =~ ^[Yy]$ ]] && RESET_WM=true
+
     read -p "  Tailscale? [y/N]: " ans
     [[ "$ans" =~ ^[Yy]$ ]] && RESET_TAILSCALE=true
 
@@ -100,6 +105,7 @@ select_components() {
 
 # Default flags
 RESET_DOTFILES=false
+RESET_WM=false
 RESET_TAILSCALE=false
 RESET_BITWARDEN=false
 RESET_HOMEBREW=false
@@ -112,6 +118,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --dotfiles)
             RESET_DOTFILES=true
+            shift
+            ;;
+        --wm)
+            RESET_WM=true
             shift
             ;;
         --tailscale)
@@ -132,6 +142,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --all)
             RESET_DOTFILES=true
+            RESET_WM=true
             RESET_TAILSCALE=true
             RESET_BITWARDEN=true
             RESET_HOMEBREW=true
@@ -164,7 +175,7 @@ if [ "$USE_FLAGS" = true ]; then
 fi
 
 # Check if anything selected
-if ! $RESET_DOTFILES && ! $RESET_TAILSCALE && ! $RESET_BITWARDEN && ! $RESET_HOMEBREW && ! $RESET_XCODE; then
+if ! $RESET_DOTFILES && ! $RESET_WM && ! $RESET_TAILSCALE && ! $RESET_BITWARDEN && ! $RESET_HOMEBREW && ! $RESET_XCODE; then
     echo -e "${YELLOW}Nothing selected to remove.${NC}"
     exit 0
 fi
@@ -173,6 +184,7 @@ fi
 echo ""
 echo -e "${YELLOW}This will remove:${NC}"
 $RESET_DOTFILES && echo "  - Chezmoi source, config, and applied dotfiles"
+$RESET_WM && echo "  - Window Manager (Aerospace, SketchyBar, JankyBorders)"
 $RESET_TAILSCALE && echo "  - Tailscale app and config"
 $RESET_BITWARDEN && echo "  - Bitwarden CLI and session"
 $RESET_HOMEBREW && echo "  - Homebrew and all packages"
@@ -186,16 +198,66 @@ fi
 
 echo ""
 
+# Reset Window Manager (before dotfiles so configs are still accessible)
+if $RESET_WM; then
+    echo -e "${YELLOW}→${NC} Removing Window Manager tools..."
+
+    # Stop and remove Aerospace
+    if pgrep -x "AeroSpace" &>/dev/null; then
+        killall AeroSpace 2>/dev/null || true
+    fi
+    if command -v brew &>/dev/null; then
+        brew uninstall --cask aerospace 2>/dev/null || true
+    fi
+    rm -rf ~/.aerospace.toml
+    rm -rf ~/.config/aerospace-monitor
+
+    # Stop and remove SketchyBar
+    if pgrep -x "sketchybar" &>/dev/null; then
+        brew services stop sketchybar 2>/dev/null || true
+        killall sketchybar 2>/dev/null || true
+    fi
+    if command -v brew &>/dev/null; then
+        brew uninstall sketchybar 2>/dev/null || true
+    fi
+    rm -rf ~/.config/sketchybar
+    rm -rf ~/.local/share/sketchybar_lua
+
+    # Remove JankyBorders
+    if pgrep -x "borders" &>/dev/null; then
+        killall borders 2>/dev/null || true
+    fi
+    if command -v brew &>/dev/null; then
+        brew uninstall borders 2>/dev/null || true
+    fi
+
+    # Unhide the macOS menu bar
+    osascript -e 'tell application "System Events" to tell dock preferences to set autohide menu bar to false' 2>/dev/null || true
+
+    # Show the Dock again
+    defaults write com.apple.dock autohide -bool false
+    killall Dock 2>/dev/null || true
+
+    echo -e "${GREEN}✓${NC} Window Manager tools removed"
+fi
+
 # Reset dotfiles
 if $RESET_DOTFILES; then
     echo -e "${YELLOW}→${NC} Removing dotfiles and chezmoi config..."
     rm -rf ~/.local/share/chezmoi
     rm -rf ~/.config
     rm -rf ~/.local/bin
-    rm -rf ~/.zshrc ~/.bashrc ~/.gitconfig ~/.zprofile
+    rm -rf ~/.zshrc ~/.bashrc ~/.gitconfig ~/.zprofile ~/.zshenv
     rm -rf ~/.bootstrap
     rm -rf ~/bin/chezmoi
     rm -rf ~/.chezmoi.toml
+
+    # Reset shell back to bash
+    if [ "$SHELL" != "/bin/bash" ]; then
+        echo -e "${YELLOW}→${NC} Resetting shell to bash..."
+        chsh -s /bin/bash 2>/dev/null || true
+    fi
+
     echo -e "${GREEN}✓${NC} Dotfiles removed"
 fi
 
@@ -262,5 +324,5 @@ echo -e "${GREEN}   ✓ Reset Complete${NC}"
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
 echo ""
 echo "You can now re-run the bootstrap:"
-echo "  curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh | bash"
+echo "  curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh"
 echo ""
