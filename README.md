@@ -407,6 +407,11 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --all && rm /tmp/reset.sh
 ```
 
+Multiple flags - Reset everything except Tailscale and Bitwarden (useful for re-testing bootstrap).
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles --apps --wm --homebrew --xcode && rm /tmp/reset.sh
+```
+
 ---
 
 **Happy Configuring! 🎉**
