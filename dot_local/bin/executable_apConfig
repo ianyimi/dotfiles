@@ -101,8 +101,8 @@ if [ -z "$BW_SESSION" ]; then
     echo "  Run 'bw-session-check && source ~/.bw-session' to fix."
 fi
 
-# Run ansible (sudo is cached from step 1 with keepalive running)
-ansible-playbook ~/.bootstrap/macos.yml </dev/tty
+# Run ansible with --ask-become-pass for plays that need sudo
+ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass </dev/tty
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
