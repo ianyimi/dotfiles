@@ -145,21 +145,22 @@ setup_tailscale() {
         echo -e "${GREEN}✓${NC} Tailscale already installed"
     fi
 
-    # Check if already connected first - if so, skip everything else
-    # tailscale status exits 0 and shows IPs when connected
-    if tailscale status &>/dev/null; then
-        TAILSCALE_STATUS=$(tailscale status 2>&1)
-        if echo "$TAILSCALE_STATUS" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"; then
-            echo -e "${GREEN}✓${NC} Tailscale already connected"
-            return 0
-        fi
+    # Check if already connected - tailscale status shows IPs when connected
+    TAILSCALE_STATUS=$(tailscale status 2>&1 || true)
+    if echo "$TAILSCALE_STATUS" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"; then
+        echo -e "${GREEN}✓${NC} Tailscale already connected"
+        return 0
     fi
 
-    # Not connected - start the service if not already running
-    if ! brew services list | grep -E "tailscale\s+started" &>/dev/null; then
-        echo -e "${YELLOW}→${NC} Starting Tailscale service..."
-        sudo brew services start tailscale
-        sleep 2
+    # Not connected - check if service needs to be started
+    if echo "$TAILSCALE_STATUS" | grep -qi "stopped\|not running\|failed to connect"; then
+        if ! brew services list | grep -E "tailscale\s+started" &>/dev/null; then
+            echo -e "${YELLOW}→${NC} Starting Tailscale service..."
+            sudo brew services start tailscale
+            sleep 2
+        else
+            echo -e "${GREEN}✓${NC} Tailscale service already running"
+        fi
     fi
 
     # Authenticate with Tailscale
@@ -249,10 +250,12 @@ init_chezmoi() {
     DEFAULT_BW_EMAIL=""
     DEFAULT_BW_SERVER=""
     DEFAULT_GITHUB_USER=""
-    if command -v chezmoi &>/dev/null && [ -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
-        DEFAULT_BW_EMAIL=$(chezmoi data --format json 2>/dev/null | grep -o '"bwEmail":"[^"]*"' | cut -d'"' -f4 || echo "")
-        DEFAULT_BW_SERVER=$(chezmoi data --format json 2>/dev/null | grep -o '"bwServer":"[^"]*"' | cut -d'"' -f4 || echo "")
-        DEFAULT_GITHUB_USER=$(chezmoi data --format json 2>/dev/null | grep -o '"githubUsername":"[^"]*"' | cut -d'"' -f4 || echo "")
+    CHEZMOI_CONFIG="$HOME/.config/chezmoi/chezmoi.toml"
+    if [ -f "$CHEZMOI_CONFIG" ]; then
+        # Read directly from TOML file
+        DEFAULT_BW_EMAIL=$(grep 'bwEmail' "$CHEZMOI_CONFIG" 2>/dev/null | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
+        DEFAULT_BW_SERVER=$(grep 'bwServer' "$CHEZMOI_CONFIG" 2>/dev/null | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
+        DEFAULT_GITHUB_USER=$(grep 'githubUsername' "$CHEZMOI_CONFIG" 2>/dev/null | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
     fi
     # Also try to get server from bw config if not found
     if [ -z "$DEFAULT_BW_SERVER" ] && command -v bw &>/dev/null; then
