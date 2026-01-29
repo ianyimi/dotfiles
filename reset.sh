@@ -221,7 +221,8 @@ if $RESET_APPS; then
             echo "  Removing cask apps..."
             for cask in $INSTALLED_CASKS; do
                 echo "    Removing $cask..."
-                brew uninstall --cask "$cask" 2>/dev/null || true
+                # Use --force to handle running apps and --zap to remove all associated files
+                brew uninstall --cask --force --zap "$cask" 2>&1 || echo "      Warning: failed to fully remove $cask"
             done
         fi
 
@@ -231,12 +232,14 @@ if $RESET_APPS; then
             echo "  Removing CLI tools..."
             for formula in $INSTALLED_FORMULAE; do
                 echo "    Removing $formula..."
-                brew uninstall "$formula" 2>/dev/null || true
+                brew uninstall --force "$formula" 2>&1 || echo "      Warning: failed to remove $formula"
             done
         fi
 
-        # Clean up
-        brew cleanup 2>/dev/null || true
+        # Clean up orphaned dependencies and cache
+        echo "  Cleaning up..."
+        brew autoremove 2>/dev/null || true
+        brew cleanup --prune=all 2>/dev/null || true
     else
         echo "  Homebrew not found, skipping brew uninstalls"
     fi
