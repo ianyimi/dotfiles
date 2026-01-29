@@ -92,7 +92,6 @@
   gather_facts: false
   environment:
     HOMEBREW_NO_ANALYTICS: "1"
-    HOMEBREW_CASK_OPTS: "--no-quarantine"
   tasks:
     - name: Check Install - Spotify
       community.general.homebrew:
@@ -119,11 +118,13 @@
       community.general.homebrew_cask:
         name: docker-desktop
         state: present
+      ignore_errors: true
 
     - name: Check Install - Handbrake
       community.general.homebrew_cask:
         name: handbrake
         state: latest
+      ignore_errors: true
 
     - name: Check Install - Keymapp
       community.general.homebrew:
@@ -151,16 +152,19 @@
       community.general.homebrew_cask:
         name: plex
         state: present
+      ignore_errors: true
 
     - name: Check Install - Mouseless
       community.general.homebrew_cask:
         name: mouseless
         state: latest
+      ignore_errors: true
 
     - name: Check Install - Responsively
       community.general.homebrew_cask:
         name: responsively
         state: present
+      ignore_errors: true
 
     - name: Check Install - Syncthing
       community.general.homebrew:
@@ -180,6 +184,7 @@
         name:
           - lm-studio
         state: latest
+      ignore_errors: true
 
 - name: Brew Install (CLI)
   hosts: localhost
