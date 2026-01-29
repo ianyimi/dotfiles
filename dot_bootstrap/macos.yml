@@ -430,6 +430,18 @@
         name: borders
         state: present
 
+    - name: Check Install - Hack Nerd Font
+      become: false
+      community.general.homebrew_cask:
+        name: font-hack-nerd-font
+        state: present
+
+    - name: Check Install - JetBrains Mono Nerd Font
+      become: false
+      community.general.homebrew_cask:
+        name: font-jetbrains-mono-nerd-font
+        state: present
+
     - name: Check Install - SketchyBar
       become: false
       ignore_errors: true
@@ -599,31 +611,19 @@
   gather_facts: false
   environment:
     HOMEBREW_NO_ANALYTICS: "1"
-    tasks:
-      - name: Check Install - Cascadia Code Font
-        become: false
-        environment:
-          HOMEBREW_NO_ANALYTICS: "1"
-        community.general.homebrew_cask:
-          name:
-            - font-cascadia-code
-          state: present
+  tasks:
+    - name: Check Install - Cascadia Code Font
+      community.general.homebrew_cask:
+        name: font-cascadia-code
+        state: present
 
-      - name: Check Install - Hack Nerd Font (SketchyBar)
-        become: false
-        environment:
-          HOMEBREW_NO_ANALYTICS: "1"
-        community.general.homebrew_cask:
-          name:
-            - font-hack-nerd-font
-          state: present
+    - name: Check Install - Hack Nerd Font (SketchyBar)
+      community.general.homebrew_cask:
+        name: font-hack-nerd-font
+        state: present
 
-      - name: Check Install - JetBrains Mono Nerd Font (SketchyBar)
-        become: false
-        environment:
-          HOMEBREW_NO_ANALYTICS: "1"
-        community.general.homebrew_cask:
-          name:
-            - font-jetbrains-mono-nerd-font
-          state: present
+    - name: Check Install - JetBrains Mono Nerd Font (SketchyBar)
+      community.general.homebrew_cask:
+        name: font-jetbrains-mono-nerd-font
+        state: present
 
