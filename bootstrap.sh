@@ -270,10 +270,10 @@ init_chezmoi() {
     CHEZMOI_CONFIG="$HOME/.config/chezmoi/chezmoi.toml"
 
     if [ -f "$CHEZMOI_CONFIG" ]; then
-        # Read from config file - handles indented TOML under [data]
-        DEFAULT_BW_EMAIL=$(grep 'bwEmail' "$CHEZMOI_CONFIG" | head -1 | sed 's/.*= *"//' | sed 's/".*//')
-        DEFAULT_BW_SERVER=$(grep 'bwServer' "$CHEZMOI_CONFIG" | head -1 | sed 's/.*= *"//' | sed 's/".*//')
-        DEFAULT_GITHUB_USER=$(grep 'githubUsername' "$CHEZMOI_CONFIG" | head -1 | sed 's/.*= *"//' | sed 's/".*//')
+        # Read from config file - extract value between quotes
+        DEFAULT_BW_EMAIL=$(sed -n 's/.*bwEmail *= *"\([^"]*\)".*/\1/p' "$CHEZMOI_CONFIG" | head -1)
+        DEFAULT_BW_SERVER=$(sed -n 's/.*bwServer *= *"\([^"]*\)".*/\1/p' "$CHEZMOI_CONFIG" | head -1)
+        DEFAULT_GITHUB_USER=$(sed -n 's/.*githubUsername *= *"\([^"]*\)".*/\1/p' "$CHEZMOI_CONFIG" | head -1)
     fi
 
     # Fallback to bw config for server if not found

@@ -1,15 +1,17 @@
-{{- $bwEmail := "" -}}
-{{- $bwServer := "" -}}
-{{- $githubUsername := "" -}}
+{{- /* Use env vars if set, otherwise prompt or use existing */ -}}
+{{- $bwEmail := env "BITWARDEN_EMAIL" -}}
+{{- $bwServer := env "BITWARDEN_SERVER" -}}
+{{- $githubUsername := env "GITHUB_USERNAME" -}}
 
-{{- if stdinIsATTY -}}
+{{- /* Only prompt if env vars are empty AND stdin is a TTY */ -}}
+{{- if and (eq $bwEmail "") (stdinIsATTY) -}}
 {{- $bwEmail = promptString "Bitwarden email" (dig "bwEmail" "" .) -}}
-{{- $bwServer = promptString "Bitwarden server URL (e.g., https://vault.example.com)" (dig "bwServer" "" .) -}}
+{{- end -}}
+{{- if and (eq $bwServer "") (stdinIsATTY) -}}
+{{- $bwServer = promptString "Bitwarden server URL" (dig "bwServer" "" .) -}}
+{{- end -}}
+{{- if and (eq $githubUsername "") (stdinIsATTY) -}}
 {{- $githubUsername = promptString "GitHub username" (dig "githubUsername" "" .) -}}
-{{- else -}}
-{{- $bwEmail = env "BITWARDEN_EMAIL" -}}
-{{- $bwServer = env "BITWARDEN_SERVER" -}}
-{{- $githubUsername = env "GITHUB_USERNAME" -}}
 {{- end -}}
 
 [data]
