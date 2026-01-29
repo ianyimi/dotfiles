@@ -327,9 +327,7 @@ chezmoi apply -v
 
 ## 📚 Additional Documentation
 
-- `BITWARDEN_SETUP.md` - Detailed Bitwarden integration guide
-- `INSTALLATION_REVIEW.md` - Fresh installation notes and known issues
-- `dot_bootstrap/macos.yml` - Ansible playbook for macOS setup
+- `INSTALLATION_REVIEW.md` - Bootstrap sequence, script naming conventions, manual installation steps
 
 ---
 

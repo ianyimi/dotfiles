@@ -26,4 +26,27 @@ Establish an agent-based workflow for managing this dotfiles project:
 
 ## Phase 2: Future Enhancements
 
-Features will be added as needs arise. No specific plans at this time.
+### Terminal Survey on First Install
+
+Interactive survey during bootstrap that runs after GitHub credentials are obtained:
+
+- Present list of available repos from your GitHub account
+- Multi-select interface (fzf or similar) to choose which repos to clone
+- Option to skip entirely by pressing Enter
+- Remembers selections for future reinstalls
+- Integrates with `apCloneProjects` workflow
+
+### Vaultwarden Session Timeout
+
+Increase Bitwarden session timeout on Vaultwarden server to reduce re-authentication friction:
+
+- Set `SESSION_TIMEOUT=43200` (12 hours) or `1440` (24 hours) in Vaultwarden container config
+- Document in README for self-hosted users
+
+### Background Session Refresh
+
+Optional daemon to keep Bitwarden session alive:
+
+- Refresh session before expiry
+- Runs in background via launchd
+- Fallback if server-side timeout cannot be increased
