@@ -92,15 +92,16 @@ fi
 # Ensure BW_SESSION is exported for ansible tasks
 if [ -f ~/.bw-session ]; then
     source ~/.bw-session
+    export BW_SESSION
 fi
 
 if [ -z "$BW_SESSION" ]; then
-    echo -e "${RED}✗${NC} BW_SESSION not set. Some tasks may fail."
-    echo "  Run 'bw-session-check' to refresh your session."
+    echo -e "${YELLOW}⚠${NC}  BW_SESSION not set. gh auth will be skipped."
+    echo "  Run 'bw-session-check && source ~/.bw-session' to fix."
 fi
 
 # Use sudo's cached credentials (already authenticated in step 1)
-BW_SESSION="$BW_SESSION" ansible-playbook ~/.bootstrap/macos.yml </dev/tty
+ansible-playbook ~/.bootstrap/macos.yml </dev/tty
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════${NC}"

@@ -44,9 +44,18 @@
           environment:
             BW_SESSION: "{{ lookup('env', 'BW_SESSION') }}"
             NODE_OPTIONS: "--no-deprecation"
-          when: gh_auth_status.rc != 0
+          when:
+            - gh_auth_status.rc != 0
+            - lookup('env', 'BW_SESSION') | length > 0
           timeout: 30
           no_log: true
+
+        - name: Warn if gh not authenticated and no BW_SESSION
+          ansible.builtin.debug:
+            msg: "Skipping gh auth - BW_SESSION not set. Run 'bw-session-check && source ~/.bw-session' then re-run."
+          when:
+            - gh_auth_status.rc != 0
+            - lookup('env', 'BW_SESSION') | length == 0
 
 - name: Machine setup (MacOS)
   hosts: localhost

@@ -254,9 +254,9 @@ init_chezmoi() {
     # Try chezmoi data first (works if chezmoi is configured)
     if command -v chezmoi &>/dev/null; then
         CHEZMOI_DATA=$(chezmoi data --format json 2>/dev/null || echo "{}")
-        DEFAULT_BW_EMAIL=$(echo "$CHEZMOI_DATA" | grep -o '"bwEmail":"[^"]*"' | cut -d'"' -f4)
-        DEFAULT_BW_SERVER=$(echo "$CHEZMOI_DATA" | grep -o '"bwServer":"[^"]*"' | cut -d'"' -f4)
-        DEFAULT_GITHUB_USER=$(echo "$CHEZMOI_DATA" | grep -o '"githubUsername":"[^"]*"' | cut -d'"' -f4)
+        DEFAULT_BW_EMAIL=$(echo "$CHEZMOI_DATA" | grep -o '"bwEmail": *"[^"]*"' | cut -d'"' -f4)
+        DEFAULT_BW_SERVER=$(echo "$CHEZMOI_DATA" | grep -o '"bwServer": *"[^"]*"' | cut -d'"' -f4)
+        DEFAULT_GITHUB_USER=$(echo "$CHEZMOI_DATA" | grep -o '"githubUsername": *"[^"]*"' | cut -d'"' -f4)
     fi
 
     # Fallback to bw config for server if not found
