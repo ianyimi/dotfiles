@@ -382,6 +382,10 @@ curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | 
 #   --all           Remove everything (full reset)
 
 # Examples with flags:
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --dotfiles              # Quick reset
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale             # Tailscale only
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale --bitwarden # Multiple components
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --all                   # Full reset
 ```
 
 ```bash
