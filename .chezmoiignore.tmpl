@@ -27,3 +27,20 @@ BITWARDEN_AUTH_EXPLAINED.md
 CLAWDBOT_FILES_EXPLAINED.md
 INSTALLATION_REVIEW.md
 SETUP_COMPLETE.md
+
+# OS-specific ignores
+{{ if eq .chezmoi.os "darwin" }}
+# Ignore Linux-only configs on macOS
+dot_config/hypr
+dot_config/waybar
+dot_config/rofi
+dot_config/dunst
+{{ end }}
+
+{{ if eq .chezmoi.os "linux" }}
+# Ignore macOS-only configs on Linux
+dot_aerospace.toml
+dot_config/aerospace
+dot_config/aerospace-monitor
+dot_config/sketchybar
+{{ end }}

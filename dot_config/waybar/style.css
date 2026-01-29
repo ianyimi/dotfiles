@@ -1,0 +1,217 @@
+/* Waybar Styles */
+/* Color scheme ported from SketchyBar (colors.lua) */
+
+/* Color Variables */
+@define-color bg #2c2e34;
+@define-color bg1 #363944;
+@define-color bg2 #414550;
+@define-color fg #e2e2e3;
+@define-color grey #7f8490;
+@define-color red #fc5d7c;
+@define-color green #9ed072;
+@define-color yellow #e7c664;
+@define-color orange #f39660;
+@define-color blue #76cce0;
+@define-color magenta #b39df3;
+@define-color black #181819;
+
+/* Base styling */
+* {
+    font-family: "JetBrainsMono Nerd Font", "Hack Nerd Font", monospace;
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: rgba(44, 46, 52, 0.96);
+    border-radius: 0;
+    color: @fg;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+/* Module containers */
+#workspaces,
+#submap,
+#window,
+#mpris,
+#pulseaudio,
+#cpu,
+#memory,
+#network,
+#battery,
+#clock,
+#tray {
+    padding: 0 10px;
+    margin: 3px 2px;
+    border-radius: 4px;
+}
+
+/* Workspaces */
+#workspaces {
+    background: @bg1;
+    padding: 0 4px;
+}
+
+#workspaces button {
+    padding: 0 6px;
+    color: @grey;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    margin: 3px 2px;
+}
+
+#workspaces button:hover {
+    background: @bg2;
+    color: @fg;
+}
+
+#workspaces button.active {
+    background: @magenta;
+    color: @black;
+    font-weight: bold;
+}
+
+#workspaces button.urgent {
+    background: @red;
+    color: @black;
+}
+
+/* Submap indicator (service mode) */
+#submap {
+    background: @red;
+    color: @black;
+    font-weight: bold;
+}
+
+/* Window title */
+#window {
+    color: @fg;
+    font-weight: normal;
+}
+
+/* Media player */
+#mpris {
+    background: @bg1;
+    color: @green;
+}
+
+#mpris.paused {
+    color: @grey;
+}
+
+/* Volume */
+#pulseaudio {
+    background: @bg1;
+    color: @blue;
+}
+
+#pulseaudio.muted {
+    background: @bg2;
+    color: @grey;
+}
+
+/* CPU */
+#cpu {
+    background: @bg1;
+    color: @green;
+}
+
+#cpu.warning {
+    color: @yellow;
+}
+
+#cpu.critical {
+    background: @red;
+    color: @black;
+}
+
+/* Memory */
+#memory {
+    background: @bg1;
+    color: @yellow;
+}
+
+#memory.warning {
+    color: @orange;
+}
+
+#memory.critical {
+    background: @red;
+    color: @black;
+}
+
+/* Network */
+#network {
+    background: @bg1;
+    color: @blue;
+}
+
+#network.disconnected {
+    background: @bg2;
+    color: @grey;
+}
+
+/* Battery */
+#battery {
+    background: @bg1;
+    color: @green;
+}
+
+#battery.charging {
+    color: @green;
+}
+
+#battery.warning:not(.charging) {
+    background: @orange;
+    color: @black;
+}
+
+#battery.critical:not(.charging) {
+    background: @red;
+    color: @black;
+    animation: blink 0.5s linear infinite alternate;
+}
+
+@keyframes blink {
+    to {
+        background: @black;
+        color: @red;
+    }
+}
+
+/* Clock */
+#clock {
+    background: @bg1;
+    color: @magenta;
+    font-weight: bold;
+}
+
+/* System tray */
+#tray {
+    background: @bg1;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background: @red;
+}
+
+/* Tooltip styling */
+tooltip {
+    background: @bg;
+    border: 1px solid @grey;
+    border-radius: 4px;
+}
+
+tooltip label {
+    color: @fg;
+    padding: 4px;
+}

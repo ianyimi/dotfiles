@@ -1,0 +1,512 @@
+---
+- name: Prerequisites (Git, GitHub Auth)
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Ensure git is installed
+      become: true
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Configure git with GitHub token from Bitwarden
+      block:
+        - name: Check if gh CLI is installed
+          ansible.builtin.command: which gh
+          register: gh_check
+          failed_when: false
+          changed_when: false
+
+        - name: Add GitHub CLI repository key
+          become: true
+          ansible.builtin.shell: |
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          args:
+            creates: /usr/share/keyrings/githubcli-archive-keyring.gpg
+          when: gh_check.rc != 0
+
+        - name: Add GitHub CLI repository
+          become: true
+          ansible.builtin.apt_repository:
+            repo: "deb [arch=amd64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+            filename: github-cli
+            state: present
+          when: gh_check.rc != 0
+
+        - name: Install gh CLI
+          become: true
+          ansible.builtin.apt:
+            name: gh
+            state: present
+            update_cache: true
+          when: gh_check.rc != 0
+
+        - name: Check if gh is authenticated
+          ansible.builtin.command: gh auth status
+          register: gh_auth_status
+          failed_when: false
+          changed_when: false
+
+        - name: Authenticate gh with Bitwarden token
+          ansible.builtin.shell: |
+            bw get password "GitHub Personal Access Token" | gh auth login --with-token
+          environment:
+            BW_SESSION: "{{ lookup('env', 'BW_SESSION') }}"
+            NODE_OPTIONS: "--no-deprecation"
+          when:
+            - gh_auth_status.rc != 0
+            - lookup('env', 'BW_SESSION') | length > 0
+          timeout: 30
+          no_log: true
+
+        - name: Warn if gh not authenticated and no BW_SESSION
+          ansible.builtin.debug:
+            msg: "Skipping gh auth - BW_SESSION not set. Run 'bw-session-check && source ~/.bw-session' then re-run."
+          when:
+            - gh_auth_status.rc != 0
+            - lookup('env', 'BW_SESSION') | length == 0
+
+- name: Machine setup (Linux)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Get my user
+      ansible.builtin.set_fact:
+        remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
+
+    - name: Ensure zsh is installed
+      ansible.builtin.apt:
+        name: zsh
+        state: present
+
+    - name: Determine the path to zsh
+      ansible.builtin.shell: "command -v zsh"
+      register: zsh_path
+      changed_when: false
+
+    - name: Change shell to zsh
+      ansible.builtin.user:
+        name: "{{ remote_regular_user }}"
+        shell: "{{ zsh_path.stdout }}"
+      when: zsh_path.stdout != ""
+
+- name: APT Install (CLI Tools)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install core CLI tools from apt
+      ansible.builtin.apt:
+        name:
+          - git
+          - curl
+          - wget
+          - build-essential
+          - tmux
+          - neovim
+          - fzf
+          - ripgrep
+          - bat
+          - zsh-autosuggestions
+          - zsh-syntax-highlighting
+          - neofetch
+          - lua5.4
+          - luarocks
+          - golang
+          - syncthing
+          - argon2
+          - jq
+        state: present
+
+    - name: Install lunajson via luarocks
+      become: false
+      ansible.builtin.command: luarocks install --local lunajson
+      changed_when: false
+
+- name: Install Node.js via NodeSource
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check if Node.js is installed
+      ansible.builtin.command: which node
+      register: node_check
+      failed_when: false
+      changed_when: false
+
+    - name: Download NodeSource setup script
+      ansible.builtin.get_url:
+        url: https://deb.nodesource.com/setup_lts.x
+        dest: /tmp/nodesource_setup.sh
+        mode: '0755'
+      when: node_check.rc != 0
+
+    - name: Run NodeSource setup script
+      ansible.builtin.shell: /tmp/nodesource_setup.sh
+      when: node_check.rc != 0
+
+    - name: Install Node.js
+      ansible.builtin.apt:
+        name: nodejs
+        state: present
+        update_cache: true
+      when: node_check.rc != 0
+
+- name: Install pnpm
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if pnpm is installed
+      ansible.builtin.command: pnpm --version
+      register: pnpm_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install pnpm
+      ansible.builtin.shell: "curl -fsSL https://get.pnpm.io/install.sh | sh -"
+      args:
+        creates: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
+      environment:
+        PNPM_HOME: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
+      when: pnpm_check.rc != 0
+
+    - name: Ensure pnpm is in PATH
+      ansible.builtin.lineinfile:
+        path: ~/.zshrc
+        line: 'export PATH="$HOME/.local/share/pnpm:$PATH"'
+        insertafter: EOF
+        state: present
+      when: pnpm_check.rc != 0
+
+- name: Install Starship prompt
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if starship is installed
+      ansible.builtin.command: which starship
+      register: starship_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install starship
+      ansible.builtin.shell: curl -sS https://starship.rs/install.sh | sh -s -- -y
+      when: starship_check.rc != 0
+
+- name: Install lazygit
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check if lazygit is installed
+      ansible.builtin.command: which lazygit
+      register: lazygit_check
+      failed_when: false
+      changed_when: false
+
+    - name: Get latest lazygit release info
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/jesseduffield/lazygit/releases/latest
+        return_content: true
+      register: lazygit_release
+      when: lazygit_check.rc != 0
+
+    - name: Download lazygit
+      ansible.builtin.unarchive:
+        src: "https://github.com/jesseduffield/lazygit/releases/download/{{ (lazygit_release.json.tag_name) }}/lazygit_{{ (lazygit_release.json.tag_name | replace('v', '')) }}_Linux_x86_64.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts: [--wildcards, lazygit]
+      when: lazygit_check.rc != 0
+
+- name: Install lazydocker
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check if lazydocker is installed
+      ansible.builtin.command: which lazydocker
+      register: lazydocker_check
+      failed_when: false
+      changed_when: false
+
+    - name: Get latest lazydocker release info
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/jesseduffield/lazydocker/releases/latest
+        return_content: true
+      register: lazydocker_release
+      when: lazydocker_check.rc != 0
+
+    - name: Download lazydocker
+      ansible.builtin.unarchive:
+        src: "https://github.com/jesseduffield/lazydocker/releases/download/{{ (lazydocker_release.json.tag_name) }}/lazydocker_{{ (lazydocker_release.json.tag_name | replace('v', '')) }}_Linux_x86_64.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts: [--wildcards, lazydocker]
+      when: lazydocker_check.rc != 0
+
+- name: Install kubectl
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check if kubectl is installed
+      ansible.builtin.command: which kubectl
+      register: kubectl_check
+      failed_when: false
+      changed_when: false
+
+    - name: Add Kubernetes apt key
+      ansible.builtin.shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      args:
+        creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      when: kubectl_check.rc != 0
+
+    - name: Add Kubernetes apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /"
+        filename: kubernetes
+        state: present
+      when: kubectl_check.rc != 0
+
+    - name: Install kubectl
+      ansible.builtin.apt:
+        name: kubectl
+        state: present
+        update_cache: true
+      when: kubectl_check.rc != 0
+
+- name: Install k9s
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check if k9s is installed
+      ansible.builtin.command: which k9s
+      register: k9s_check
+      failed_when: false
+      changed_when: false
+
+    - name: Get latest k9s release info
+      ansible.builtin.uri:
+        url: https://api.github.com/repos/derailed/k9s/releases/latest
+        return_content: true
+      register: k9s_release
+      when: k9s_check.rc != 0
+
+    - name: Download k9s
+      ansible.builtin.unarchive:
+        src: "https://github.com/derailed/k9s/releases/download/{{ k9s_release.json.tag_name }}/k9s_Linux_amd64.tar.gz"
+        dest: /usr/local/bin
+        remote_src: true
+        extra_opts: [--wildcards, k9s]
+      when: k9s_check.rc != 0
+
+- name: Install Claude Code
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if Claude Code is installed
+      ansible.builtin.command: which claude
+      register: claude_code_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Claude Code (native install with auto-updates)
+      ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
+      when: claude_code_check.rc != 0
+
+- name: Install tmuxinator
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if tmuxinator is installed
+      ansible.builtin.command: which tmuxinator
+      register: tmuxinator_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install tmuxinator via gem
+      become: true
+      ansible.builtin.gem:
+        name: tmuxinator
+        state: present
+      when: tmuxinator_check.rc != 0
+
+- name: GitHub Dash extension
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if GitHub Dash extension is installed
+      ansible.builtin.command: gh extension list
+      register: gh_dash_list
+      changed_when: false
+      ignore_errors: true
+
+    - name: Install GitHub Dash extension if not present
+      ansible.builtin.command: gh extension install dlvhdr/gh-dash
+      when: "'gh-dash' not in gh_dash_list.stdout"
+
+- name: Install Hyprland and Wayland tools
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Add Hyprland PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:hyprwm/hyprland
+        state: present
+
+    - name: Install Hyprland and related packages
+      ansible.builtin.apt:
+        name:
+          - hyprland
+          - waybar
+          - rofi-wayland
+          - dunst
+          - wl-clipboard
+          - grim
+          - slurp
+          - swaylock
+          - swayidle
+          - brightnessctl
+          - pavucontrol
+          - libnotify-bin
+        state: present
+        update_cache: true
+
+- name: Snap Install (GUI Apps)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Ensure snapd is installed
+      ansible.builtin.apt:
+        name: snapd
+        state: present
+
+    - name: Install Spotify via snap
+      community.general.snap:
+        name: spotify
+        state: present
+      ignore_errors: true
+
+    - name: Install Discord via snap
+      community.general.snap:
+        name: discord
+        state: present
+      ignore_errors: true
+
+    - name: Install Slack via snap
+      community.general.snap:
+        name: slack
+        classic: true
+        state: present
+      ignore_errors: true
+
+    - name: Install Obsidian via snap
+      community.general.snap:
+        name: obsidian
+        classic: true
+        state: present
+      ignore_errors: true
+
+    - name: Install Bitwarden via snap
+      community.general.snap:
+        name: bw
+        state: present
+      ignore_errors: true
+
+- name: Flatpak Install (Zen Browser)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Ensure flatpak is installed
+      ansible.builtin.apt:
+        name: flatpak
+        state: present
+
+    - name: Add Flathub repository
+      community.general.flatpak_remote:
+        name: flathub
+        flatpakrepo_url: https://dl.flathub.org/repo/flathub.flatpakrepo
+        state: present
+
+    - name: Install Zen Browser via flatpak
+      community.general.flatpak:
+        name: io.github.nickvision.money
+        state: present
+      ignore_errors: true
+      # Note: Update with correct Zen Browser flatpak ID when available
+
+# macOS-only: No Linux equivalent
+# - responsively
+# - lm-studio
+# - plex (use web version)
+# - handbrake (available but often outdated in repos)
+# - mouseless (check availability)
+
+- name: Install Nerd Fonts
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Ensure user fonts directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts"
+        state: directory
+        mode: "0755"
+
+    - name: Check if Hack Nerd Font is installed
+      ansible.builtin.stat:
+        path: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts/HackNerdFont-Regular.ttf"
+      register: hack_font_stat
+
+    - name: Download Hack Nerd Font
+      ansible.builtin.unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip
+        dest: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts/"
+        remote_src: true
+      when: not hack_font_stat.stat.exists
+
+    - name: Check if JetBrains Mono Nerd Font is installed
+      ansible.builtin.stat:
+        path: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts/JetBrainsMonoNerdFont-Regular.ttf"
+      register: jetbrains_font_stat
+
+    - name: Download JetBrains Mono Nerd Font
+      ansible.builtin.unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip
+        dest: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts/"
+        remote_src: true
+      when: not jetbrains_font_stat.stat.exists
+
+    - name: Refresh font cache
+      ansible.builtin.command: fc-cache -fv
+      changed_when: false
+
+- name: Start user services
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Enable and start syncthing user service
+      ansible.builtin.systemd:
+        name: syncthing
+        scope: user
+        enabled: true
+        state: started
+      ignore_errors: true

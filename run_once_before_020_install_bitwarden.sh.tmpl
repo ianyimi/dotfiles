@@ -4,7 +4,40 @@
 # Bitwarden setup is now handled by bootstrap.sh before chezmoi init
 # This script just verifies the setup is complete
 
-echo "=== Verifying Bitwarden CLI ==="
+echo "=== Verifying Bitwarden CLI (macOS) ==="
+
+if command -v bw &>/dev/null && bw login --check &>/dev/null; then
+    echo "✓ Bitwarden CLI is configured and logged in"
+else
+    echo "⚠ Bitwarden CLI not fully configured"
+    echo "  Run the bootstrap script or manually configure with:"
+    echo "  bw config server <your-server-url>"
+    echo "  bw login <your-email>"
+fi
+
+echo "=== Bitwarden CLI check complete ==="
+{{ else if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+
+# Bitwarden setup is now handled by bootstrap.sh before chezmoi init
+# This script just verifies the setup is complete
+
+echo "=== Verifying Bitwarden CLI (Linux) ==="
+
+# Install Bitwarden CLI if not present
+if ! command -v bw &>/dev/null; then
+    echo "Installing Bitwarden CLI via snap..."
+    if command -v snap &>/dev/null; then
+        sudo snap install bw
+    else
+        echo "⚠ snap not available, trying npm..."
+        if command -v npm &>/dev/null; then
+            sudo npm install -g @bitwarden/cli
+        else
+            echo "⚠ Cannot install Bitwarden CLI - install snap or npm first"
+        fi
+    fi
+fi
 
 if command -v bw &>/dev/null && bw login --check &>/dev/null; then
     echo "✓ Bitwarden CLI is configured and logged in"

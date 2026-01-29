@@ -12,11 +12,22 @@
 - **CLI Tool:** Bitwarden CLI (bw)
 - **Session Management:** BW_SESSION environment variable
 
-## System Automation
+## System Automation (macOS)
 
 - **Configuration Management:** Ansible
-- **Package Manager:** Homebrew (macOS)
-- **Platform:** macOS (Darwin)
+- **Package Manager:** Homebrew
+- **Window Manager:** Aerospace
+- **Status Bar:** SketchyBar
+- **Window Borders:** JankyBorders
+
+## System Automation (Linux)
+
+- **Configuration Management:** Ansible
+- **Package Managers:** apt (primary), snap, flatpak
+- **Window Manager:** Hyprland (Wayland)
+- **Status Bar:** Waybar
+- **Application Launcher:** Rofi
+- **Notification Daemon:** Dunst
 
 ## Shell Environment
 

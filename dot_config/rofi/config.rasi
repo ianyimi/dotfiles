@@ -1,0 +1,161 @@
+/* Rofi Configuration */
+/* Color scheme matching Waybar/SketchyBar */
+
+configuration {
+    modi: "drun,run,window";
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    terminal: "ghostty";
+    drun-display-format: "{name}";
+    location: 0;
+    disable-history: false;
+    hide-scrollbar: true;
+    sidebar-mode: false;
+    matching: "fuzzy";
+    sort: true;
+    sorting-method: "fzf";
+}
+
+/* Color definitions */
+* {
+    bg: #2c2e34;
+    bg1: #363944;
+    bg2: #414550;
+    fg: #e2e2e3;
+    grey: #7f8490;
+    red: #fc5d7c;
+    green: #9ed072;
+    yellow: #e7c664;
+    orange: #f39660;
+    blue: #76cce0;
+    magenta: #b39df3;
+    black: #181819;
+
+    background-color: transparent;
+    text-color: @fg;
+    font: "JetBrainsMono Nerd Font 12";
+}
+
+window {
+    background-color: @bg;
+    border: 3px solid;
+    border-color: @magenta;
+    border-radius: 8px;
+    width: 600px;
+    padding: 10px;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [inputbar, listview];
+    spacing: 10px;
+}
+
+inputbar {
+    background-color: @bg1;
+    border-radius: 6px;
+    padding: 10px;
+    children: [prompt, entry];
+    spacing: 10px;
+}
+
+prompt {
+    background-color: @magenta;
+    text-color: @black;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font: "JetBrainsMono Nerd Font Bold 12";
+}
+
+entry {
+    background-color: transparent;
+    text-color: @fg;
+    placeholder: "Search...";
+    placeholder-color: @grey;
+    padding: 6px;
+}
+
+listview {
+    background-color: transparent;
+    columns: 1;
+    lines: 8;
+    spacing: 4px;
+    fixed-height: true;
+    scrollbar: false;
+}
+
+element {
+    background-color: transparent;
+    padding: 10px;
+    border-radius: 6px;
+    spacing: 10px;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element normal.urgent {
+    background-color: @red;
+    text-color: @black;
+}
+
+element normal.active {
+    background-color: @green;
+    text-color: @black;
+}
+
+element selected.normal {
+    background-color: @bg2;
+    text-color: @fg;
+    border: 2px solid;
+    border-color: @magenta;
+}
+
+element selected.urgent {
+    background-color: @red;
+    text-color: @black;
+}
+
+element selected.active {
+    background-color: @green;
+    text-color: @black;
+}
+
+element alternate.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element-icon {
+    size: 24px;
+    padding: 0 10px 0 0;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+    vertical-align: 0.5;
+}
+
+/* Message styling */
+message {
+    background-color: @bg1;
+    border-radius: 6px;
+    padding: 10px;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+/* Error message */
+error-message {
+    background-color: @bg;
+    border: 3px solid;
+    border-color: @red;
+    border-radius: 8px;
+    padding: 10px;
+}

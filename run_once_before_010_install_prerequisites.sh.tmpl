@@ -3,7 +3,7 @@
 
 set -e
 
-echo "=== Installing Prerequisites ==="
+echo "=== Installing Prerequisites (macOS) ==="
 
 # Check and install Xcode Command Line Tools (includes git)
 if ! xcode-select -p &>/dev/null; then
@@ -33,6 +33,39 @@ fi
 if ! command -v git &>/dev/null; then
     echo "Installing git..."
     brew install git
+else
+    echo "✓ git already installed"
+fi
+
+echo "=== Prerequisites installation complete ==="
+{{ else if eq .chezmoi.os "linux" -}}
+#!/bin/bash
+
+set -e
+
+echo "=== Installing Prerequisites (Linux) ==="
+
+# Update package lists
+echo "Updating package lists..."
+sudo apt-get update
+
+# Install essential packages
+echo "Installing essential packages..."
+sudo apt-get install -y \
+    git \
+    curl \
+    wget \
+    build-essential \
+    software-properties-common \
+    apt-transport-https \
+    ca-certificates \
+    gnupg \
+    lsb-release
+
+# Ensure git is available
+if ! command -v git &>/dev/null; then
+    echo "Installing git..."
+    sudo apt-get install -y git
 else
     echo "✓ git already installed"
 fi

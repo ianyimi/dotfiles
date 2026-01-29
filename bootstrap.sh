@@ -153,40 +153,79 @@ setup_tailscale() {
     echo ""
     echo -e "${BLUE}Setting up Tailscale...${NC}"
 
-    # Install Tailscale CLI if not present
-    if ! command -v tailscale &>/dev/null; then
-        echo -e "${YELLOW}→${NC} Installing Tailscale..."
-        brew install tailscale
-        echo -e "${GREEN}✓${NC} Tailscale installed"
-    else
-        echo -e "${GREEN}✓${NC} Tailscale already installed"
-    fi
+    case "$OS" in
+        Darwin*)
+            # macOS - use Homebrew
+            if ! command -v tailscale &>/dev/null; then
+                echo -e "${YELLOW}→${NC} Installing Tailscale..."
+                brew install tailscale
+                echo -e "${GREEN}✓${NC} Tailscale installed"
+            else
+                echo -e "${GREEN}✓${NC} Tailscale already installed"
+            fi
 
-    # Check if already connected - tailscale status returns 0 when connected
-    if tailscale status &>/dev/null; then
-        echo -e "${GREEN}✓${NC} Tailscale already connected"
-        return 0
-    fi
+            # Check if already connected - tailscale status returns 0 when connected
+            if tailscale status &>/dev/null; then
+                echo -e "${GREEN}✓${NC} Tailscale already connected"
+                return 0
+            fi
 
-    # Not connected - need to start service and authenticate
-    # Only start service if not already running (check without sudo to avoid password prompt)
-    if ! pgrep -f "io.tailscale" &>/dev/null && ! pgrep -f "tailscaled" &>/dev/null; then
-        echo -e "${YELLOW}→${NC} Starting Tailscale service..."
-        sudo brew services start tailscale
-        sleep 2
-    else
-        echo -e "${GREEN}✓${NC} Tailscale service already running"
-    fi
+            # Not connected - need to start service and authenticate
+            # Only start service if not already running (check without sudo to avoid password prompt)
+            if ! pgrep -f "io.tailscale" &>/dev/null && ! pgrep -f "tailscaled" &>/dev/null; then
+                echo -e "${YELLOW}→${NC} Starting Tailscale service..."
+                sudo brew services start tailscale
+                sleep 2
+            else
+                echo -e "${GREEN}✓${NC} Tailscale service already running"
+            fi
 
-    # Authenticate with Tailscale
-    echo ""
-    echo -e "${YELLOW}→${NC} Tailscale authentication required"
-    echo "  A login URL will be displayed below."
-    echo "  Open it in your browser and authenticate to continue."
-    echo ""
+            # Authenticate with Tailscale
+            echo ""
+            echo -e "${YELLOW}→${NC} Tailscale authentication required"
+            echo "  A login URL will be displayed below."
+            echo "  Open it in your browser and authenticate to continue."
+            echo ""
 
-    # tailscale login prints URL and waits for authentication to complete
-    sudo tailscale login --accept-routes
+            # tailscale login prints URL and waits for authentication to complete
+            sudo tailscale login --accept-routes
+            ;;
+
+        Linux*)
+            # Linux - use official installer
+            if ! command -v tailscale &>/dev/null; then
+                echo -e "${YELLOW}→${NC} Installing Tailscale..."
+                curl -fsSL https://tailscale.com/install.sh | sh
+                echo -e "${GREEN}✓${NC} Tailscale installed"
+            else
+                echo -e "${GREEN}✓${NC} Tailscale already installed"
+            fi
+
+            # Check if already connected
+            if tailscale status &>/dev/null; then
+                echo -e "${GREEN}✓${NC} Tailscale already connected"
+                return 0
+            fi
+
+            # Start service if not running
+            if ! systemctl is-active --quiet tailscaled; then
+                echo -e "${YELLOW}→${NC} Starting Tailscale service..."
+                sudo systemctl enable --now tailscaled
+                sleep 2
+            else
+                echo -e "${GREEN}✓${NC} Tailscale service already running"
+            fi
+
+            # Authenticate with Tailscale
+            echo ""
+            echo -e "${YELLOW}→${NC} Tailscale authentication required"
+            echo "  A login URL will be displayed below."
+            echo "  Open it in your browser and authenticate to continue."
+            echo ""
+
+            sudo tailscale up --accept-routes
+            ;;
+    esac
 
     echo -e "${GREEN}✓${NC} Tailscale connected"
 }
@@ -351,6 +390,34 @@ init_chezmoi() {
     fi
 }
 
+# Function to run Linux setup
+run_linux_setup() {
+    echo "Running Linux setup..."
+
+    # Install Ansible if not present
+    if ! command -v ansible &>/dev/null; then
+        echo -e "${YELLOW}→${NC} Installing Ansible..."
+        sudo apt-get update
+        sudo apt-get install -y ansible
+        echo -e "${GREEN}✓${NC} Ansible installed"
+    else
+        echo -e "${GREEN}✓${NC} Ansible already installed"
+    fi
+
+    # Run Linux playbook
+    LINUX_PLAYBOOK="$HOME/.bootstrap/linux.yml"
+    if [ -f "$LINUX_PLAYBOOK" ]; then
+        echo -e "${YELLOW}→${NC} Running Linux Ansible playbook..."
+        read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG
+        if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
+            ansible-playbook "$LINUX_PLAYBOOK" --ask-become-pass
+        fi
+    else
+        echo -e "${YELLOW}⚠${NC}  Linux playbook not found at $LINUX_PLAYBOOK"
+        echo "    Apply chezmoi first, then run 'ansible-playbook ~/.bootstrap/linux.yml'"
+    fi
+}
+
 # Function to run OS-specific setup
 run_os_setup() {
     echo ""
@@ -376,9 +443,7 @@ run_os_setup() {
             ;;
         Linux*)
             # Linux
-            echo "Running Linux setup..."
-            echo -e "${YELLOW}⚠${NC}  Linux-specific setup not yet implemented"
-            echo "Please check your dotfiles for Linux-specific run_once scripts"
+            run_linux_setup
             ;;
         *)
             echo -e "${YELLOW}⚠${NC}  No OS-specific setup available for $OS"
@@ -425,16 +490,29 @@ main() {
         echo -e "${CYAN}${BOLD}[6/6] Running OS-specific setup...${NC}"
         run_os_setup
     else
-        echo -e "${CYAN}${BOLD}[1/3] Installing chezmoi...${NC}"
+        # Linux
+        echo -e "${CYAN}${BOLD}[1/5] Installing chezmoi...${NC}"
         install_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[2/3] Initializing dotfiles...${NC}"
+        echo -e "${CYAN}${BOLD}[2/5] Setting up Tailscale...${NC}"
+        setup_tailscale
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[3/5] Initializing dotfiles...${NC}"
         init_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[3/3] Running OS-specific setup...${NC}"
+        echo -e "${CYAN}${BOLD}[4/5] Running OS-specific setup...${NC}"
         run_os_setup
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[5/5] Starting Hyprland session (optional)...${NC}"
+        if command -v Hyprland &>/dev/null; then
+            echo -e "${GREEN}✓${NC} Hyprland is installed"
+            echo "  To start Hyprland, log out and select Hyprland from your display manager"
+            echo "  Or run 'Hyprland' from a TTY"
+        fi
     fi
 
     echo ""
