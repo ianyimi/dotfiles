@@ -131,6 +131,99 @@ install_chezmoi() {
     echo -e "${GREEN}✓${NC} chezmoi installed successfully"
 }
 
+# Function to setup Tailscale (must connect before Bitwarden for self-hosted access)
+setup_tailscale() {
+    echo ""
+    echo -e "${BLUE}Setting up Tailscale...${NC}"
+
+    # Install Tailscale CLI if not present
+    if ! command -v tailscale &>/dev/null; then
+        echo -e "${YELLOW}→${NC} Installing Tailscale..."
+        brew install tailscale
+        echo -e "${GREEN}✓${NC} Tailscale installed"
+    else
+        echo -e "${GREEN}✓${NC} Tailscale already installed"
+    fi
+
+    # Start the Tailscale daemon service
+    if ! brew services list | grep -q "tailscale.*started"; then
+        echo -e "${YELLOW}→${NC} Starting Tailscale service..."
+        sudo brew services start tailscale
+        sleep 2
+    fi
+
+    # Check if already connected
+    if tailscale status &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Tailscale already connected"
+        return 0
+    fi
+
+    # Authenticate with Tailscale
+    echo ""
+    echo -e "${YELLOW}→${NC} Tailscale authentication required"
+    echo "  A login URL will be displayed below."
+    echo "  Open it in your browser and authenticate to continue."
+    echo ""
+
+    # tailscale login prints URL and waits for authentication to complete
+    sudo tailscale login --accept-routes
+
+    echo -e "${GREEN}✓${NC} Tailscale connected"
+}
+
+# Function to setup Bitwarden CLI (must run before chezmoi init so BW_SESSION is available)
+setup_bitwarden() {
+    local bw_email="$1"
+    local bw_server="$2"
+
+    echo ""
+    echo -e "${BLUE}Setting up Bitwarden CLI...${NC}"
+
+    # Install Bitwarden CLI if not present
+    if ! command -v bw &>/dev/null; then
+        echo -e "${YELLOW}→${NC} Installing Bitwarden CLI..."
+        brew install bitwarden-cli
+        echo -e "${GREEN}✓${NC} Bitwarden CLI installed"
+    else
+        echo -e "${GREEN}✓${NC} Bitwarden CLI already installed"
+    fi
+
+    # Suppress Node.js deprecation warnings
+    export NODE_OPTIONS="--no-deprecation"
+
+    # Configure Bitwarden server
+    CURRENT_SERVER=$(bw config server 2>/dev/null || echo "")
+    if [ "$CURRENT_SERVER" != "$bw_server" ]; then
+        echo -e "${YELLOW}→${NC} Configuring Bitwarden server: $bw_server"
+        # Logout first if logged in to different server
+        if bw login --check &>/dev/null; then
+            bw logout
+        fi
+        bw config server "$bw_server"
+    fi
+
+    # Login if not already logged in
+    if ! bw login --check &>/dev/null; then
+        echo ""
+        echo -e "${YELLOW}→${NC} Please log in to Bitwarden:"
+        BW_SESSION=$(bw login "$bw_email" --raw </dev/tty)
+    else
+        # Already logged in, just unlock
+        echo -e "${YELLOW}→${NC} Unlocking Bitwarden vault..."
+        BW_SESSION=$(bw unlock --raw </dev/tty)
+    fi
+
+    if [ -n "$BW_SESSION" ]; then
+        export BW_SESSION
+        echo "export BW_SESSION=\"$BW_SESSION\"" > ~/.bw-session
+        chmod 600 ~/.bw-session
+        echo -e "${GREEN}✓${NC} Bitwarden authenticated"
+    else
+        echo -e "${RED}✗${NC} Failed to authenticate with Bitwarden"
+        exit 1
+    fi
+}
+
 # Function to initialize chezmoi with dotfiles repo
 init_chezmoi() {
     echo ""
@@ -180,6 +273,9 @@ init_chezmoi() {
     else
         read -p "GitHub username: " GITHUB_USER </dev/tty
     fi
+
+    # Setup Bitwarden before chezmoi init so BW_SESSION is available for templates
+    setup_bitwarden "$BW_EMAIL" "$BW_SERVER"
 
     # Initialize and apply dotfiles with values passed via flags
     if chezmoi init --apply \
@@ -246,23 +342,27 @@ main() {
     echo ""
     # On macOS, install prerequisites first
     if [[ "$OS" == "Darwin"* ]]; then
-        echo -e "${CYAN}${BOLD}[1/5] Installing Xcode Command Line Tools...${NC}"
+        echo -e "${CYAN}${BOLD}[1/6] Installing Xcode Command Line Tools...${NC}"
         install_xcode_clt
 
         echo ""
-        echo -e "${CYAN}${BOLD}[2/5] Installing Homebrew...${NC}"
+        echo -e "${CYAN}${BOLD}[2/6] Installing Homebrew...${NC}"
         install_homebrew
 
         echo ""
-        echo -e "${CYAN}${BOLD}[3/5] Installing chezmoi...${NC}"
+        echo -e "${CYAN}${BOLD}[3/6] Installing chezmoi...${NC}"
         install_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[4/5] Initializing dotfiles...${NC}"
+        echo -e "${CYAN}${BOLD}[4/6] Setting up Tailscale...${NC}"
+        setup_tailscale
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[5/6] Initializing dotfiles...${NC}"
         init_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[5/5] Running OS-specific setup...${NC}"
+        echo -e "${CYAN}${BOLD}[6/6] Running OS-specific setup...${NC}"
         run_os_setup
     else
         echo -e "${CYAN}${BOLD}[1/3] Installing chezmoi...${NC}"
