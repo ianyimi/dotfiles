@@ -145,17 +145,21 @@ setup_tailscale() {
         echo -e "${GREEN}✓${NC} Tailscale already installed"
     fi
 
-    # Start the Tailscale daemon service
-    if ! brew services list | grep -q "tailscale.*started"; then
+    # Check if already connected first - if so, skip everything else
+    # tailscale status exits 0 and shows IPs when connected
+    if tailscale status &>/dev/null; then
+        TAILSCALE_STATUS=$(tailscale status 2>&1)
+        if echo "$TAILSCALE_STATUS" | grep -qE "^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+"; then
+            echo -e "${GREEN}✓${NC} Tailscale already connected"
+            return 0
+        fi
+    fi
+
+    # Not connected - start the service if not already running
+    if ! brew services list | grep -E "tailscale\s+started" &>/dev/null; then
         echo -e "${YELLOW}→${NC} Starting Tailscale service..."
         sudo brew services start tailscale
         sleep 2
-    fi
-
-    # Check if already connected
-    if tailscale status &>/dev/null; then
-        echo -e "${GREEN}✓${NC} Tailscale already connected"
-        return 0
     fi
 
     # Authenticate with Tailscale
@@ -191,6 +195,15 @@ setup_bitwarden() {
     # Suppress Node.js deprecation warnings
     export NODE_OPTIONS="--no-deprecation"
 
+    # Check for existing valid session first
+    if [ -f ~/.bw-session ]; then
+        source ~/.bw-session
+        if [ -n "$BW_SESSION" ] && bw unlock --check --session "$BW_SESSION" &>/dev/null; then
+            echo -e "${GREEN}✓${NC} Bitwarden session already valid"
+            return 0
+        fi
+    fi
+
     # Configure Bitwarden server
     CURRENT_SERVER=$(bw config server 2>/dev/null || echo "")
     if [ "$CURRENT_SERVER" != "$bw_server" ]; then
@@ -200,6 +213,8 @@ setup_bitwarden() {
             bw logout
         fi
         bw config server "$bw_server"
+    else
+        echo -e "${GREEN}✓${NC} Bitwarden server already configured"
     fi
 
     # Login if not already logged in
@@ -209,6 +224,7 @@ setup_bitwarden() {
         BW_SESSION=$(bw login "$bw_email" --raw </dev/tty)
     else
         # Already logged in, just unlock
+        echo -e "${GREEN}✓${NC} Bitwarden already logged in"
         echo -e "${YELLOW}→${NC} Unlocking Bitwarden vault..."
         BW_SESSION=$(bw unlock --raw </dev/tty)
     fi
@@ -229,6 +245,20 @@ init_chezmoi() {
     echo ""
     echo -e "${BLUE}Initializing chezmoi with dotfiles...${NC}"
 
+    # Get existing values from chezmoi config BEFORE any deletion
+    DEFAULT_BW_EMAIL=""
+    DEFAULT_BW_SERVER=""
+    DEFAULT_GITHUB_USER=""
+    if command -v chezmoi &>/dev/null && [ -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+        DEFAULT_BW_EMAIL=$(chezmoi data --format json 2>/dev/null | grep -o '"bwEmail":"[^"]*"' | cut -d'"' -f4 || echo "")
+        DEFAULT_BW_SERVER=$(chezmoi data --format json 2>/dev/null | grep -o '"bwServer":"[^"]*"' | cut -d'"' -f4 || echo "")
+        DEFAULT_GITHUB_USER=$(chezmoi data --format json 2>/dev/null | grep -o '"githubUsername":"[^"]*"' | cut -d'"' -f4 || echo "")
+    fi
+    # Also try to get server from bw config if not found
+    if [ -z "$DEFAULT_BW_SERVER" ] && command -v bw &>/dev/null; then
+        DEFAULT_BW_SERVER=$(bw config server 2>/dev/null || echo "")
+    fi
+
     if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
         echo -e "${YELLOW}⚠${NC}  Chezmoi source directory already exists"
         read -p "Do you want to reinitialize? (y/N): " REINIT </dev/tty
@@ -237,16 +267,6 @@ init_chezmoi() {
             return 0
         fi
         rm -rf "$HOME/.local/share/chezmoi"
-    fi
-
-    # Get existing values from chezmoi config if available
-    DEFAULT_BW_EMAIL=""
-    DEFAULT_BW_SERVER=""
-    DEFAULT_GITHUB_USER=""
-    if command -v chezmoi &>/dev/null && [ -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
-        DEFAULT_BW_EMAIL=$(chezmoi data --format json 2>/dev/null | grep -o '"bwEmail":"[^"]*"' | cut -d'"' -f4 || echo "")
-        DEFAULT_BW_SERVER=$(chezmoi data --format json 2>/dev/null | grep -o '"bwServer":"[^"]*"' | cut -d'"' -f4 || echo "")
-        DEFAULT_GITHUB_USER=$(chezmoi data --format json 2>/dev/null | grep -o '"githubUsername":"[^"]*"' | cut -d'"' -f4 || echo "")
     fi
 
     # Prompt for chezmoi template values with defaults
