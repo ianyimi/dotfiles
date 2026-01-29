@@ -198,13 +198,6 @@
         name: k6
         state: present
 
-    - name: Check Install - Tailscale
-      become: true
-      community.general.homebrew_cask:
-        name: tailscale
-        state: present
-      ignore_errors: true
-
     - name: Check Install - Bat
       community.general.homebrew:
         name: bat
