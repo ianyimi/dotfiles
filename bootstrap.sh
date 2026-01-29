@@ -222,7 +222,7 @@ main() {
     echo "  3. Your secrets will be populated from Bitwarden"
     echo ""
     echo -e "${YELLOW}Tip:${NC} You can re-run this script anytime with:"
-    echo "  bash <(curl -fsSL https://raw.githubusercontent.com/$GITHUB_USERNAME/dotfiles/master/bootstrap.sh)"
+    echo "  curl -fsSL https://raw.githubusercontent.com/$GITHUB_USERNAME/dotfiles/master/bootstrap.sh | bash"
     echo ""
 }
 

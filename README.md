@@ -7,7 +7,7 @@ Complete system configuration using chezmoi + Bitwarden for secure secret manage
 On a **brand new Mac** with nothing installed, run this single command:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh)
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh | bash
 ```
 
 Or use chezmoi directly:
@@ -136,7 +136,7 @@ export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
 
 ```bash
 # Run bootstrap
-bash <(curl -fsSL https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh)
+curl -fsSL https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh | bash
 
 # Projects clone with apCloneProjects
 # Then apply configs
