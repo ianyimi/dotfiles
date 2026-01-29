@@ -443,17 +443,12 @@
     #     name: font-sketchybar-app-font
     #     state: present
 
-    - name: Check if SketchyBar is running
+    - name: Start SketchyBar service
       become: false
-      shell: "pgrep -x sketchybar"
-      register: sketchybar_status
+      shell: "brew services start sketchybar"
+      register: sketchybar_service
+      changed_when: "'Successfully started' in sketchybar_service.stdout"
       failed_when: false
-      changed_when: false
-
-    - name: Start SketchyBar if not running
-      become: false
-      shell: "sketchybar --restart"
-      when: sketchybar_status.rc != 0
 
     - name: Set menu bar to auto-hide
       become: false
@@ -547,8 +542,21 @@
         dest: "{{ ansible_facts['env']['HOME'] }}/.config/sketchybar/helpers/app_icons.lua"
         mode: "0644"
 
+    - name: Ensure user Fonts directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_facts['env']['HOME'] }}/Library/Fonts"
+        state: directory
+        mode: "0755"
+
+    - name: Install sketchybar-app-font TTF
+      when: icon_map_stat.stat.exists
+      ansible.builtin.copy:
+        src: "{{ ansible_facts['env']['HOME'] }}/packages/sketchybar-app-font/dist/sketchybar-app-font.ttf"
+        dest: "{{ ansible_facts['env']['HOME'] }}/Library/Fonts/sketchybar-app-font.ttf"
+        mode: "0644"
+
     - name: Restart SketchyBar to apply new icon configurations
-      ansible.builtin.shell: "sketchybar --reload"
+      ansible.builtin.shell: "brew services restart sketchybar"
 
 - name: Brew Install (Languages)
   hosts: localhost
