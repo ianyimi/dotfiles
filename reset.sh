@@ -264,29 +264,25 @@ if $RESET_APPS; then
         echo "  Homebrew not found, skipping brew uninstalls"
     fi
 
-    # Remove known managed apps from /Applications that may not have been installed via brew
-    # This handles apps that were manually installed or came from elsewhere
-    echo "  Removing managed apps from /Applications..."
-    MANAGED_APPS=(
-        "Spotify.app"
-        "Arc.app"
-        "HandBrake.app"
-        "Keymapp.app"
-        "Obsidian.app"
-        "Ghostty.app"
-        "Plex.app"
-        "Mouseless.app"
-        "Responsively.app"
-        "Syncthing.app"
-        "Discord.app"
-        "LM Studio.app"
-        "Docker.app"
-    )
-    for app in "${MANAGED_APPS[@]}"; do
-        if [ -d "/Applications/$app" ]; then
-            echo "    Removing /Applications/$app..."
-            rm -rf "/Applications/$app" 2>/dev/null || sudo rm -rf "/Applications/$app" 2>/dev/null || echo "      Warning: failed to remove $app"
+    # Remove all apps from /Applications except those controlled by other flags
+    echo "  Removing apps from /Applications..."
+    SKIP_APPS=""
+    if ! $RESET_TAILSCALE; then
+        SKIP_APPS="$SKIP_APPS Tailscale.app"
+    fi
+
+    for app in /Applications/*.app; do
+        [ -d "$app" ] || continue
+        app_name=$(basename "$app")
+
+        # Skip if in exclusion list
+        if echo "$SKIP_APPS" | grep -qw "$app_name"; then
+            echo "    Skipping $app_name (controlled by separate flag)"
+            continue
         fi
+
+        echo "    Removing $app_name..."
+        rm -rf "$app" 2>/dev/null || sudo rm -rf "$app" 2>/dev/null || echo "      Warning: failed to remove $app_name"
     done
 
     # Remove managed fonts from ~/Library/Fonts
