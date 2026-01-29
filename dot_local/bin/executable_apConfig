@@ -26,9 +26,10 @@ fi
 
 # Step 1: Get sudo password early
 echo -e "${BLUE}[1/4]${NC} Checking sudo access..."
-sudo -v
+sudo -v </dev/tty
 # Keep sudo alive in background
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+while true; do sudo -n true; sleep 30; kill -0 "$$" || exit; done 2>/dev/null &
+SUDO_KEEPALIVE_PID=$!
 echo -e "${GREEN}✓${NC} Sudo access confirmed"
 echo ""
 
@@ -100,19 +101,8 @@ if [ -z "$BW_SESSION" ]; then
     echo "  Run 'bw-session-check && source ~/.bw-session' to fix."
 fi
 
-# Cache sudo credentials and keep them alive during ansible run
-echo -e "${YELLOW}→${NC} Enter your password to cache sudo credentials:"
-sudo -v </dev/tty
-
-# Keep sudo alive in background during ansible
-while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done &
-SUDO_KEEPALIVE_PID=$!
-
-# Run ansible without --ask-become-pass since sudo is already cached
+# Run ansible (sudo is cached from step 1 with keepalive running)
 ansible-playbook ~/.bootstrap/macos.yml </dev/tty
-
-# Kill the sudo keepalive process
-kill $SUDO_KEEPALIVE_PID 2>/dev/null || true
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
