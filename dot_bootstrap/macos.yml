@@ -97,61 +97,73 @@
       community.general.homebrew_cask:
         name: spotify
         state: present
+      ignore_errors: true
 
     - name: Check Install - Arc Browser
       community.general.homebrew_cask:
         name: arc
         state: present
+      ignore_errors: true
 
     - name: Check Install - Handbrake
       community.general.homebrew_cask:
         name: handbrake
         state: present
+      ignore_errors: true
 
     - name: Check Install - Keymapp
       community.general.homebrew_cask:
         name: keymapp
         state: present
+      ignore_errors: true
 
     - name: Check Install - Obsidian
       community.general.homebrew_cask:
         name: obsidian
         state: present
+      ignore_errors: true
 
     - name: Check Install - Ghostty
       community.general.homebrew_cask:
         name: ghostty
         state: present
+      ignore_errors: true
 
     - name: Check Install - Plex
       community.general.homebrew_cask:
         name: plex
         state: present
+      ignore_errors: true
 
     - name: Check Install - Mouseless
       community.general.homebrew_cask:
         name: mouseless
         state: present
+      ignore_errors: true
 
     - name: Check Install - Responsively
       community.general.homebrew_cask:
         name: responsively
         state: present
+      ignore_errors: true
 
     - name: Check Install - Syncthing
       community.general.homebrew_cask:
         name: syncthing
         state: present
+      ignore_errors: true
 
     - name: Check Install - Discord
       community.general.homebrew_cask:
         name: discord
         state: present
+      ignore_errors: true
 
     - name: Check Install - LMStudio
       community.general.homebrew_cask:
         name: lm-studio
         state: present
+      ignore_errors: true
 
 - name: Brew Install (CLI)
   hosts: localhost
