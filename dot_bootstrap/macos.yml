@@ -198,6 +198,12 @@
         name: k6
         state: present
 
+    - name: Check Install - Claude Code
+      community.general.homebrew_cask:
+        name: claude-code
+        state: present
+      ignore_errors: true
+
     - name: Check Install - Bat
       community.general.homebrew:
         name: bat
