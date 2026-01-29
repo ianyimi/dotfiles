@@ -402,7 +402,7 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 
 `--all` - Full factory reset. Removes everything including Homebrew and Xcode CLT.
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --all
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" | bash -s -- --all
 ```
 
 ---
