@@ -437,11 +437,24 @@
         name: sketchybar
         state: present
 
-    # - name: Check Install - SketchyBar App Font
-    #   become: false
-    #   community.general.homebrew_cask:
-    #     name: font-sketchybar-app-font
-    #     state: present
+    - name: Check if SbarLua is installed
+      ansible.builtin.stat:
+        path: "{{ ansible_facts['env']['HOME'] }}/.local/share/sketchybar_lua/sketchybar.so"
+      register: sbarlua_stat
+
+    - name: Clone SbarLua repository
+      when: not sbarlua_stat.stat.exists
+      ansible.builtin.git:
+        repo: "https://github.com/FelixKratz/SbarLua.git"
+        dest: "/tmp/SbarLua"
+        version: "HEAD"
+        force: yes
+
+    - name: Build and install SbarLua
+      when: not sbarlua_stat.stat.exists
+      ansible.builtin.shell: "make install"
+      args:
+        chdir: "/tmp/SbarLua"
 
     - name: Start SketchyBar service
       become: false
