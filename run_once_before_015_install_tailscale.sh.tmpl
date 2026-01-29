@@ -5,23 +5,23 @@ set -e
 
 echo "=== Installing Tailscale ==="
 
-# Check if Tailscale app is already installed
-if [ -d "/Applications/Tailscale.app" ]; then
+# Install Tailscale if not present
+if [ ! -d "/Applications/Tailscale.app" ]; then
+    echo "Installing Tailscale..."
+    brew install --cask tailscale
+    echo "✓ Tailscale installed"
+else
     echo "✓ Tailscale already installed"
-    echo ""
-    echo "ℹ️  Make sure you're connected to your Tailscale network"
-    echo "   (Click Tailscale in menu bar to connect if needed)"
-    echo ""
+fi
+
+# Check if already connected
+if /Applications/Tailscale.app/Contents/MacOS/Tailscale status &>/dev/null; then
+    echo "✓ Tailscale already connected"
     echo "=== Tailscale setup complete ==="
     exit 0
 fi
 
-# Install Tailscale if not present
-echo "Installing Tailscale..."
-brew install --cask tailscale
-
-# Start Tailscale app
-echo "✓ Tailscale installed"
+# Start Tailscale app and wait for connection
 echo ""
 echo "=== Tailscale Authentication Required ==="
 echo "Opening Tailscale app - please:"
@@ -33,10 +33,11 @@ echo ""
 open -a Tailscale
 sleep 2
 
-echo "Waiting for you to connect..."
-echo "(Script will continue once you close this terminal or press Ctrl+C)"
-echo ""
-echo "After connecting, you can continue with: chezmoi apply"
-echo ""
+echo "Waiting for Tailscale to connect..."
+while ! /Applications/Tailscale.app/Contents/MacOS/Tailscale status &>/dev/null; do
+    sleep 3
+done
+
+echo "✓ Tailscale connected"
 echo "=== Tailscale setup complete ==="
 {{ end -}}
