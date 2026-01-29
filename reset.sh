@@ -227,7 +227,8 @@ if $RESET_BITWARDEN; then
         brew uninstall bitwarden-cli 2>/dev/null || true
     fi
     # Remove bw config
-    rm -rf ~/.config/Bitwarden\ CLI
+    rm -rf ~/.config/"Bitwarden CLI"
+    rm -rf ~/Library/Application\ Support/Bitwarden\ CLI
     echo -e "${GREEN}✓${NC} Bitwarden CLI removed"
 fi
 
@@ -235,7 +236,8 @@ fi
 if $RESET_HOMEBREW; then
     echo -e "${YELLOW}→${NC} Removing Homebrew (this may take a while)..."
     if command -v brew &>/dev/null; then
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)"
+        # Homebrew uninstaller needs TTY for prompts
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" </dev/tty
     else
         echo "  Homebrew not found, skipping"
     fi
@@ -245,8 +247,13 @@ fi
 # Reset Xcode CLT
 if $RESET_XCODE; then
     echo -e "${YELLOW}→${NC} Removing Xcode Command Line Tools..."
-    sudo rm -rf /Library/Developer/CommandLineTools
-    echo -e "${GREEN}✓${NC} Xcode Command Line Tools removed"
+    if [ -d "/Library/Developer/CommandLineTools" ]; then
+        echo -e "${YELLOW}  Requires password to remove system directory...${NC}"
+        sudo rm -rf /Library/Developer/CommandLineTools
+        echo -e "${GREEN}✓${NC} Xcode Command Line Tools removed"
+    else
+        echo "  Xcode Command Line Tools not found, skipping"
+    fi
 fi
 
 echo ""
