@@ -477,10 +477,7 @@
 
     - name: Set menu bar to auto-hide
       become: false
-      shell: |
-        defaults write NSGlobalDomain _HIHideMenuBar -bool true
-        osascript -e 'tell application "System Events" to tell dock preferences to set autohide menu bar to true' 2>/dev/null || true
-        killall SystemUIServer 2>/dev/null || true
+      shell: "osascript -e 'tell application \"System Events\" to tell dock preferences to set autohide menu bar to true'"
       changed_when: false
 
 - name: Clone SketchyBar App Font Repository
