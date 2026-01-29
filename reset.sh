@@ -289,6 +289,26 @@ if $RESET_APPS; then
         fi
     done
 
+    # Remove managed fonts from ~/Library/Fonts
+    echo "  Removing managed fonts..."
+    MANAGED_FONTS=(
+        "HackNerdFont*.ttf"
+        "HackNerdFontMono*.ttf"
+        "HackNerdFontPropo*.ttf"
+        "JetBrainsMonoNerdFont*.ttf"
+        "JetBrainsMonoNLNerdFont*.ttf"
+        "CascadiaCode*.ttf"
+        "CascadiaMono*.ttf"
+        "sketchybar-app-font.ttf"
+    )
+    for font_pattern in "${MANAGED_FONTS[@]}"; do
+        for font in ~/Library/Fonts/$font_pattern; do
+            [ -e "$font" ] || continue
+            echo "    Removing $font..."
+            rm -f "$font" 2>/dev/null || echo "      Warning: failed to remove $font"
+        done
+    done
+
     echo -e "${GREEN}✓${NC} Applications removed"
 fi
 
