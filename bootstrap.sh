@@ -283,8 +283,15 @@ init_chezmoi() {
     if [ -z "$DEFAULT_BW_SERVER" ] && command -v bw &>/dev/null; then
         DEFAULT_BW_SERVER=$(bw config server 2>/dev/null || echo "")
     fi
-    if [ -z "$DEFAULT_GITHUB_USER" ] && command -v gh &>/dev/null; then
-        DEFAULT_GITHUB_USER=$(gh api user 2>/dev/null | grep -o '"login": *"[^"]*"' | head -1 | cut -d'"' -f4)
+    if [ -z "$DEFAULT_GITHUB_USER" ]; then
+        # Try gh if authenticated, otherwise try git config
+        if command -v gh &>/dev/null && gh auth status &>/dev/null; then
+            DEFAULT_GITHUB_USER=$(gh api user 2>/dev/null | grep -o '"login": *"[^"]*"' | head -1 | cut -d'"' -f4)
+        fi
+        # Fallback to git config user (often matches github username)
+        if [ -z "$DEFAULT_GITHUB_USER" ] && command -v git &>/dev/null; then
+            DEFAULT_GITHUB_USER=$(git config --global user.name 2>/dev/null || echo "")
+        fi
     fi
 
     if [ -d "$HOME/.local/share/chezmoi/.git" ]; then
