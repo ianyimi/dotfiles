@@ -9,6 +9,9 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Suppress Node.js deprecation warnings from bw CLI
+export NODE_OPTIONS="--no-deprecation"
+
 echo -e "${BLUE}═══════════════════════════════════════${NC}"
 echo -e "${BLUE}    System Configuration Bootstrap     ${NC}"
 echo -e "${BLUE}═══════════════════════════════════════${NC}"
@@ -22,54 +25,46 @@ if [[ "$1" == "--skip-projects" ]] || [[ "$1" == "-s" ]]; then
 fi
 
 # Step 1: Get sudo password early
-echo -e "${BLUE}[1/6]${NC} Checking sudo access..."
+echo -e "${BLUE}[1/4]${NC} Checking sudo access..."
 sudo -v
 # Keep sudo alive in background
 while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
 echo -e "${GREEN}✓${NC} Sudo access confirmed"
 echo ""
 
-# Step 2: Install prerequisites (git, brew)
-echo -e "${BLUE}[2/6]${NC} Installing prerequisites (git, brew)..."
-if ! command -v brew &>/dev/null; then
-    echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty
-    if [[ $(uname -m) == "arm64" ]]; then
-        eval "$(/opt/homebrew/bin/brew shellenv)"
+# Step 2: Verify Bitwarden session (should already be set by bootstrap.sh)
+echo -e "${BLUE}[2/4]${NC} Checking Bitwarden session..."
+if [ -f ~/.bw-session ]; then
+    source ~/.bw-session
+fi
+
+if [ -n "$BW_SESSION" ] && bw unlock --check --session "$BW_SESSION" &>/dev/null; then
+    echo -e "${GREEN}✓${NC} Bitwarden session valid"
+else
+    echo -e "${YELLOW}⚠${NC}  Bitwarden session expired, refreshing..."
+    if command -v bw-session-check &>/dev/null; then
+        bw-session-check
+        source ~/.bw-session
+    else
+        # Fallback if helper script not available
+        if ! bw login --check &>/dev/null; then
+            echo "Please login to Bitwarden:"
+            BW_SESSION=$(bw login --raw </dev/tty)
+        else
+            echo "Unlocking Bitwarden vault..."
+            BW_SESSION=$(bw unlock --raw </dev/tty)
+        fi
+        echo "export BW_SESSION=\"$BW_SESSION\"" > ~/.bw-session
+        chmod 600 ~/.bw-session
+        export BW_SESSION
     fi
+    echo -e "${GREEN}✓${NC} Bitwarden session refreshed"
 fi
-if ! command -v git &>/dev/null; then
-    brew install git
-fi
-echo -e "${GREEN}✓${NC} Prerequisites installed"
 echo ""
 
-# Step 3: Install and configure Bitwarden CLI
-echo -e "${BLUE}[3/6]${NC} Setting up Bitwarden CLI..."
-if ! command -v bw &>/dev/null; then
-    brew install bitwarden-cli
-fi
-
-# Configure server if needed (you'll be prompted during chezmoi init)
-# This will be set in .chezmoi.toml.tmpl
-
-# Step 4: Authenticate with Bitwarden
-echo -e "${BLUE}[4/6]${NC} Authenticating with Bitwarden..."
-if ! bw login --check &>/dev/null; then
-    echo "Please login to Bitwarden:"
-    bw login </dev/tty
-fi
-
-echo "Unlocking Bitwarden vault..."
-export BW_SESSION=$(bw unlock --raw </dev/tty)
-echo "export BW_SESSION=\"$BW_SESSION\"" > ~/.bw-session
-chmod 600 ~/.bw-session
-echo -e "${GREEN}✓${NC} Bitwarden authenticated and unlocked"
-echo ""
-
-# Step 5: Project cloning (unless skipped)
+# Step 3: Project cloning (unless skipped)
 if [ "$SKIP_PROJECTS" = false ]; then
-    echo -e "${BLUE}[5/6]${NC} Project Setup"
+    echo -e "${BLUE}[3/4]${NC} Project Setup"
     echo ""
 
     if command -v apCloneProjects &>/dev/null; then
@@ -80,23 +75,18 @@ if [ "$SKIP_PROJECTS" = false ]; then
     fi
     echo ""
 else
-    echo -e "${BLUE}[5/6]${NC} Skipping project setup"
+    echo -e "${BLUE}[3/4]${NC} Skipping project setup"
     echo ""
 fi
 
-# Step 6: Run Ansible playbook
-echo -e "${BLUE}[6/6]${NC} Running system configuration (ansible)..."
+# Step 4: Run Ansible playbook
+echo -e "${BLUE}[4/4]${NC} Running system configuration (ansible)..."
 echo "This will install all applications and CLI tools..."
 echo ""
 
 if [ ! -f ~/.bootstrap/macos.yml ]; then
     echo -e "${YELLOW}⚠${NC}  Applying chezmoi first to get bootstrap files..."
     chezmoi apply
-fi
-
-# Source Bitwarden session for ansible tasks that need it
-if [ -f ~/.bw-session ]; then
-    source ~/.bw-session
 fi
 
 ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass </dev/tty

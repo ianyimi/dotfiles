@@ -252,10 +252,10 @@ init_chezmoi() {
     DEFAULT_GITHUB_USER=""
     CHEZMOI_CONFIG="$HOME/.config/chezmoi/chezmoi.toml"
     if [ -f "$CHEZMOI_CONFIG" ]; then
-        # Read directly from TOML file
-        DEFAULT_BW_EMAIL=$(grep 'bwEmail' "$CHEZMOI_CONFIG" 2>/dev/null | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
-        DEFAULT_BW_SERVER=$(grep 'bwServer' "$CHEZMOI_CONFIG" 2>/dev/null | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
-        DEFAULT_GITHUB_USER=$(grep 'githubUsername' "$CHEZMOI_CONFIG" 2>/dev/null | sed 's/.*= *"\([^"]*\)".*/\1/' || echo "")
+        # Read directly from TOML file - extract value between quotes after =
+        DEFAULT_BW_EMAIL=$(awk -F'"' '/bwEmail/ {print $2}' "$CHEZMOI_CONFIG" 2>/dev/null)
+        DEFAULT_BW_SERVER=$(awk -F'"' '/bwServer/ {print $2}' "$CHEZMOI_CONFIG" 2>/dev/null)
+        DEFAULT_GITHUB_USER=$(awk -F'"' '/githubUsername/ {print $2}' "$CHEZMOI_CONFIG" 2>/dev/null)
     fi
     # Also try to get server from bw config if not found
     if [ -z "$DEFAULT_BW_SERVER" ] && command -v bw &>/dev/null; then
@@ -274,8 +274,13 @@ init_chezmoi() {
 
     # Prompt for chezmoi template values with defaults
     echo ""
-    echo -e "${BLUE}Please provide configuration values (press Enter to accept default):${NC}"
+    if [ -n "$DEFAULT_BW_EMAIL" ] || [ -n "$DEFAULT_BW_SERVER" ] || [ -n "$DEFAULT_GITHUB_USER" ]; then
+        echo -e "${BLUE}Please provide configuration values (press Enter to accept default):${NC}"
+    else
+        echo -e "${BLUE}Please provide configuration values:${NC}"
+    fi
 
+    # Always show what the default is, even in the prompt format
     if [ -n "$DEFAULT_BW_EMAIL" ]; then
         read -p "Bitwarden email [$DEFAULT_BW_EMAIL]: " BW_EMAIL </dev/tty
         BW_EMAIL=${BW_EMAIL:-$DEFAULT_BW_EMAIL}
@@ -287,7 +292,7 @@ init_chezmoi() {
         read -p "Bitwarden server URL [$DEFAULT_BW_SERVER]: " BW_SERVER </dev/tty
         BW_SERVER=${BW_SERVER:-$DEFAULT_BW_SERVER}
     else
-        read -p "Bitwarden server URL (e.g., https://vault.example.com): " BW_SERVER </dev/tty
+        read -p "Bitwarden server URL: " BW_SERVER </dev/tty
     fi
 
     if [ -n "$DEFAULT_GITHUB_USER" ]; then
