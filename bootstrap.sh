@@ -29,6 +29,28 @@ echo "  OS: $OS"
 echo "  Architecture: $ARCH"
 echo ""
 
+# Function to install Xcode Command Line Tools (required for git on macOS)
+install_xcode_clt() {
+    if xcode-select -p &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Xcode Command Line Tools already installed"
+        return 0
+    fi
+
+    echo -e "${YELLOW}→${NC} Installing Xcode Command Line Tools (required for git)..."
+    echo -e "${YELLOW}  Please click 'Install' in the popup dialog and wait for it to complete.${NC}"
+
+    # Trigger the install dialog
+    xcode-select --install 2>/dev/null || true
+
+    # Wait for installation to complete
+    echo -e "${YELLOW}  Waiting for installation to complete...${NC}"
+    until xcode-select -p &>/dev/null; do
+        sleep 5
+    done
+
+    echo -e "${GREEN}✓${NC} Xcode Command Line Tools installed"
+}
+
 # Function to install chezmoi
 install_chezmoi() {
     if command -v chezmoi &>/dev/null; then
@@ -159,16 +181,34 @@ main() {
     fi
 
     echo ""
-    echo -e "${CYAN}${BOLD}[1/3] Installing chezmoi...${NC}"
-    install_chezmoi
+    # On macOS, ensure Xcode CLT is installed first (provides git)
+    if [[ "$OS" == "Darwin"* ]]; then
+        echo -e "${CYAN}${BOLD}[1/4] Installing Xcode Command Line Tools...${NC}"
+        install_xcode_clt
 
-    echo ""
-    echo -e "${CYAN}${BOLD}[2/3] Initializing dotfiles...${NC}"
-    init_chezmoi
+        echo ""
+        echo -e "${CYAN}${BOLD}[2/4] Installing chezmoi...${NC}"
+        install_chezmoi
 
-    echo ""
-    echo -e "${CYAN}${BOLD}[3/3] Running OS-specific setup...${NC}"
-    run_os_setup
+        echo ""
+        echo -e "${CYAN}${BOLD}[3/4] Initializing dotfiles...${NC}"
+        init_chezmoi
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[4/4] Running OS-specific setup...${NC}"
+        run_os_setup
+    else
+        echo -e "${CYAN}${BOLD}[1/3] Installing chezmoi...${NC}"
+        install_chezmoi
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[2/3] Initializing dotfiles...${NC}"
+        init_chezmoi
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[3/3] Running OS-specific setup...${NC}"
+        run_os_setup
+    fi
 
     echo ""
     echo -e "${GREEN}${BOLD}═══════════════════════════════════════${NC}"
