@@ -353,4 +353,22 @@ Original setup forked from [Logan Donley's dotfiles](https://github.com/logandon
 
 ---
 
+## 🧪 Development
+
+### Testing on a fresh VM
+
+Use this command to bypass GitHub's CDN cache when testing changes:
+
+```bash
+curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" | bash
+```
+
+### Reset VM for fresh install (keeps Homebrew, Xcode CLT, Tailscale)
+
+```bash
+rm -rf ~/.local/share/chezmoi ~/.config ~/.local/bin ~/.zshrc ~/.bashrc ~/.gitconfig ~/.zprofile ~/.bootstrap ~/bin/chezmoi ~/.bw-session ~/.chezmoi.toml
+```
+
+---
+
 **Happy Configuring! 🎉**
