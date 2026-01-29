@@ -212,72 +212,34 @@ echo ""
 
 # Reset Apps (before homebrew so we can use brew to uninstall)
 if $RESET_APPS; then
-    echo -e "${YELLOW}→${NC} Removing installed applications..."
+    echo -e "${YELLOW}→${NC} Removing all brew-installed applications..."
 
     if command -v brew &>/dev/null; then
-        # Quit running apps first
-        for app in Ghostty Discord Spotify Arc Obsidian "Plex Media Player" Handbrake "LM Studio" Syncthing; do
-            osascript -e "quit app \"$app\"" 2>/dev/null || true
-        done
+        # Get all installed casks and uninstall them
+        INSTALLED_CASKS=$(brew list --cask 2>/dev/null)
+        if [ -n "$INSTALLED_CASKS" ]; then
+            echo "  Removing cask apps..."
+            for cask in $INSTALLED_CASKS; do
+                echo "    Removing $cask..."
+                brew uninstall --cask "$cask" 2>/dev/null || true
+            done
+        fi
 
-        # Uninstall cask apps
-        CASK_APPS=(
-            ghostty
-            discord
-            spotify
-            arc
-            obsidian
-            plex
-            handbrake
-            lm-studio
-            syncthing
-            keymapp
-            raycast
-        )
+        # Get all installed formulae and uninstall them
+        INSTALLED_FORMULAE=$(brew list --formula 2>/dev/null)
+        if [ -n "$INSTALLED_FORMULAE" ]; then
+            echo "  Removing CLI tools..."
+            for formula in $INSTALLED_FORMULAE; do
+                echo "    Removing $formula..."
+                brew uninstall "$formula" 2>/dev/null || true
+            done
+        fi
 
-        for app in "${CASK_APPS[@]}"; do
-            echo "  Removing $app..."
-            brew uninstall --cask "$app" 2>/dev/null || true
-        done
-
-        # Uninstall CLI tools installed by playbook
-        CLI_TOOLS=(
-            tmux
-            tmuxinator
-            lazygit
-            lazydocker
-            fzf
-            ripgrep
-            bat
-            neofetch
-            starship
-            kubectl
-            k9s
-            k6
-            azure-cli
-            mongosh
-            lua
-            luarocks
-            go
-            fnm
-            pnpm
-            gh
-        )
-
-        for tool in "${CLI_TOOLS[@]}"; do
-            echo "  Removing $tool..."
-            brew uninstall "$tool" 2>/dev/null || true
-        done
+        # Clean up
+        brew cleanup 2>/dev/null || true
     else
         echo "  Homebrew not found, skipping brew uninstalls"
     fi
-
-    # Remove app data directories
-    rm -rf ~/Library/Application\ Support/Ghostty
-    rm -rf ~/Library/Application\ Support/discord
-    rm -rf ~/Library/Application\ Support/Spotify
-    rm -rf ~/Library/Application\ Support/Arc
-    rm -rf ~/Library/Application\ Support/obsidian
 
     echo -e "${GREEN}✓${NC} Applications removed"
 fi
