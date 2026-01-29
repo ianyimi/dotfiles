@@ -15,15 +15,22 @@ echo -e "${CYAN}     GitHub Project Cloner${NC}"
 echo -e "${CYAN}═══════════════════════════════════════${NC}"
 echo ""
 
+# Suppress Node.js deprecation warnings
+export NODE_OPTIONS="--no-deprecation"
+
 # Check if BW_SESSION is set
 if [ -z "$BW_SESSION" ]; then
     if [ -f ~/.bw-session ]; then
         source ~/.bw-session
     else
         echo -e "${YELLOW}⚠${NC}  Bitwarden session not found. Unlocking..."
-        export BW_SESSION=$(bw unlock --raw)
+        export BW_SESSION=$(bw unlock --raw </dev/tty)
     fi
 fi
+
+# Sync Bitwarden vault to get latest items
+echo "Syncing Bitwarden vault..."
+bw sync --session "$BW_SESSION" &>/dev/null || true
 
 # Check if gh CLI is installed and authenticated
 if ! command -v gh &>/dev/null; then
@@ -35,7 +42,7 @@ fi
 # Authenticate gh CLI using token from Bitwarden
 if ! gh auth status &>/dev/null; then
     echo "Authenticating GitHub CLI with token from Bitwarden..."
-    GITHUB_TOKEN=$(bw get password "GitHub Personal Access Token" 2>/dev/null || bw get password "GitHub API Token" 2>/dev/null)
+    GITHUB_TOKEN=$(bw get password "GitHub Personal Access Token" --session "$BW_SESSION" 2>/dev/null)
 
     if [ -z "$GITHUB_TOKEN" ]; then
         echo -e "${RED}✗${NC} Could not find GitHub token in Bitwarden."
