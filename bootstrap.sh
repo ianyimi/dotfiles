@@ -263,17 +263,17 @@ init_chezmoi() {
     echo ""
     echo -e "${BLUE}Initializing chezmoi with dotfiles...${NC}"
 
-    # Get existing values from chezmoi data (most reliable method)
+    # Get existing values - try config file directly (most reliable)
     DEFAULT_BW_EMAIL=""
     DEFAULT_BW_SERVER=""
     DEFAULT_GITHUB_USER=""
+    CHEZMOI_CONFIG="$HOME/.config/chezmoi/chezmoi.toml"
 
-    # Try chezmoi data first (works if chezmoi is configured)
-    if command -v chezmoi &>/dev/null; then
-        CHEZMOI_DATA=$(chezmoi data --format json 2>/dev/null || echo "{}")
-        DEFAULT_BW_EMAIL=$(echo "$CHEZMOI_DATA" | grep -o '"bwEmail": *"[^"]*"' | cut -d'"' -f4)
-        DEFAULT_BW_SERVER=$(echo "$CHEZMOI_DATA" | grep -o '"bwServer": *"[^"]*"' | cut -d'"' -f4)
-        DEFAULT_GITHUB_USER=$(echo "$CHEZMOI_DATA" | grep -o '"githubUsername": *"[^"]*"' | cut -d'"' -f4)
+    if [ -f "$CHEZMOI_CONFIG" ]; then
+        # Read from config file - handles indented TOML under [data]
+        DEFAULT_BW_EMAIL=$(grep 'bwEmail' "$CHEZMOI_CONFIG" | head -1 | sed 's/.*= *"//' | sed 's/".*//')
+        DEFAULT_BW_SERVER=$(grep 'bwServer' "$CHEZMOI_CONFIG" | head -1 | sed 's/.*= *"//' | sed 's/".*//')
+        DEFAULT_GITHUB_USER=$(grep 'githubUsername' "$CHEZMOI_CONFIG" | head -1 | sed 's/.*= *"//' | sed 's/".*//')
     fi
 
     # Fallback to bw config for server if not found
@@ -324,12 +324,14 @@ init_chezmoi() {
     # Setup Bitwarden before chezmoi init so BW_SESSION is available for templates
     setup_bitwarden "$BW_EMAIL" "$BW_SERVER"
 
-    # Initialize and apply dotfiles with values passed via flags
-    if chezmoi init --apply \
-        --promptString "bwEmail=$BW_EMAIL" \
-        --promptString "bwServer=$BW_SERVER" \
-        --promptString "githubUsername=$GITHUB_USER" \
-        "$REPO_URL"; then
+    # Export values as environment variables for chezmoi template
+    # (required because stdinIsATTY is false when running via curl | bash)
+    export BITWARDEN_EMAIL="$BW_EMAIL"
+    export BITWARDEN_SERVER="$BW_SERVER"
+    export GITHUB_USERNAME="$GITHUB_USER"
+
+    # Initialize and apply dotfiles
+    if chezmoi init --apply "$REPO_URL"; then
         echo -e "${GREEN}✓${NC} Dotfiles initialized and applied"
     else
         echo -e "${RED}✗${NC} Failed to initialize dotfiles"
