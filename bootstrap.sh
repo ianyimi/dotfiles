@@ -147,7 +147,8 @@ init_chezmoi() {
     fi
 
     # Initialize and apply dotfiles
-    if chezmoi init --apply "$REPO_URL"; then
+    # Use </dev/tty so chezmoi's promptString can read from terminal
+    if chezmoi init --apply "$REPO_URL" </dev/tty; then
         echo -e "${GREEN}✓${NC} Dotfiles initialized and applied"
     else
         echo -e "${RED}✗${NC} Failed to initialize dotfiles"
