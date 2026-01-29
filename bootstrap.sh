@@ -146,12 +146,40 @@ init_chezmoi() {
         rm -rf "$HOME/.local/share/chezmoi"
     fi
 
-    # Prompt for chezmoi template values
+    # Get existing values from chezmoi config if available
+    DEFAULT_BW_EMAIL=""
+    DEFAULT_BW_SERVER=""
+    DEFAULT_GITHUB_USER=""
+    if command -v chezmoi &>/dev/null && [ -f "$HOME/.config/chezmoi/chezmoi.toml" ]; then
+        DEFAULT_BW_EMAIL=$(chezmoi data --format json 2>/dev/null | grep -o '"bwEmail":"[^"]*"' | cut -d'"' -f4 || echo "")
+        DEFAULT_BW_SERVER=$(chezmoi data --format json 2>/dev/null | grep -o '"bwServer":"[^"]*"' | cut -d'"' -f4 || echo "")
+        DEFAULT_GITHUB_USER=$(chezmoi data --format json 2>/dev/null | grep -o '"githubUsername":"[^"]*"' | cut -d'"' -f4 || echo "")
+    fi
+
+    # Prompt for chezmoi template values with defaults
     echo ""
-    echo -e "${BLUE}Please provide configuration values:${NC}"
-    read -p "Bitwarden email: " BW_EMAIL </dev/tty
-    read -p "Bitwarden server URL (e.g., https://vault.example.com): " BW_SERVER </dev/tty
-    read -p "GitHub username: " GITHUB_USER </dev/tty
+    echo -e "${BLUE}Please provide configuration values (press Enter to accept default):${NC}"
+
+    if [ -n "$DEFAULT_BW_EMAIL" ]; then
+        read -p "Bitwarden email [$DEFAULT_BW_EMAIL]: " BW_EMAIL </dev/tty
+        BW_EMAIL=${BW_EMAIL:-$DEFAULT_BW_EMAIL}
+    else
+        read -p "Bitwarden email: " BW_EMAIL </dev/tty
+    fi
+
+    if [ -n "$DEFAULT_BW_SERVER" ]; then
+        read -p "Bitwarden server URL [$DEFAULT_BW_SERVER]: " BW_SERVER </dev/tty
+        BW_SERVER=${BW_SERVER:-$DEFAULT_BW_SERVER}
+    else
+        read -p "Bitwarden server URL (e.g., https://vault.example.com): " BW_SERVER </dev/tty
+    fi
+
+    if [ -n "$DEFAULT_GITHUB_USER" ]; then
+        read -p "GitHub username [$DEFAULT_GITHUB_USER]: " GITHUB_USER </dev/tty
+        GITHUB_USER=${GITHUB_USER:-$DEFAULT_GITHUB_USER}
+    else
+        read -p "GitHub username: " GITHUB_USER </dev/tty
+    fi
 
     # Initialize and apply dotfiles with values passed via flags
     if chezmoi init --apply \
