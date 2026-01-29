@@ -45,7 +45,7 @@ fi
 if ! bw login --check &>/dev/null; then
     echo ""
     echo "Please log in to Bitwarden to continue:"
-    bw login {{ .bwEmail }}
+    bw login {{ .bwEmail }} </dev/tty
 fi
 
 echo ""

@@ -18,7 +18,7 @@ fi
 # Check and install Homebrew
 if ! command -v brew &>/dev/null; then
     echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty
 
     # Add Homebrew to PATH for Apple Silicon Macs
     if [[ $(uname -m) == "arm64" ]]; then

@@ -39,6 +39,6 @@ case "${OS}" in
         ;;
 esac
 
-ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass
+ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass </dev/tty
 
 echo "Ansible installation complete."

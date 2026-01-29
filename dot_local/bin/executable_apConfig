@@ -33,7 +33,7 @@ echo ""
 echo -e "${BLUE}[2/6]${NC} Installing prerequisites (git, brew)..."
 if ! command -v brew &>/dev/null; then
     echo "Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" </dev/tty
     if [[ $(uname -m) == "arm64" ]]; then
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
@@ -57,11 +57,11 @@ fi
 echo -e "${BLUE}[4/6]${NC} Authenticating with Bitwarden..."
 if ! bw login --check &>/dev/null; then
     echo "Please login to Bitwarden:"
-    bw login
+    bw login </dev/tty
 fi
 
 echo "Unlocking Bitwarden vault..."
-export BW_SESSION=$(bw unlock --raw)
+export BW_SESSION=$(bw unlock --raw </dev/tty)
 echo "export BW_SESSION=\"$BW_SESSION\"" > ~/.bw-session
 chmod 600 ~/.bw-session
 echo -e "${GREEN}✓${NC} Bitwarden authenticated and unlocked"
@@ -94,7 +94,7 @@ if [ ! -f ~/.bootstrap/macos.yml ]; then
     chezmoi apply
 fi
 
-ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass
+ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass </dev/tty
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
