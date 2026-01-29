@@ -370,7 +370,9 @@ Interactive reset script with menu or flags:
 ```bash
 # Interactive menu (recommended)
 curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash
+```
 
+```bash
 # Or use flags to skip the menu:
 #   --dotfiles      Remove chezmoi source, config, and applied dotfiles
 #   --tailscale     Remove Tailscale app and config
@@ -380,10 +382,20 @@ curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | 
 #   --all           Remove everything (full reset)
 
 # Examples with flags:
+```
+
+```bash
 curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --dotfiles              # Quick reset
+```
+```bash
 curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale             # Tailscale only
+```
+```bash
 curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --tailscale --bitwarden # Multiple components
+```
+```bash
 curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh | bash -s -- --all                   # Full reset
+```
 ```
 
 ---
