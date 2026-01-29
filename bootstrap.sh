@@ -169,8 +169,10 @@ setup_tailscale() {
         return 0
     fi
 
-    # Start service if not running (check without sudo first)
-    if ! brew services list | grep -q "tailscale.*started"; then
+    # Check if tailscaled is already running (no sudo needed for pgrep)
+    if pgrep -x tailscaled &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Tailscale service already running"
+    else
         echo -e "${YELLOW}→${NC} Starting Tailscale service..."
         sudo brew services start tailscale
         sleep 2
