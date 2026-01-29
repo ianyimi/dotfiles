@@ -222,6 +222,8 @@ if $RESET_APPS; then
     fi
     if ! $RESET_BITWARDEN; then
         SKIP_FORMULAE+=("bitwarden-cli")
+        # bitwarden-cli requires node to run
+        SKIP_FORMULAE+=("node")
     fi
 
     if command -v brew &>/dev/null; then
