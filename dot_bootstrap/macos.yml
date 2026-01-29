@@ -109,6 +109,7 @@
       community.general.homebrew:
         name: arc
         state: present
+      ignore_errors: true
 
     # - name: Check Install - Zen Browser
     #   community.general.homebrew_cask:
