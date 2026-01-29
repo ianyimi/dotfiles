@@ -169,8 +169,9 @@ setup_tailscale() {
         return 0
     fi
 
-    # Check if tailscaled is already running (no sudo needed for pgrep)
-    if pgrep -x tailscaled &>/dev/null; then
+    # Check if tailscale daemon is already running (no sudo needed for pgrep)
+    # On macOS with brew, the process is named "io.tailscale.ip" not "tailscaled"
+    if pgrep -f "tailscale" &>/dev/null; then
         echo -e "${GREEN}✓${NC} Tailscale service already running"
     else
         echo -e "${YELLOW}→${NC} Starting Tailscale service..."
