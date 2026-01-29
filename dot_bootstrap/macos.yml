@@ -325,6 +325,11 @@
         name: npm
         state: present
 
+    - name: Check Install - HandBrakeCLI
+      community.general.homebrew:
+        name: handbrake
+        state: present
+
     - name: Check Install - lazydocker
       community.general.homebrew:
         name: lazydocker
