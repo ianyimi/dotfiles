@@ -230,6 +230,9 @@
   hosts: localhost
   become: false
   connection: local
+  vars:
+    real_user: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER')) }}"
+    real_home: "/home/{{ real_user }}"
   tasks:
     - name: Check if pnpm is installed
       ansible.builtin.command: pnpm --version
@@ -240,17 +243,19 @@
     - name: Install pnpm
       ansible.builtin.shell: "curl -fsSL https://get.pnpm.io/install.sh | sh -"
       args:
-        creates: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
+        creates: "{{ real_home }}/.local/share/pnpm"
       environment:
-        PNPM_HOME: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
+        HOME: "{{ real_home }}"
+        PNPM_HOME: "{{ real_home }}/.local/share/pnpm"
       when: pnpm_check.rc != 0
 
     - name: Ensure pnpm is in PATH
       ansible.builtin.lineinfile:
-        path: ~/.zshrc
+        path: "{{ real_home }}/.zshrc"
         line: 'export PATH="$HOME/.local/share/pnpm:$PATH"'
         insertafter: EOF
         state: present
+        create: true
       when: pnpm_check.rc != 0
 
 - name: Install Starship prompt
