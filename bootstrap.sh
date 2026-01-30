@@ -432,9 +432,12 @@ run_linux_setup() {
     LINUX_PLAYBOOK="$HOME/.bootstrap/linux.yml"
     if [ -f "$LINUX_PLAYBOOK" ]; then
         echo -e "${YELLOW}→${NC} Running Linux Ansible playbook..."
-        read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG
+        read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG </dev/tty
         if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
-            ansible-playbook "$LINUX_PLAYBOOK" --ask-become-pass
+            # Read password from terminal and pass to ansible
+            read -s -p "BECOME password (sudo): " BECOME_PASS </dev/tty
+            echo ""
+            echo "$BECOME_PASS" | ansible-playbook "$LINUX_PLAYBOOK" --become-password-file=/dev/stdin
         fi
     else
         echo -e "${YELLOW}⚠${NC}  Linux playbook not found at $LINUX_PLAYBOOK"
