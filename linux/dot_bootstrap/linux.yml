@@ -400,9 +400,14 @@
 
 - name: Install tmuxinator
   hosts: localhost
-  become: false
+  become: true
   connection: local
   tasks:
+    - name: Install Ruby (required for tmuxinator)
+      ansible.builtin.apt:
+        name: ruby
+        state: present
+
     - name: Check if tmuxinator is installed
       ansible.builtin.command: which tmuxinator
       register: tmuxinator_check
@@ -410,7 +415,6 @@
       changed_when: false
 
     - name: Install tmuxinator via gem
-      become: true
       ansible.builtin.gem:
         name: tmuxinator
         state: present
