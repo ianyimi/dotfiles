@@ -384,12 +384,12 @@ curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyi
 
 **Linux (Ubuntu):**
 ```bash
-wget -q "https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)" -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+wget --no-cache -q "https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)" -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 **Universal (both platforms):**
 ```bash
-URL="https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+URL="https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)"; (command -v curl >/dev/null && curl -H "Cache-Control: no-cache" -fsSL "$URL" -o /tmp/bootstrap.sh || wget --no-cache -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 ### Reset script
