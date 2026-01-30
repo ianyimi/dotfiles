@@ -1,3 +1,4 @@
+# Always ignore these
 .config/aerospace-monitor/aerospace-monitor-daemon
 .config/aerospace-monitor/daemon.log
 
@@ -28,19 +29,18 @@ CLAWDBOT_FILES_EXPLAINED.md
 INSTALLATION_REVIEW.md
 SETUP_COMPLETE.md
 
-# OS-specific ignores
-{{ if eq .chezmoi.os "darwin" }}
-# Ignore Linux-only configs on macOS
-dot_config/hypr
-dot_config/waybar
-dot_config/rofi
-dot_config/dunst
-{{ end }}
+# Don't install the OS-specific folders as directories themselves
+# These are handled by run_before_000_setup_os_symlinks.sh.tmpl
+darwin/
+linux/
+shared/
 
-{{ if eq .chezmoi.os "linux" }}
-# Ignore macOS-only configs on Linux
-dot_aerospace.toml
-dot_config/aerospace
-dot_config/aerospace-monitor
-dot_config/sketchybar
+# Root dot_local is no longer used (moved to shared/darwin/linux)
+dot_local/
+
+# OS-specific ignores for files at root level (if any remain)
+{{ if eq .chezmoi.os "darwin" }}
+# On macOS: ignore any root-level Linux files
+{{ else if eq .chezmoi.os "linux" }}
+# On Linux: ignore any root-level macOS files
 {{ end }}

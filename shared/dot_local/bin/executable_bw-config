@@ -3,6 +3,9 @@
 
 CONFIG_FILE="$HOME/.config/chezmoi/chezmoi.toml"
 
+# Detect OS for sed compatibility
+OS="$(uname -s)"
+
 # Get current values
 CURRENT_EMAIL=$(grep 'bwEmail' "$CONFIG_FILE" | sed 's/.*= "\(.*\)"/\1/')
 CURRENT_SERVER=$(grep 'bwServer' "$CONFIG_FILE" | sed 's/.*= "\(.*\)"/\1/')
@@ -32,14 +35,28 @@ if [ "$NEW_EMAIL" = "$CURRENT_EMAIL" ] && [ "$NEW_SERVER" = "$CURRENT_SERVER" ];
     exit 0
 fi
 
-# Update the config file
+# Update the config file (OS-specific sed syntax)
 if [ "$NEW_EMAIL" != "$CURRENT_EMAIL" ]; then
-    sed -i '' "s|bwEmail = \".*\"|bwEmail = \"$NEW_EMAIL\"|" "$CONFIG_FILE"
+    case "$OS" in
+        Darwin*)
+            sed -i '' "s|bwEmail = \".*\"|bwEmail = \"$NEW_EMAIL\"|" "$CONFIG_FILE"
+            ;;
+        Linux*)
+            sed -i "s|bwEmail = \".*\"|bwEmail = \"$NEW_EMAIL\"|" "$CONFIG_FILE"
+            ;;
+    esac
     echo "✓ Updated email to: $NEW_EMAIL"
 fi
 
 if [ "$NEW_SERVER" != "$CURRENT_SERVER" ]; then
-    sed -i '' "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+    case "$OS" in
+        Darwin*)
+            sed -i '' "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+            ;;
+        Linux*)
+            sed -i "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+            ;;
+    esac
     echo "✓ Updated server to: $NEW_SERVER"
     echo ""
     echo "Reconfiguring Bitwarden CLI..."

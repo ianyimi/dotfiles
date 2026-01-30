@@ -3,6 +3,9 @@
 
 CONFIG_FILE="$HOME/.config/chezmoi/chezmoi.toml"
 
+# Detect OS for sed compatibility
+OS="$(uname -s)"
+
 # Get current value
 CURRENT_SERVER=$(grep 'bwServer' "$CONFIG_FILE" | sed 's/.*= "\(.*\)"/\1/')
 
@@ -17,8 +20,15 @@ if [ -z "$NEW_SERVER" ]; then
     exit 0
 fi
 
-# Update the config file
-sed -i '' "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+# Update the config file (OS-specific sed syntax)
+case "$OS" in
+    Darwin*)
+        sed -i '' "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+        ;;
+    Linux*)
+        sed -i "s|bwServer = \".*\"|bwServer = \"$NEW_SERVER\"|" "$CONFIG_FILE"
+        ;;
+esac
 
 echo "✓ Updated Bitwarden server to: $NEW_SERVER"
 echo ""

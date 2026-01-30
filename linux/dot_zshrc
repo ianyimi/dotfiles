@@ -1,0 +1,34 @@
+# Linux zshrc
+
+# Source shared configuration
+source ~/.zshrc_shared
+
+# Linux-specific aliases
+alias apConfig="ansible-playbook ~/.bootstrap/linux.yml --ask-become-pass"
+alias nvHypr="nvim ~/.config/hypr/hyprland.conf"
+
+# Hyprland aliases
+alias hyprReload="hyprctl reload"
+alias waybarRestart="killall waybar; waybar &"
+
+# pnpm (Linux path)
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# System zsh plugins (apt-installed)
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2>/dev/null || true
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh 2>/dev/null || true
+
+# fnm (Linux)
+FNM_PATH="$HOME/.local/share/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="$FNM_PATH:$PATH"
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
+
+# node-rdkafka openssl (Linux)
+export CPPFLAGS="-I/usr/include/openssl"
+export LDFLAGS="-L/usr/lib/x86_64-linux-gnu"

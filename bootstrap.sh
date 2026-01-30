@@ -241,7 +241,24 @@ setup_bitwarden() {
     # Install Bitwarden CLI if not present
     if ! command -v bw &>/dev/null; then
         echo -e "${YELLOW}→${NC} Installing Bitwarden CLI..."
-        brew install bitwarden-cli
+        case "$OS" in
+            Darwin*)
+                brew install bitwarden-cli
+                ;;
+            Linux*)
+                # Try snap first, fall back to npm
+                if command -v snap &>/dev/null; then
+                    sudo snap install bw
+                elif command -v npm &>/dev/null; then
+                    sudo npm install -g @bitwarden/cli
+                else
+                    # Install npm first, then bw
+                    sudo apt-get update
+                    sudo apt-get install -y npm
+                    sudo npm install -g @bitwarden/cli
+                fi
+                ;;
+        esac
         echo -e "${GREEN}✓${NC} Bitwarden CLI installed"
     else
         echo -e "${GREEN}✓${NC} Bitwarden CLI already installed"

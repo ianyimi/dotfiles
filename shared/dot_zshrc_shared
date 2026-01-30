@@ -1,0 +1,113 @@
+# Shared zshrc - sourced by OS-specific zshrc files
+
+eval "$(starship init zsh)"
+export EDITOR=nvim
+export PATH="$PATH:$HOME/go/bin"
+
+# Navigation aliases
+alias .="cd ../"
+alias ..="cd ../../"
+alias ...="cd ../../../"
+alias ....="cd ../../../../"
+alias .....="cd ../../../../../"
+alias ......="cd ../../../../../../"
+alias .......="cd ../../../../../../../"
+
+alias claude="unset ANTHROPIC_API_KEY && claude"
+
+# Agent-os aliases
+alias aocp="~/agent-os/scripts/create-profile.sh && chezmoi add ~/agent-os && echo 'Added new profile to dotfiles'"
+alias aopi="~/agent-os/scripts/project-install.sh"
+alias bwcs="bw-config-server"
+alias bwc="bw-config"
+
+# Auto-load Bitwarden session if available and refresh if expired
+if [ -f ~/.bw-session ]; then
+    source ~/.bw-session
+    if [ -n "$BW_SESSION" ]; then
+        export BW_SESSION
+        if ! bw unlock --check --session "$BW_SESSION" &>/dev/null; then
+            unset BW_SESSION
+            rm -f ~/.bw-session
+        fi
+    fi
+fi
+
+# Common aliases
+alias bwsr="bw-session-check"
+alias cpfd="cp -R"
+alias cm="chezmoi"
+alias cma="bw-session-check && source ~/.bw-session 2>/dev/null && NODE_OPTIONS='--no-deprecation' chezmoi apply && source ~/.zshrc"
+alias cme="chezmoi edit --watch"
+alias tm="tmux"
+alias tma="tmux attach"
+alias tms="tmux kill-session -t"
+alias nv="nvim ."
+alias lg="lazygit"
+alias ap="ansible-playbook"
+alias mux="tmuxinator"
+
+alias sz="source ~/.zshrc"
+alias nrd="npm run dev"
+alias nrb="npm run build"
+alias nrs="npm run start"
+alias nrt="npm run test"
+
+alias spotify="source spotdl/bin/activate"
+alias spotifydl="spotify_dl -o ~/Downloads/ -s y -l"
+
+alias tmks="tmux kill-session"
+alias tmkS="tmux kill-server"
+
+# Directory aliases
+alias cdConfig="cd ~/.config"
+alias cdDesktop="cd ~/Desktop"
+alias cdDownloads="cd ~/Downloads"
+alias cdDocuments="cd ~/Documents"
+alias cdHome="cd ~/"
+alias nvZsh="nvim ~/.zshrc"
+
+alias cdChezmoi="chezmoi cd"
+alias lgChezmoi="lazygit -p ~/.local/share/chezmoi"
+
+alias cdNvim="cd ~/.config/nvim"
+alias nvNvim="nvim ~/.config/nvim"
+alias lgNvim="lazygit -p ~/.config/nvim"
+
+# Project aliases
+alias cdCog="cd ~/Desktop/Projects/Zoic/cognitive-core"
+alias nvCog="nvim ~/Desktop/Projects/Zoic/cognitive-core"
+alias lgCog="lg ~/Desktop/Projects/Zoic/cognitive-core"
+
+alias cdEdapt="cd ~/Desktop/Edapt/webapp-v2"
+alias nvEdapt="nvim ~/Desktop/Edapt/webapp-v2"
+alias lgEdapt="lazygit -p ~/Desktop/Edapt/webapp-v2"
+
+alias cdPortfolio="cd ~/Desktop/Portfolio24"
+alias nvPortfolio="nvim ~/Desktop/Portfolio24"
+alias lgPortfolio="lazygit -p ~/Desktop/Portfolio24"
+
+alias cdScripts="cd ~/Documents/The\ Lab/System/Assets/Scripts/"
+alias nvScripts="nvim ~/Documents/The\ Lab/System/Assets/Scripts/"
+
+alias cdDaily="cd ~/Documents/The\ Lab/Logs/Daily/"
+alias nvDaily="nvim ~/Documents/The\ Lab/Logs/Daily/"
+
+alias cdVault="cd ~/Documents/The\ Lab/"
+alias nvVault="nvim ~/Documents/The\ Lab/"
+
+# NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# Console ninja
+PATH=~/.console-ninja/.bin:$PATH
+
+export CKJS_LINKING="dynamic"
+export BUILD_LIBRDKAFKA="0"
+
+bindkey -v
+
+# Local bin
+export PATH="$HOME/.local/bin:$PATH"

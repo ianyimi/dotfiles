@@ -1,0 +1,202 @@
+#!/bin/bash
+# This script runs before chezmoi apply to set up OS-specific files
+# It copies files from darwin/linux/shared folders to the target locations
+# enabling clean separation of OS-specific configurations
+
+set -e
+
+CHEZMOI_SOURCE="{{ .chezmoi.sourceDir }}"
+OS="{{ .chezmoi.os }}"
+
+echo "=== Setting up OS-specific file structure for $OS ==="
+
+# Function to create directory if it doesn't exist
+ensure_dir() {
+    if [ ! -d "$1" ]; then
+        mkdir -p "$1"
+    fi
+}
+
+# Function to copy a file, handling executable_ prefix
+copy_file() {
+    local src="$1"
+    local dest_dir="$2"
+    local name=$(basename "$src")
+
+    # Handle executable_ prefix - remove it and make file executable
+    if [[ "$name" == executable_* ]]; then
+        local dest_name="${name#executable_}"
+        cp "$src" "$dest_dir/$dest_name"
+        chmod +x "$dest_dir/$dest_name"
+    else
+        cp "$src" "$dest_dir/$name"
+    fi
+}
+
+# Function to recursively copy directory contents, handling executable_ prefix
+copy_dir_contents() {
+    local src_dir="$1"
+    local dest_dir="$2"
+    local label="$3"
+
+    ensure_dir "$dest_dir"
+
+    for item in "$src_dir"/*; do
+        if [ -e "$item" ]; then
+            local name=$(basename "$item")
+
+            if [ -d "$item" ]; then
+                # Recursively copy directory
+                rm -rf "$dest_dir/$name"
+                mkdir -p "$dest_dir/$name"
+                copy_dir_contents "$item" "$dest_dir/$name" "$label"
+            else
+                # Copy file, handling executable_ prefix
+                copy_file "$item" "$dest_dir"
+            fi
+        fi
+    done
+    echo "  Copied $label"
+}
+
+TARGET_HOME="$HOME"
+
+echo "Setting up configuration files..."
+
+# Shared configs - always installed
+if [ -d "$CHEZMOI_SOURCE/shared" ]; then
+    # dot_config contents
+    if [ -d "$CHEZMOI_SOURCE/shared/dot_config" ]; then
+        ensure_dir "$TARGET_HOME/.config"
+        for item in "$CHEZMOI_SOURCE/shared/dot_config"/*; do
+            if [ -e "$item" ]; then
+                name=$(basename "$item")
+                rm -rf "$TARGET_HOME/.config/$name"
+                if [ -d "$item" ]; then
+                    mkdir -p "$TARGET_HOME/.config/$name"
+                    copy_dir_contents "$item" "$TARGET_HOME/.config/$name" "shared config: $name"
+                else
+                    copy_file "$item" "$TARGET_HOME/.config"
+                    echo "  Copied shared config: $name"
+                fi
+            fi
+        done
+    fi
+
+    # dot_local/bin - handle executable files
+    if [ -d "$CHEZMOI_SOURCE/shared/dot_local/bin" ]; then
+        ensure_dir "$TARGET_HOME/.local/bin"
+        for item in "$CHEZMOI_SOURCE/shared/dot_local/bin"/*; do
+            if [ -f "$item" ]; then
+                copy_file "$item" "$TARGET_HOME/.local/bin"
+            fi
+        done
+        echo "  Copied shared local/bin scripts"
+    fi
+
+    # dot_tmux
+    if [ -d "$CHEZMOI_SOURCE/shared/dot_tmux" ]; then
+        rm -rf "$TARGET_HOME/.tmux"
+        mkdir -p "$TARGET_HOME/.tmux"
+        copy_dir_contents "$CHEZMOI_SOURCE/shared/dot_tmux" "$TARGET_HOME/.tmux" "shared: .tmux"
+    fi
+
+    # dot_tmux.conf
+    if [ -f "$CHEZMOI_SOURCE/shared/dot_tmux.conf" ]; then
+        cp "$CHEZMOI_SOURCE/shared/dot_tmux.conf" "$TARGET_HOME/.tmux.conf"
+        echo "  Copied shared: .tmux.conf"
+    fi
+
+    # dot_tmux.snazzy.theme
+    if [ -f "$CHEZMOI_SOURCE/shared/dot_tmux.snazzy.theme" ]; then
+        cp "$CHEZMOI_SOURCE/shared/dot_tmux.snazzy.theme" "$TARGET_HOME/.tmux.snazzy.theme"
+        echo "  Copied shared: .tmux.snazzy.theme"
+    fi
+
+    # dot_bashrc
+    if [ -f "$CHEZMOI_SOURCE/shared/dot_bashrc" ]; then
+        cp "$CHEZMOI_SOURCE/shared/dot_bashrc" "$TARGET_HOME/.bashrc"
+        echo "  Copied shared: .bashrc"
+    fi
+
+    # dot_zshrc_shared -> .zshrc_shared
+    if [ -f "$CHEZMOI_SOURCE/shared/dot_zshrc_shared" ]; then
+        cp "$CHEZMOI_SOURCE/shared/dot_zshrc_shared" "$TARGET_HOME/.zshrc_shared"
+        echo "  Copied shared: .zshrc_shared"
+    fi
+fi
+
+# OS-specific configs
+{{ if eq .chezmoi.os "darwin" }}
+OS_DIR="$CHEZMOI_SOURCE/darwin"
+{{ else }}
+OS_DIR="$CHEZMOI_SOURCE/linux"
+{{ end }}
+
+if [ -d "$OS_DIR" ]; then
+    # dot_config contents
+    if [ -d "$OS_DIR/dot_config" ]; then
+        ensure_dir "$TARGET_HOME/.config"
+        for item in "$OS_DIR/dot_config"/*; do
+            if [ -e "$item" ]; then
+                name=$(basename "$item")
+                rm -rf "$TARGET_HOME/.config/$name"
+                if [ -d "$item" ]; then
+                    mkdir -p "$TARGET_HOME/.config/$name"
+                    copy_dir_contents "$item" "$TARGET_HOME/.config/$name" "$OS config: $name"
+                else
+                    copy_file "$item" "$TARGET_HOME/.config"
+                    echo "  Copied $OS config: $name"
+                fi
+            fi
+        done
+    fi
+
+    # dot_bootstrap
+    if [ -d "$OS_DIR/dot_bootstrap" ]; then
+        ensure_dir "$TARGET_HOME/.bootstrap"
+        for item in "$OS_DIR/dot_bootstrap"/*; do
+            if [ -f "$item" ]; then
+                name=$(basename "$item")
+                cp "$item" "$TARGET_HOME/.bootstrap/$name"
+                echo "  Copied $OS bootstrap: $name"
+            fi
+        done
+    fi
+
+    # dot_local/bin - handle executable files, merge with shared
+    if [ -d "$OS_DIR/dot_local/bin" ]; then
+        ensure_dir "$TARGET_HOME/.local/bin"
+        for item in "$OS_DIR/dot_local/bin"/*; do
+            if [ -f "$item" ]; then
+                copy_file "$item" "$TARGET_HOME/.local/bin"
+            fi
+        done
+        echo "  Copied $OS local/bin scripts"
+    fi
+
+    # dot_zshrc -> .zshrc (OS-specific)
+    if [ -f "$OS_DIR/dot_zshrc" ]; then
+        cp "$OS_DIR/dot_zshrc" "$TARGET_HOME/.zshrc"
+        echo "  Copied $OS: .zshrc"
+    fi
+
+{{ if eq .chezmoi.os "darwin" }}
+    # macOS-specific files
+
+    # dot_aerospace.toml
+    if [ -f "$OS_DIR/dot_aerospace.toml" ]; then
+        cp "$OS_DIR/dot_aerospace.toml" "$TARGET_HOME/.aerospace.toml"
+        echo "  Copied darwin: .aerospace.toml"
+    fi
+
+    # dot_glzr
+    if [ -d "$OS_DIR/dot_glzr" ]; then
+        rm -rf "$TARGET_HOME/.glzr"
+        mkdir -p "$TARGET_HOME/.glzr"
+        copy_dir_contents "$OS_DIR/dot_glzr" "$TARGET_HOME/.glzr" "darwin: .glzr"
+    fi
+{{ end }}
+fi
+
+echo "=== OS-specific file setup complete ==="

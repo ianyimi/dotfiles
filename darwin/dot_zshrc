@@ -1,0 +1,43 @@
+# macOS zshrc
+
+# Source shared configuration
+source ~/.zshrc_shared
+
+# macOS-specific aliases
+alias ocu="brew update && brew upgrade opencode"
+alias skr="brew services restart sketchybar"
+alias apConfig="ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass"
+alias nvAero="nvim ~/.aerospace.toml"
+
+# AeroSpace Monitor Daemon aliases
+alias aeromonStart='~/.config/aerospace-monitor/start-daemon.sh'
+alias aeromonStop='pkill -f aerospace-monitor-daemon && echo "✅ Daemon stopped"'
+alias aeromonRestart='pkill -f aerospace-monitor-daemon; sleep 1; chezmoi apply ~/.config/aerospace-monitor/main.swift && cd ~/.config/aerospace-monitor && ./build.sh && ./aerospace-monitor-daemon > daemon.log 2>&1 & echo "✅ Daemon restarted"'
+alias aeromonStatus='pgrep -fl aerospace-monitor-daemon || echo "❌ Daemon not running"'
+alias aeromonLogs='tail -f ~/.config/aerospace-monitor/daemon.log'
+
+# pnpm (macOS path)
+export PNPM_HOME="$HOME/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+
+# Homebrew zsh plugins
+source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 2>/dev/null || true
+source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh 2>/dev/null || true
+
+# fnm (macOS)
+FNM_PATH="$HOME/Library/Application Support/fnm"
+if [ -d "$FNM_PATH" ]; then
+  export PATH="$FNM_PATH:$PATH"
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
+
+# node-rdkafka openssl (macOS Homebrew)
+export CPPFLAGS="-I/opt/homebrew/opt/openssl@3/include -I/opt/homebrew/include"
+export LDFLAGS="-L/opt/homebrew/opt/openssl@3/lib -L/opt/homebrew/lib"
+export LIBRDKAFKA_ROOT="/opt/homebrew/opt/librdkafka"
+
+# LM Studio CLI (macOS)
+export PATH="$PATH:$HOME/.lmstudio/bin"
