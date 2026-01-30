@@ -398,6 +398,22 @@
       ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
       when: claude_code_check.rc != 0
 
+- name: Install Ghostty terminal
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if Ghostty is installed
+      ansible.builtin.command: which ghostty
+      register: ghostty_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Ghostty via community .deb package
+      ansible.builtin.shell: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh)"
+      when: ghostty_check.rc != 0
+      ignore_errors: true
+
 - name: Install tmuxinator
   hosts: localhost
   become: true
