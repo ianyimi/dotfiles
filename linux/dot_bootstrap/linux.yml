@@ -192,10 +192,10 @@
         name: jq
         state: present
 
-    - name: Install lunajson via luarocks
-      become: false
-      ansible.builtin.command: luarocks install --local lunajson
+    - name: Install lunajson via luarocks (system-wide)
+      ansible.builtin.command: luarocks install lunajson
       changed_when: false
+      ignore_errors: true
 
 - name: Install Node.js via NodeSource
   hosts: localhost
