@@ -434,14 +434,11 @@ run_linux_setup() {
         echo -e "${YELLOW}→${NC} Running Linux Ansible playbook..."
         read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG </dev/tty
         if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
-            # Read password from terminal and write to temp file
-            read -s -p "BECOME password (sudo): " BECOME_PASS </dev/tty
-            echo ""
-            PASS_FILE=$(mktemp)
-            echo "$BECOME_PASS" > "$PASS_FILE"
-            chmod 600 "$PASS_FILE"
-            ansible-playbook "$LINUX_PLAYBOOK" --become-password-file="$PASS_FILE"
-            rm -f "$PASS_FILE"
+            # Use sudo to cache credentials, then run ansible
+            echo "Enter sudo password to continue:"
+            sudo -v </dev/tty
+            # Run ansible with sudo cached (no password needed)
+            sudo ansible-playbook "$LINUX_PLAYBOOK"
         fi
     else
         echo -e "${YELLOW}⚠${NC}  Linux playbook not found at $LINUX_PLAYBOOK"
