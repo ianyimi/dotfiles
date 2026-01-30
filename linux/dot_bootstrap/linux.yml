@@ -454,25 +454,89 @@
       when: hyprland_in_repos.rc != 0
       ignore_errors: true
 
-    - name: Install Hyprland and related packages
+    - name: Install Hyprland
       ansible.builtin.apt:
-        name:
-          - hyprland
-          - waybar
-          - rofi-wayland
-          - dunst
-          - wl-clipboard
-          - grim
-          - slurp
-          - swaylock
-          - swayidle
-          - brightnessctl
-          - pavucontrol
-          - libnotify-bin
-          - xdg-desktop-portal-hyprland
-          - polkit-gnome
+        name: hyprland
         state: present
         update_cache: true
+      ignore_errors: true
+
+    - name: Install waybar
+      ansible.builtin.apt:
+        name: waybar
+        state: present
+      ignore_errors: true
+
+    - name: Install rofi (launcher)
+      ansible.builtin.apt:
+        name: rofi
+        state: present
+      ignore_errors: true
+
+    - name: Install dunst (notifications)
+      ansible.builtin.apt:
+        name: dunst
+        state: present
+      ignore_errors: true
+
+    - name: Install wl-clipboard
+      ansible.builtin.apt:
+        name: wl-clipboard
+        state: present
+      ignore_errors: true
+
+    - name: Install grim (screenshots)
+      ansible.builtin.apt:
+        name: grim
+        state: present
+      ignore_errors: true
+
+    - name: Install slurp (screen selection)
+      ansible.builtin.apt:
+        name: slurp
+        state: present
+      ignore_errors: true
+
+    - name: Install swaylock
+      ansible.builtin.apt:
+        name: swaylock
+        state: present
+      ignore_errors: true
+
+    - name: Install swayidle
+      ansible.builtin.apt:
+        name: swayidle
+        state: present
+      ignore_errors: true
+
+    - name: Install brightnessctl
+      ansible.builtin.apt:
+        name: brightnessctl
+        state: present
+      ignore_errors: true
+
+    - name: Install pavucontrol
+      ansible.builtin.apt:
+        name: pavucontrol
+        state: present
+      ignore_errors: true
+
+    - name: Install libnotify-bin
+      ansible.builtin.apt:
+        name: libnotify-bin
+        state: present
+      ignore_errors: true
+
+    - name: Install xdg-desktop-portal-hyprland
+      ansible.builtin.apt:
+        name: xdg-desktop-portal-hyprland
+        state: present
+      ignore_errors: true
+
+    - name: Install polkit-gnome
+      ansible.builtin.apt:
+        name: polkit-gnome
+        state: present
       ignore_errors: true
 
 - name: Snap Install (GUI Apps)
