@@ -102,27 +102,94 @@
         update_cache: true
         cache_valid_time: 3600
 
-    - name: Install core CLI tools from apt
+    - name: Install git
       ansible.builtin.apt:
-        name:
-          - git
-          - curl
-          - wget
-          - build-essential
-          - tmux
-          - neovim
-          - fzf
-          - ripgrep
-          - bat
-          - zsh-autosuggestions
-          - zsh-syntax-highlighting
-          - fastfetch
-          - lua5.4
-          - luarocks
-          - golang
-          - syncthing
-          - argon2
-          - jq
+        name: git
+        state: present
+
+    - name: Install curl
+      ansible.builtin.apt:
+        name: curl
+        state: present
+
+    - name: Install wget
+      ansible.builtin.apt:
+        name: wget
+        state: present
+
+    - name: Install build-essential
+      ansible.builtin.apt:
+        name: build-essential
+        state: present
+
+    - name: Install tmux
+      ansible.builtin.apt:
+        name: tmux
+        state: present
+
+    - name: Install neovim
+      ansible.builtin.apt:
+        name: neovim
+        state: present
+
+    - name: Install fzf
+      ansible.builtin.apt:
+        name: fzf
+        state: present
+
+    - name: Install ripgrep
+      ansible.builtin.apt:
+        name: ripgrep
+        state: present
+
+    - name: Install bat
+      ansible.builtin.apt:
+        name: bat
+        state: present
+
+    - name: Install zsh-autosuggestions
+      ansible.builtin.apt:
+        name: zsh-autosuggestions
+        state: present
+
+    - name: Install zsh-syntax-highlighting
+      ansible.builtin.apt:
+        name: zsh-syntax-highlighting
+        state: present
+
+    - name: Install fastfetch
+      ansible.builtin.apt:
+        name: fastfetch
+        state: present
+
+    - name: Install lua5.4
+      ansible.builtin.apt:
+        name: lua5.4
+        state: present
+
+    - name: Install luarocks
+      ansible.builtin.apt:
+        name: luarocks
+        state: present
+
+    - name: Install golang
+      ansible.builtin.apt:
+        name: golang
+        state: present
+
+    - name: Install syncthing
+      ansible.builtin.apt:
+        name: syncthing
+        state: present
+
+    - name: Install argon2
+      ansible.builtin.apt:
+        name: argon2
+        state: present
+
+    - name: Install jq
+      ansible.builtin.apt:
+        name: jq
         state: present
 
     - name: Install lunajson via luarocks
