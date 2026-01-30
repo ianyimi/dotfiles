@@ -252,13 +252,14 @@ setup_bitwarden() {
                 brew install bitwarden-cli
                 ;;
             Linux*)
-                # Try snap first, fall back to npm
-                if command -v snap &>/dev/null; then
+                # Try snap first (not available on ARM64), fall back to npm
+                if command -v snap &>/dev/null && [[ "$ARCH" != "aarch64" ]] && [[ "$ARCH" != "arm64" ]]; then
                     sudo snap install bw
                 elif command -v npm &>/dev/null; then
                     sudo npm install -g @bitwarden/cli
                 else
                     # Install npm first, then bw
+                    echo -e "${YELLOW}→${NC} Installing npm first..."
                     sudo apt-get update
                     sudo apt-get install -y npm
                     sudo npm install -g @bitwarden/cli
