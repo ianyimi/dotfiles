@@ -17,7 +17,7 @@
 
 /* Base styling */
 * {
-    font-family: "JetBrainsMono Nerd Font", "Hack Nerd Font", monospace;
+    font-family: "JetBrainsMono Nerd Font", "Hack Nerd Font", "Symbols Nerd Font", "Font Awesome 6 Free", "Font Awesome 6 Brands", monospace;
     font-size: 13px;
     min-height: 0;
 }

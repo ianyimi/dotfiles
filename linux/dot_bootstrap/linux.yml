@@ -387,16 +387,20 @@
   hosts: localhost
   become: false
   connection: local
+  vars:
+    real_user: "{{ lookup('env', 'SUDO_USER') | default(lookup('env', 'USER')) }}"
+    real_home: "/home/{{ real_user }}"
   tasks:
     - name: Check if Claude Code is installed
-      ansible.builtin.command: which claude
+      ansible.builtin.stat:
+        path: "{{ real_home }}/.local/bin/claude"
       register: claude_code_check
-      failed_when: false
-      changed_when: false
 
     - name: Install Claude Code (native install with auto-updates)
       ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
-      when: claude_code_check.rc != 0
+      environment:
+        HOME: "{{ real_home }}"
+      when: not claude_code_check.stat.exists
 
 - name: Install Ghostty terminal
   hosts: localhost
@@ -627,6 +631,22 @@
 # - handbrake (available but often outdated in repos)
 # - mouseless (check availability)
 
+- name: Install Font Awesome and icon fonts (for Waybar)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Install fonts-font-awesome
+      ansible.builtin.apt:
+        name: fonts-font-awesome
+        state: present
+
+    - name: Install fonts-materialdesignicons-webfont
+      ansible.builtin.apt:
+        name: fonts-materialdesignicons-webfont
+        state: present
+      ignore_errors: true
+
 - name: Install Nerd Fonts
   hosts: localhost
   become: false
@@ -661,6 +681,18 @@
         dest: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts/"
         remote_src: true
       when: not jetbrains_font_stat.stat.exists
+
+    - name: Check if Font Awesome Nerd Font symbols is installed
+      ansible.builtin.stat:
+        path: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts/SymbolsNerdFont-Regular.ttf"
+      register: symbols_font_stat
+
+    - name: Download Nerd Fonts Symbols (icons for waybar)
+      ansible.builtin.unarchive:
+        src: https://github.com/ryanoasis/nerd-fonts/releases/latest/download/NerdFontsSymbolsOnly.zip
+        dest: "{{ ansible_facts['env']['HOME'] }}/.local/share/fonts/"
+        remote_src: true
+      when: not symbols_font_stat.stat.exists
 
     - name: Refresh font cache
       ansible.builtin.command: fc-cache -fv
