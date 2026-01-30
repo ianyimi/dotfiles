@@ -9,7 +9,7 @@ Supports **macOS** and **Linux (Ubuntu)** with a single bootstrap command.
 On a **brand new machine** (macOS or Linux), run this single command:
 
 ```bash
-(command -v curl >/dev/null && curl -fsSL || wget -qO-) https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh | bash
+URL="https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 **You'll be prompted for:**
@@ -151,7 +151,7 @@ export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
 
 ```bash
 # Run bootstrap (works on macOS and Linux)
-(command -v curl >/dev/null && curl -fsSL || wget -qO-) https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh | bash
+URL="https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 
 # Projects clone with apCloneProjects
 # Then apply configs
@@ -389,7 +389,7 @@ wget -q "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?
 
 **Universal (both platforms):**
 ```bash
-(command -v curl >/dev/null && curl -fsSL || wget -qO-) "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" | bash
+URL="https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 ### Reset script
