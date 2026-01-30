@@ -196,7 +196,12 @@ setup_tailscale() {
             # Linux - use official installer
             if ! command -v tailscale &>/dev/null; then
                 echo -e "${YELLOW}→${NC} Installing Tailscale..."
-                curl -fsSL https://tailscale.com/install.sh | sh
+                # Use curl if available, otherwise wget
+                if command -v curl &>/dev/null; then
+                    curl -fsSL https://tailscale.com/install.sh | sh
+                else
+                    wget -qO- https://tailscale.com/install.sh | sh
+                fi
                 echo -e "${GREEN}✓${NC} Tailscale installed"
             else
                 echo -e "${GREEN}✓${NC} Tailscale already installed"
