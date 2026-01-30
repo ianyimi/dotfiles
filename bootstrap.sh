@@ -14,6 +14,7 @@ NC='\033[0m'
 # Configuration
 GITHUB_USERNAME="ianyimi"
 REPO_URL="https://github.com/${GITHUB_USERNAME}/dotfiles"
+BRANCH="feat/linux-port"  # Change to "master" for production
 
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════${NC}"
 echo -e "${CYAN}${BOLD}   Universal Dotfiles Bootstrap${NC}"
@@ -398,11 +399,11 @@ init_chezmoi() {
     export GITHUB_USERNAME="$GITHUB_USER"
 
     # Initialize and apply dotfiles
-    if chezmoi init --apply "$REPO_URL"; then
+    if chezmoi init --apply --branch "$BRANCH" "$REPO_URL"; then
         echo -e "${GREEN}✓${NC} Dotfiles initialized and applied"
     else
         echo -e "${RED}✗${NC} Failed to initialize dotfiles"
-        echo "You can try manually with: chezmoi init --apply $REPO_URL"
+        echo "You can try manually with: chezmoi init --apply --branch $BRANCH $REPO_URL"
         exit 1
     fi
 }

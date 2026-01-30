@@ -9,7 +9,7 @@ Supports **macOS** and **Linux (Ubuntu)** with a single bootstrap command.
 On a **brand new machine** (macOS or Linux), run this single command:
 
 ```bash
-URL="https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+URL="https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 **You'll be prompted for:**
@@ -379,17 +379,17 @@ Use this command to bypass GitHub's CDN cache when testing changes:
 
 **macOS:**
 ```bash
-curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 **Linux (Ubuntu):**
 ```bash
-wget -q "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+wget -q "https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)" -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 **Universal (both platforms):**
 ```bash
-URL="https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+URL="https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
 ```
 
 ### Reset script
