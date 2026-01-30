@@ -2,52 +2,67 @@
 
 Complete system configuration using chezmoi + Bitwarden for secure secret management.
 
+Supports **macOS** and **Linux (Ubuntu)** with a single bootstrap command.
+
 ## 🚀 Quick Start
 
-On a **brand new Mac** with nothing installed, run this single command:
+On a **brand new machine** (macOS or Linux), run this single command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
-```
-
-Or use chezmoi directly:
-
-```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply https://github.com/ianyimi/dotfiles
+(command -v curl >/dev/null && curl -fsSL || wget -qO-) https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh | bash
 ```
 
 **You'll be prompted for:**
-1. **System password** - For Tailscale (`sudo tailscale up`) and Homebrew installation
+1. **System password** - For package installation and Tailscale setup
 2. **Tailscale authentication** - Browser opens to log in and approve device
 3. **Bitwarden master password** - If not already logged in (session persists)
 
 **Everything else is automatic!**
 
+### macOS
 The bootstrap script will:
 - ✓ Install Homebrew, Xcode Command Line Tools, git
 - ✓ Install and connect Tailscale (required for Bitwarden access)
 - ✓ Install and configure Bitwarden CLI
 - ✓ Apply all dotfiles with secrets populated from Bitwarden
+- ✓ Set up Aerospace (window manager), SketchyBar, JankyBorders
 - ✓ Set up agent-os for AI-powered development workflows
+
+### Linux (Ubuntu)
+The bootstrap script will:
+- ✓ Install essential packages (git, curl, build-essential)
+- ✓ Install and connect Tailscale (required for Bitwarden access)
+- ✓ Install and configure Bitwarden CLI
+- ✓ Apply all dotfiles with secrets populated from Bitwarden
+- ✓ Set up Hyprland (window manager), Waybar, Rofi, Dunst
+- ✓ Run Ansible playbook for full system configuration
 
 ---
 
 ## 📋 What Gets Installed
 
 ### Applications (macOS)
-- Browsers: Arc, Spotify
-- Development: Docker Desktop, Ghostty Terminal, Neovim, LM Studio
-- Tools: Obsidian, Discord, Plex, Handbrake, Syncthing
+- Browsers: Arc
+- Media: Spotify, Plex
+- Development: Ghostty Terminal, Neovim, LM Studio
+- Tools: Obsidian, Discord, Handbrake, Syncthing
 - Window Management: Aerospace, JankyBorders, SketchyBar
 
-### CLI Tools
-- Development: git, gh, node, pnpm, npm, fnm, go, lua
-- DevOps: kubectl, k9s, k6, Azure CLI, mongosh
+### Applications (Linux)
+- Browsers: Zen Browser (via Flatpak)
+- Media: Spotify (via Snap)
+- Development: Ghostty Terminal, Neovim
+- Tools: Obsidian, Discord, Slack, Syncthing (via Snap)
+- Window Management: Hyprland, Waybar, Rofi, Dunst
+
+### CLI Tools (Both Platforms)
+- Development: git, gh, node, pnpm, npm, go, lua
+- DevOps: kubectl, k9s, Azure CLI
 - Utilities: tmux, tmuxinator, lazygit, lazydocker, fzf, ripgrep, bat, neofetch
 - Shell: zsh with autosuggestions & syntax highlighting, starship prompt
 
 ### Languages & Runtimes
-- Node.js (via fnm)
+- Node.js (via fnm on macOS, NodeSource on Linux)
 - Go
 - Lua (with luarocks & lunajson)
 - C toolchain
@@ -135,8 +150,8 @@ export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
 ### On a new machine
 
 ```bash
-# Run bootstrap
-curl -fsSL https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh | bash
+# Run bootstrap (works on macOS and Linux)
+(command -v curl >/dev/null && curl -fsSL || wget -qO-) https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh | bash
 
 # Projects clone with apCloneProjects
 # Then apply configs
@@ -283,9 +298,10 @@ bw get item "GitHub Personal Access Token"
 
 ### Ansible playbook fails
 
-Check `~/.bootstrap/macos.yml` for errors. Common issues:
+Check `~/.bootstrap/macos.yml` (macOS) or `~/.bootstrap/linux.yml` (Linux) for errors. Common issues:
 - Missing sudo password
-- Homebrew not in PATH
+- Homebrew not in PATH (macOS)
+- Package not available in repos (Linux)
 - Network connectivity for downloads
 
 ### .env files not created after cloning projects
@@ -348,6 +364,8 @@ Built with:
 - [Bitwarden](https://bitwarden.com/) - Secret management
 - [Ansible](https://www.ansible.com/) - System configuration
 - [Homebrew](https://brew.sh/) - Package management (macOS)
+- [Hyprland](https://hyprland.org/) - Wayland compositor (Linux)
+- [Waybar](https://github.com/Alexays/Waybar) - Status bar (Linux)
 
 Original setup forked from [Logan Donley's dotfiles](https://github.com/logandonley/dotfiles).
 
@@ -359,8 +377,19 @@ Original setup forked from [Logan Donley's dotfiles](https://github.com/logandon
 
 Use this command to bypass GitHub's CDN cache when testing changes:
 
+**macOS:**
 ```bash
 curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+```
+
+**Linux (Ubuntu):**
+```bash
+wget -q "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+```
+
+**Universal (both platforms):**
+```bash
+(command -v curl >/dev/null && curl -fsSL || wget -qO-) "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" | bash
 ```
 
 ### Reset script
