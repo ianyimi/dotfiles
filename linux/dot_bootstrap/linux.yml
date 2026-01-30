@@ -434,6 +434,7 @@
     - name: Install GitHub Dash extension if not present
       ansible.builtin.command: gh extension install dlvhdr/gh-dash
       when: "'gh-dash' not in gh_dash_list.stdout"
+      ignore_errors: true  # Fails if not logged into gh, user can install later
 
 - name: Install Hyprland and Wayland tools
   hosts: localhost
