@@ -116,7 +116,7 @@
           - bat
           - zsh-autosuggestions
           - zsh-syntax-highlighting
-          - neofetch
+          - fastfetch
           - lua5.4
           - luarocks
           - golang
