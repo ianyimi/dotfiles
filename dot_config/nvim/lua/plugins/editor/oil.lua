@@ -2,6 +2,50 @@
 local pending_git = {}
 local git_status = {}
 
+-- Track recently opened oil buffers to avoid refresh interfering with initial cursor positioning
+local recent_oil_opens = {}
+
+-- Safe refresh that preserves cursor position
+local function safe_refresh()
+	local ok, actions = pcall(require, "oil.actions")
+	if not ok or not actions.refresh or not actions.refresh.callback then
+		return
+	end
+
+	local oil = require("oil")
+	local current_dir = oil.get_current_dir()
+
+	-- Skip refresh if this buffer was just opened (within 500ms)
+	-- This prevents the refresh from interfering with oil's initial cursor positioning
+	if current_dir and recent_oil_opens[current_dir] then
+		local open_time = recent_oil_opens[current_dir]
+		if (vim.uv.now() - open_time) < 500 then
+			return
+		end
+	end
+
+	-- Save cursor position before refresh
+	local cursor_entry = oil.get_cursor_entry()
+	local cursor_name = cursor_entry and cursor_entry.name
+
+	pcall(actions.refresh.callback)
+
+	-- Restore cursor position after refresh if we had one
+	if cursor_name and current_dir then
+		vim.schedule(function()
+			local bufnr = vim.api.nvim_get_current_buf()
+			local lines = vim.api.nvim_buf_line_count(bufnr)
+			for lnum = 1, lines do
+				local entry = oil.get_entry_on_line(bufnr, lnum)
+				if entry and entry.name == cursor_name then
+					pcall(vim.api.nvim_win_set_cursor, 0, { lnum, 0 })
+					break
+				end
+			end
+		end)
+	end
+end
+
 local function start_git_status(dir)
 	if pending_git[dir] or git_status[dir] then
 		return
@@ -28,12 +72,7 @@ local function start_git_status(dir)
 			if p.done.tracked then
 				git_status[dir] = { ignored = p.ignored, tracked = p.tracked }
 				pending_git[dir] = nil
-				vim.schedule(function()
-					local ok, actions = pcall(require, "oil.actions")
-					if ok and actions.refresh and actions.refresh.callback then
-						pcall(actions.refresh.callback)
-					end
-				end)
+				vim.schedule(safe_refresh)
 			end
 		end
 	)
@@ -57,12 +96,7 @@ local function start_git_status(dir)
 			if p.done.ignored then
 				git_status[dir] = { ignored = p.ignored, tracked = p.tracked }
 				pending_git[dir] = nil
-				vim.schedule(function()
-					local ok, actions = pcall(require, "oil.actions")
-					if ok and actions.refresh and actions.refresh.callback then
-						pcall(actions.refresh.callback)
-					end
-				end)
+				vim.schedule(safe_refresh)
 			end
 		end
 	)
@@ -285,6 +319,16 @@ return {
 				callback = function(args)
 					-- Disable global <leader>p in Oil buffers
 					vim.keymap.set("x", "<leader>p", "<Nop>", { buffer = args.buf, desc = "Disabled in Oil" })
+
+					-- Track when this oil buffer was opened to prevent refresh race conditions
+					local dir = require("oil").get_current_dir(args.buf)
+					if dir then
+						recent_oil_opens[dir] = vim.uv.now()
+						-- Clean up the tracking after 1 second
+						vim.defer_fn(function()
+							recent_oil_opens[dir] = nil
+						end, 1000)
+					end
 				end,
 			})
 			vim.api.nvim_create_autocmd("FileType", {
