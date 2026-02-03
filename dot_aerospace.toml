@@ -50,10 +50,10 @@ exec-on-workspace-change = [
 # See https://nikitabobko.github.io/AeroSpace/commands#move-mouse
 # Fallback value (if you omit the key): on-focused-monitor-changed = []
 on-focus-changed = [
+  'exec-and-forget ~/.config/aerospace-monitor/track-focus.sh',
   'exec-and-forget sketchybar --trigger front_app_switched',
   'exec-and-forget sleep(0.25)',
   'move-mouse window-lazy-center',
-  # 'exec-and-forget sketchybar --trigger send_message MESSAGE="Focus has changed"'
 ]
 
 [workspace-to-monitor-force-assignment]
@@ -107,7 +107,7 @@ outer.right = [{ monitor.main = 3 }, { monitor.secondary = 5 }, 3]
 # '''
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace-back-and-forth
-alt-tab = 'focus-monitor --wrap-around next'
+alt-tab = 'exec-and-forget ~/.config/aerospace-monitor/focus-monitor.sh next'
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-workspace-to-monitor
 alt-shift-tab = 'move-node-to-monitor --wrap-around --focus-follows-window next'
 alt-cmd-shift-tab = 'move-workspace-to-monitor --wrap-around next'
@@ -141,36 +141,36 @@ alt-down = 'resize smart -50'
 alt-up = 'resize smart +50'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#workspace
-alt-1 = 'workspace 1'
-alt-2 = 'workspace 2'
-alt-3 = 'workspace 3'
-alt-4 = 'workspace 4'
-alt-5 = 'workspace 5'
-alt-6 = 'workspace 6'
-alt-7 = 'workspace 7'
-alt-8 = 'workspace 8'
-alt-9 = 'workspace 9'
-alt-a = 'workspace A' # In your config, you can drop workspace bindings that you don't need
-alt-b = 'workspace B'
-alt-c = 'workspace C'
-alt-d = 'workspace D'
-alt-e = 'workspace E'
+alt-1 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 1'
+alt-2 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 2'
+alt-3 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 3'
+alt-4 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 4'
+alt-5 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 5'
+alt-6 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 6'
+alt-7 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 7'
+alt-8 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 8'
+alt-9 = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh 9'
+alt-a = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh A'
+alt-b = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh B'
+alt-c = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh C'
+alt-d = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh D'
+alt-e = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh E'
 # alt-f = 'workspace F'
-alt-g = 'workspace G'
+alt-g = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh G'
 # alt-i = 'workspace I'
-alt-m = 'workspace M'
-alt-n = 'workspace N'
-alt-o = 'workspace O'
-alt-p = 'workspace P'
-alt-q = 'workspace Q'
-alt-r = 'workspace R'
-alt-s = 'workspace S'
-alt-t = 'workspace T'
-alt-u = 'workspace U'
-alt-v = 'workspace V'
-alt-w = 'workspace W'
-alt-x = 'workspace X'
-alt-y = 'workspace Y'
+alt-m = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh M'
+alt-n = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh N'
+alt-o = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh O'
+alt-p = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh P'
+alt-q = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh Q'
+alt-r = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh R'
+alt-s = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh S'
+alt-t = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh T'
+alt-u = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh U'
+alt-v = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh V'
+alt-w = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh W'
+alt-x = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh X'
+alt-y = 'exec-and-forget ~/.config/aerospace-monitor/focus-workspace.sh Y'
 # alt-z = 'workspace Z'
 
 # See: https://nikitabobko.github.io/AeroSpace/commands#move-node-to-workspace
