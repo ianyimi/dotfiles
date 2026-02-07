@@ -1,4 +1,7 @@
 {
+  "env": {
+    "ANTHROPIC_API_KEY": "{{ (bitwarden "item" "ANTHROPIC_API_KEY").login.password }}",
+  },
 	"wizard": {
 		"lastRunAt": "2026-01-27T07:58:04.000Z",
 		"lastRunVersion": "2026.1.16-2",
