@@ -47,6 +47,8 @@ alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
 
+alias gcb="git clone --bare"
+
 alias sz="source ~/.zshrc"
 alias nrd="npm run dev"
 alias nrb="npm run build"
