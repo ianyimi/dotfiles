@@ -27,11 +27,11 @@ return {
       },
       -- format_on_save causes cursor jumps on undo/redo - see commit 8dbbb4b
       -- Commenting out to test if this fixes the issue
-      -- format_on_save = {
-      --   lsp_fallback = true,
-      --   async = false,
-      --   timeout_ms = 1000
-      -- }
+      format_on_save = {
+        lsp_fallback = true,
+        async = false,
+        timeout_ms = 1000
+      }
     })
 
     -- Configure individual formatters
