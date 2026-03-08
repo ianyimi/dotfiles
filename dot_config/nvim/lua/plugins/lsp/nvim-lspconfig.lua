@@ -208,6 +208,43 @@ return {
 						"sugarss", "javascript", "javascriptreact", "reason", "rescript", "typescript",
 						"typescriptreact", "vue", "svelte", "templ",
 					},
+					-- Support Tailwind v4 CSS-based config (no tailwind.config.js needed)
+					-- For monorepos: add tailwind.css with "@import tailwindcss" at root
+					root_dir = require("lspconfig.util").root_pattern(
+						"tailwind.config.js",
+						"tailwind.config.cjs",
+						"tailwind.config.mjs",
+						"tailwind.config.ts",
+						"tailwind.css", -- Tailwind v4 monorepo entry point
+						"postcss.config.js",
+						"postcss.config.cjs",
+						"postcss.config.mjs",
+						"postcss.config.ts"
+					),
+					settings = {
+						tailwindCSS = {
+							experimental = {
+								-- Enable class regex for cn, cva, clsx, cx, etc.
+								classRegex = {
+									{ "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
+									{ "cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+									{ "cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+									{ "clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+								},
+							},
+							classAttributes = { "class", "className", "class:list", "classList", "ngClass" },
+							lint = {
+								cssConflict = "warning",
+								invalidApply = "error",
+								invalidConfigPath = "error",
+								invalidScreen = "error",
+								invalidTailwindDirective = "error",
+								invalidVariant = "error",
+								recommendedVariantOrder = "warning",
+							},
+							validate = true,
+						},
+					},
 				})
 			elseif server == "eslint" then
 				lspconfig.eslint.setup({

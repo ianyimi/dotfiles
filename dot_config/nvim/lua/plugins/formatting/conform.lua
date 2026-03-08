@@ -6,30 +6,32 @@ return {
 
     conform.setup({
       formatters_by_ft = {
-        javascript = { "prettierd", "prettier" },
-        typescript = { "prettierd", "prettier" },
-        javascriptreact = { "prettierd", "prettier" },
-        typescriptreact = { "prettierd", "prettier" },
-        svelte = { "prettierd", "prettier" },
-        css = { "prettierd", "prettier" },
-        html = { "prettierd", "prettier" },
-        json = { "prettierd", "prettier" },
-        yaml = { "prettierd", "prettier" },
-        markdown = { "prettierd", "prettier" },
-        ["markdown.mdx"] = { "prettierd", "prettier" },
-        mdx = { "prettierd", "prettier" },
-        graphql = { "prettierd", "prettier" },
-        liquid = { "prettierd", "prettier" },
+        -- Use { "a", "b" } to run a then b
+        -- Use { { "a", "b" } } to run a OR b (first available)
+        javascript = { "prettierd", "prettier", stop_after_first = true },
+        typescript = { "prettierd", "prettier", stop_after_first = true },
+        javascriptreact = { "prettierd", "prettier", stop_after_first = true },
+        typescriptreact = { "prettierd", "prettier", stop_after_first = true },
+        svelte = { "prettierd", "prettier", stop_after_first = true },
+        css = { "prettierd", "prettier", stop_after_first = true },
+        html = { "prettierd", "prettier", stop_after_first = true },
+        json = { "prettierd", "prettier", stop_after_first = true },
+        yaml = { "prettierd", "prettier", stop_after_first = true },
+        markdown = { "prettierd", "prettier", stop_after_first = true },
+        ["markdown.mdx"] = { "prettierd", "prettier", stop_after_first = true },
+        mdx = { "prettierd", "prettier", stop_after_first = true },
+        graphql = { "prettierd", "prettier", stop_after_first = true },
+        liquid = { "prettierd", "prettier", stop_after_first = true },
         lua = { "stylua" },
-        python = { "isort", "black" },
+        python = { "isort", "black" }, -- isort then black (both run)
       },
-      -- Disable conform's format_on_save - let LazyVim's format system handle it
-      -- This prevents double-formatting and cursor jumping issues
-      format_on_save = {
-        lsp_fallback = true,
-        async = false,
-        timeout_ms = 1000
-      }
+      -- format_on_save causes cursor jumps on undo/redo - see commit 8dbbb4b
+      -- Commenting out to test if this fixes the issue
+      -- format_on_save = {
+      --   lsp_fallback = true,
+      --   async = false,
+      --   timeout_ms = 1000
+      -- }
     })
 
     -- Configure individual formatters
