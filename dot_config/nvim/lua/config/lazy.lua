@@ -1,3 +1,13 @@
+-- Suppress lspconfig deprecation warning until ecosystem migrates to vim.lsp.config (Nvim 0.11+)
+-- See: https://github.com/neovim/nvim-lspconfig/issues/3693
+local orig_deprecate = vim.deprecate
+vim.deprecate = function(name, alternative, version, plugin, backtrace)
+  if plugin == "nvim-lspconfig" and name:find("framework") then
+    return -- suppress this specific warning
+  end
+  return orig_deprecate(name, alternative, version, plugin, backtrace)
+end
+
 -- Bootstrap lazy.nvim
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then

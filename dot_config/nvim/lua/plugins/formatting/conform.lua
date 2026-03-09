@@ -6,24 +6,24 @@ return {
 
     conform.setup({
       formatters_by_ft = {
-        -- Use { "a", "b" } to run a then b
-        -- Use { { "a", "b" } } to run a OR b (first available)
-        javascript = { "prettierd", "prettier", stop_after_first = true },
-        typescript = { "prettierd", "prettier", stop_after_first = true },
-        javascriptreact = { "prettierd", "prettier", stop_after_first = true },
-        typescriptreact = { "prettierd", "prettier", stop_after_first = true },
-        svelte = { "prettierd", "prettier", stop_after_first = true },
-        css = { "prettierd", "prettier", stop_after_first = true },
-        html = { "prettierd", "prettier", stop_after_first = true },
-        json = { "prettierd", "prettier", stop_after_first = true },
-        yaml = { "prettierd", "prettier", stop_after_first = true },
-        markdown = { "prettierd", "prettier", stop_after_first = true },
-        ["markdown.mdx"] = { "prettierd", "prettier", stop_after_first = true },
-        mdx = { "prettierd", "prettier", stop_after_first = true },
-        graphql = { "prettierd", "prettier", stop_after_first = true },
-        liquid = { "prettierd", "prettier", stop_after_first = true },
-        lua = { "stylua" },
-        python = { "isort", "black" }, -- isort then black (both run)
+        -- eslint_d first (import sorting), then prettierd (formatting)
+        -- stop_after_first = false means ALL formatters run sequentially
+        javascript = { "eslint_d", "prettierd", stop_after_first = false },
+        typescript = { "eslint_d", "prettierd", stop_after_first = false },
+        javascriptreact = { "eslint_d", "prettierd", stop_after_first = false },
+        typescriptreact = { "eslint_d", "prettierd", stop_after_first = false },
+        svelte = { "eslint_d", "prettierd", stop_after_first = false },
+        css = { "prettierd", stop_after_first = false },
+        html = { "prettierd", stop_after_first = false },
+        json = { "prettierd", stop_after_first = false },
+        yaml = { "prettierd", stop_after_first = false },
+        markdown = { "prettierd", stop_after_first = false },
+        ["markdown.mdx"] = { "prettierd", stop_after_first = false },
+        mdx = { "prettierd", stop_after_first = false },
+        graphql = { "prettierd", stop_after_first = false },
+        liquid = { "prettierd", stop_after_first = false },
+        lua = { "stylua", stop_after_first = false },
+        python = { "isort", "black", stop_after_first = false },
       },
       -- format_on_save causes cursor jumps on undo/redo - see commit 8dbbb4b
       -- Commenting out to test if this fixes the issue

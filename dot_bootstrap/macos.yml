@@ -291,6 +291,18 @@
         name: node
         state: present
 
+    - name: Check Install - eslint_d (fast eslint daemon for neovim)
+      community.general.npm:
+        name: eslint_d
+        global: true
+        state: present
+
+    - name: Check Install - prettierd (fast prettier daemon for neovim)
+      community.general.npm:
+        name: "@fsouza/prettierd"
+        global: true
+        state: present
+
     - name: Check Install - GitHub CLI
       community.general.homebrew:
         name: gh
