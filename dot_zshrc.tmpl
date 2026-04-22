@@ -1,6 +1,7 @@
 eval "$(starship init zsh)"
 export EDITOR=nvim
 export PATH="$PATH:$HOME/go/bin"
+export ANTHROPIC_API_KEY="{{ (bitwarden "item" "ANTHROPIC_API_KEY").login.password }}"
 
 # aliases
 alias .="cd ../"
@@ -11,7 +12,9 @@ alias .....="cd ../../../../../"
 alias ......="cd ../../../../../../"
 alias .......="cd ../../../../../../../"
 
-alias claude="unset ANTHROPIC_API_KEY && claude"
+alias claude="echo 'Use specific commands: claude-maprios or claude-zaye'"
+alias claude-maprios="unset ANTHROPIC_API_KEY && CLAUDE_CONFIG_DIR=~/.claude-maprios /Users/zaye/.local/share/fnm/aliases/default/bin/claude"
+alias claude-zaye="unset ANTHROPIC_API_KEY && CLAUDE_CONFIG_DIR=~/.claude-zaye /Users/zaye/.local/share/fnm/aliases/default/bin/claude"
 
 alias aocp="~/agent-os/scripts/create-profile.sh && chezmoi add ~/agent-os && echo 'Added new profile to dotfiles'"
 alias aopi="~/agent-os/scripts/project-install.sh"

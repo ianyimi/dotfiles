@@ -395,6 +395,50 @@
         name: ripgrep
         state: present
 
+    - name: Check Install - Pi Coding Agent
+      block:
+        - name: Install Pi Coding Agent
+          community.general.homebrew:
+            name: pi-coding-agent
+            state: latest
+
+        - name: Wait for pi command to be available
+          ansible.builtin.command: which pi
+          register: pi_check
+          retries: 3
+          delay: 2
+          until: pi_check.rc == 0
+          changed_when: false
+
+        # Removed: pi-powerline-footer (using local combined vim-powerline extension)
+
+        - name: Install Pi BTW extension
+          ansible.builtin.shell: pi install npm:pi-btw
+          args:
+            creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/pi-btw"
+
+        - name: Install Pi DocParser extension
+          ansible.builtin.shell: pi install npm:pi-docparser
+          args:
+            creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/pi-docparser"
+
+        - name: Install Pi Image Preview extension (fork with space support)
+          ansible.builtin.shell: pi install git:https://github.com/ianyimi/pi-image-preview
+          args:
+            creates: "{{ ansible_facts['env']['HOME'] }}/.pi/git/github.com/ianyimi/pi-image-preview"
+
+        - name: Install LSP Pi extension
+          ansible.builtin.shell: pi install npm:lsp-pi
+          args:
+            creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/lsp-pi"
+
+        # Removed: pi-vim (using local combined vim-powerline extension)
+
+    - name: Check Install - RTK
+      community.general.homebrew:
+        name: rtk
+        state: present
+
     - name: Set Dock to auto-hide
       become: false
       shell: "defaults write com.apple.dock autohide -bool true && killall Dock"
@@ -459,7 +503,7 @@
 
     - name: Set menu bar to auto-hide
       become: false
-      shell: "osascript -e 'tell application \"System Events\" to tell dock preferences to set autohide menu bar to true'"
+      shell: 'osascript -e ''tell application "System Events" to tell dock preferences to set autohide menu bar to true'''
       changed_when: false
 
 - name: Clone SketchyBar App Font Repository
@@ -633,4 +677,3 @@
       shell: "open -a AeroSpace"
       when: aerospace_status.rc != 0
       ignore_errors: true
-

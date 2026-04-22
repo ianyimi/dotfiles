@@ -1,0 +1,9 @@
+--- a/vim-main.ts
++++ b/vim-main.ts
+@@ -401,6 +401,7 @@ export class ModalEditor extends CustomEditor {
+   handleInput(data: string): void {
+     this.ensureOnChangeHook();
++    console.log(`[VIM DEBUG] Mode: ${this.mode}, Input: ${JSON.stringify(data)}`);
+ 
+     if (this.mode !== "insert") {
+       if (this.discardingBracketedPasteInNormalMode) {

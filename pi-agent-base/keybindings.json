@@ -1,0 +1,7 @@
+{
+  "app.session.resume": ["ctrl+shift+r"],
+  "app.session.tree": ["ctrl+shift+t"],
+  "app.session.new": ["ctrl+shift+n"],
+  "app.model.cycleForward": ["ctrl+p"],
+  "app.thinking.cycle": ["shift+tab"]
+}

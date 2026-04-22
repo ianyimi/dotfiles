@@ -1,0 +1,17 @@
+{
+  "enableSkillCommands": true,
+  "skills": [
+    "/Users/zaye/.pi/agent/skills"
+  ],
+  "autoCompaction": true,
+  "quietStartup": true,
+  "lastChangelogVersion": "0.68.0",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-4-5",
+  "packages": [
+    "npm:pi-btw",
+    "npm:pi-docparser",
+    "npm:lsp-pi",
+    "git:https://github.com/ianyimi/pi-image-preview"
+  ]
+}

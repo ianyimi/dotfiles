@@ -7,6 +7,14 @@ agent-os-base/
 # Project agent-os installation (managed separately after base install)
 agent-os/
 
+# Base Pi agent config - synced to ~/.pi/agent via run_after script
+# Do not use 'chezmoi add ~/.pi' - auth.json and sessions/ must stay untracked
+pi-agent-base/
+
+# Project-local Pi harness for this dotfiles repo
+# Tracked by git but not deployed by chezmoi (it's not dot_pi/)
+.pi/
+
 # Temporarily ignore bitwarden-dependent templates
 .config/secrets.env
 

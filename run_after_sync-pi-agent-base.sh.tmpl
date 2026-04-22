@@ -1,0 +1,36 @@
+#!/bin/bash
+# Auto-sync pi-agent-base to ~/.pi/agent after chezmoi apply
+# This makes pi-agent-base/ in chezmoi the source of truth for the global Pi config.
+#
+# Excludes:
+#   auth.json   — API keys written by Pi at runtime, never checked in
+#   sessions/   — Conversation history, runtime only
+#   bin/        — Compiled binaries installed by Pi itself
+#   git/        — Downloaded packages from GitHub/npm, managed by Pi
+
+set -e
+
+SOURCE_DIR="{{ .chezmoi.sourceDir }}/pi-agent-base"
+TARGET_DIR="$HOME/.pi/agent"
+
+if [ ! -d "$SOURCE_DIR" ]; then
+    exit 0
+fi
+
+mkdir -p "$TARGET_DIR"
+
+if command -v rsync &> /dev/null; then
+    rsync -a --delete \
+        --exclude='auth.json' \
+        --exclude='sessions/' \
+        --exclude='bin/' \
+        --exclude='git/' \
+        --exclude='.DS_Store' \
+        --exclude='**/.git/' \
+        "$SOURCE_DIR/" "$TARGET_DIR/"
+else
+    # rsync not available — cp fallback (won't preserve exclusions cleanly)
+    cp -R "$SOURCE_DIR/." "$TARGET_DIR/"
+fi
+
+echo "✓ Synced pi-agent-base → ~/.pi/agent"
