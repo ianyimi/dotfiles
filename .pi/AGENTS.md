@@ -66,6 +66,43 @@
 - Vim mode indicator in powerline (π INSERT / π NORMAL)
 - Vim clipboard isolated (no system sync)
 
+## Key File: `dot_zshrc.tmpl`
+
+**Path:** `/Users/zaye/.local/share/chezmoi/dot_zshrc.tmpl` (deploys to `~/.zshrc`)
+
+This is the **source of truth for all shell aliases and functions** zaye uses. The user frequently refers to commands by their alias rather than the full command. Whenever an unfamiliar short command appears in a request (e.g. `cma`, `apConfig`, `nrd`, `lgCog`), **look it up in `dot_zshrc.tmpl` first** before asking what it means.
+
+### Frequently-used aliases
+
+| Alias | Expands to | Purpose |
+|-------|------------|---------|
+| `cma` | `bw-session-check && source ~/.bw-session && bw sync && chezmoi apply && source ~/.zshrc` | Deploy chezmoi changes (requires Bitwarden session) |
+| `cm` | `chezmoi` | Chezmoi shorthand |
+| `cme` | `chezmoi edit --watch` | Edit + live-apply a managed file |
+| `apConfig` | `ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass` | Run macOS provisioning playbook |
+| `ap` | `ansible-playbook` | Ansible shorthand |
+| `sz` | `source ~/.zshrc` | Reload shell config |
+| `bwsr` | `bw-session-check` | Check/refresh Bitwarden session |
+| `nv` | `nvim .` | Open current dir in Neovim |
+| `lg` | `lazygit` | Lazygit TUI |
+| `tm` / `tma` / `tms` | tmux / attach / kill-session | Tmux shortcuts |
+| `mux` | `tmuxinator` | Tmuxinator |
+| `nrd` / `nrb` / `nrs` / `nrt` | `npm run dev/build/start/test` | NPM script shortcuts |
+| `claude-maprios` / `claude-zaye` | Claude CLI with isolated `CLAUDE_CONFIG_DIR` | Separate claude profiles |
+
+### Navigation alias patterns
+
+Zaye uses consistent prefixes — if you see an unfamiliar command matching one of these patterns, it almost certainly follows the pattern:
+
+- `cd<Name>` → `cd` into that project/directory (e.g. `cdCog`, `cdChezmoi`, `cdNvim`, `cdEdapt`, `cdPortfolio`, `cdVault`, `cdScripts`, `cdDaily`)
+- `nv<Name>` → open that directory in Neovim (e.g. `nvCog`, `nvNvim`, `nvEdapt`, `nvZsh`, `nvAero`)
+- `lg<Name>` → open lazygit for that project (e.g. `lgCog`, `lgNvim`, `lgEdapt`, `lgChezmoi`)
+- `aeromon<Action>` → aerospace-monitor daemon control (`Start`, `Stop`, `Restart`, `Status`, `Logs`)
+
+### Rule
+
+When the user says "run cma" or "test with apConfig", that's a literal instruction to use that alias — do not translate it to the expanded command in your response. If the user invents a new alias-like shorthand you haven't seen, grep `dot_zshrc.tmpl` before guessing.
+
 ## Workflow Commands
 
 ```bash

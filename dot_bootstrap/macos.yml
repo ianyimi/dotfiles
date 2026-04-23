@@ -432,6 +432,33 @@
           args:
             creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/lsp-pi"
 
+        - name: Install Browser Annotations Pi extension
+          ansible.builtin.shell: pi install npm:@browser-annotations/pi
+          args:
+            creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/@browser-annotations/pi"
+
+        - name: Install Browser Annotations Chrome DevTools extension
+          # Installs the companion Chrome extension that exposes the "Feedback" tab
+          # in DevTools. Required for @browser-annotations/pi to receive anything.
+          # Interactive: may prompt to open Chrome Web Store or load unpacked.
+          # Safe to re-run — the installer handles the already-installed case.
+          ansible.builtin.shell: npx --yes browser-annotations@latest
+          register: browser_annotations_chrome
+          changed_when: false
+          failed_when: false
+          environment:
+            PATH: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm:{{ ansible_facts['env']['PATH'] }}"
+
+        - name: Show Browser Annotations Chrome installer output
+          ansible.builtin.debug:
+            msg: "{{ browser_annotations_chrome.stdout_lines | default([]) }}"
+          when: browser_annotations_chrome.stdout is defined
+
+        - name: Install Pi Smart Fetch extension
+          ansible.builtin.shell: pi install npm:pi-smart-fetch
+          args:
+            creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/pi-smart-fetch"
+
         # Removed: pi-vim (using local combined vim-powerline extension)
 
     - name: Check Install - RTK

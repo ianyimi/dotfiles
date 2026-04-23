@@ -12,6 +12,13 @@ fi
 
 # Check if session is valid
 if [ -n "$BW_SESSION" ] && bw unlock --check --session "$BW_SESSION" &>/dev/null; then
+    # Ensure the bridge file exists so parent shells / aliases can re-source it.
+    # The file is the only way this subprocess can hand BW_SESSION back to the
+    # calling shell (needed by `chezmoi apply` for bitwarden template functions).
+    if [ ! -f ~/.bw-session ]; then
+        echo "export BW_SESSION=\"$BW_SESSION\"" > ~/.bw-session
+        chmod 600 ~/.bw-session
+    fi
     echo "✓ Bitwarden session is valid"
     exit 0
 fi

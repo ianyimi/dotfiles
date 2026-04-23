@@ -5,13 +5,18 @@
   ],
   "autoCompaction": true,
   "quietStartup": true,
-  "lastChangelogVersion": "0.68.0",
+  "lastChangelogVersion": "0.68.1",
   "defaultProvider": "anthropic",
-  "defaultModel": "claude-sonnet-4-5",
+  "defaultModel": "claude-opus-4-7",
   "packages": [
     "npm:pi-btw",
     "npm:pi-docparser",
     "npm:lsp-pi",
+    "npm:@browser-annotations/pi",
+    "npm:pi-smart-fetch",
     "git:https://github.com/ianyimi/pi-image-preview"
+  ],
+  "suppressWarnings": [
+    "tmux-extended-keys"
   ]
 }
