@@ -42,6 +42,11 @@
 	},
 	"agents": {
 		"defaults": {
+      "heartbeat": {
+        "every": "0m",
+        "target": "last",
+        "directPolicy": "allow"
+      },
 			"model": {
 				"id": "zai-org/glm-4.7-flash",
 				"provider": "LM Studio",
@@ -76,11 +81,6 @@
 		"nativeSkills": "auto"
 	},
 	"hooks": {
-		"gmail": {
-			"tailscale": {
-				"mode": "serve"
-			}
-		},
 		"internal": {
 			"enabled": true,
 			"entries": {
