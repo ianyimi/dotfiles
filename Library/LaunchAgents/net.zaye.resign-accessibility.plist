@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>net.zaye.resign-accessibility</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/zaye/.local/bin/resign-accessibility-binaries</string>
+  </array>
+
+  <!--
+    Fires whenever Homebrew rewrites the symlinks or replaces the underlying
+    Cellar / Caskroom directories during `brew upgrade`. WatchPaths reacts to
+    metadata changes on the path itself (atime/mtime/inode), which is exactly
+    what `brew` does when swapping versions.
+  -->
+  <key>WatchPaths</key>
+  <array>
+    <string>/opt/homebrew/bin/sketchybar</string>
+    <string>/opt/homebrew/bin/aerospace</string>
+    <string>/opt/homebrew/Cellar/sketchybar</string>
+    <string>/opt/homebrew/Caskroom/aerospace</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/zaye/.local/state/resign-accessibility.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/zaye/.local/state/resign-accessibility.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+</dict>
+</plist>

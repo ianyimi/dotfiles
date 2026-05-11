@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+#
+# resign-accessibility-binaries
+#
+# Re-signs ad-hoc / unstable-signed Homebrew binaries with a stable self-signed
+# code-signing identity so that macOS TCC (Accessibility) grants persist across
+# `brew upgrade`. Without this, every upgrade produces a new cdhash and macOS
+# re-prompts for permission.
+#
+# One-time setup (cannot be scripted — Apple's `security` CLI cannot mint a
+# code-signing cert; only Keychain Access can):
+#
+#   1. Open Keychain Access → menu Certificate Assistant → Create a Certificate…
+#   2. Name:            zaye-codesign
+#      Identity Type:   Self Signed Root
+#      Certificate Type: Code Signing
+#      (tick "Let me override defaults", set validity ~3650 days)
+#   3. In the login keychain, double-click the new cert → Trust → "Always Trust"
+#      for Code Signing.
+#
+# After that, this script will keep sketchybar/aerospace signed with that
+# identity. Grant Accessibility once per binary in System Settings; future
+# `brew upgrade`s will preserve the grant because the designated requirement
+# (identifier + cert hash) is stable.
+
+set -euo pipefail
+
+IDENTITY="zaye-codesign"
+
+# binary path : stable identifier we want codesign to embed
+TARGETS=(
+  "/opt/homebrew/bin/sketchybar:net.zaye.sketchybar"
+  "/opt/homebrew/bin/aerospace:net.zaye.aerospace"
+)
+
+log() { printf '[resign] %s\n' "$*"; }
+
+if ! security find-identity -p codesigning -v | grep -q " \"$IDENTITY\""; then
+  log "ERROR: code-signing identity '$IDENTITY' not found."
+  log "Create it via Keychain Access → Certificate Assistant → Create a Certificate"
+  log "  Name: $IDENTITY  /  Identity Type: Self Signed Root  /  Certificate Type: Code Signing"
+  log "Then double-click it in the login keychain and set Trust → Code Signing → Always Trust."
+  exit 1
+fi
+
+for entry in "${TARGETS[@]}"; do
+  bin="${entry%%:*}"
+  want_id="${entry##*:}"
+
+  if [ ! -e "$bin" ]; then
+    log "skip: $bin not installed"
+    continue
+  fi
+
+  real=$(readlink -f "$bin" 2>/dev/null || python3 -c "import os,sys;print(os.path.realpath(sys.argv[1]))" "$bin")
+
+  cs_out=$(codesign -dv "$real" 2>&1 || true)
+  cur_auth=$(awk -F'=' '/^Authority=/{print $2; exit}' <<<"$cs_out")
+  cur_id=$(awk -F'=' '/^Identifier=/{print $2}' <<<"$cs_out")
+
+  if [ "$cur_auth" = "$IDENTITY" ] && [ "$cur_id" = "$want_id" ]; then
+    log "ok:   $bin (already $IDENTITY / $want_id)"
+    continue
+  fi
+
+  log "sign: $bin  →  identity=$IDENTITY  identifier=$want_id"
+  codesign --force \
+           --sign "$IDENTITY" \
+           --identifier "$want_id" \
+           --preserve-metadata=entitlements,requirements,flags \
+           --timestamp=none \
+           "$real"
+done
+
+log "done."
