@@ -4,6 +4,35 @@
   become: false
   connection: local
   tasks:
+    # Stale Command Line Tools cause source-built formulas (rust, llvm,
+    # python@3.14, omlx …) to fail mid-install with a confusing error. Catch
+    # it here so the playbook stops with clear remediation instead of failing
+    # 200 tasks deep. `brew doctor` is the cheapest reliable signal.
+    - name: Detect outdated Xcode Command Line Tools
+      ansible.builtin.shell: |
+        set -o pipefail
+        brew doctor 2>&1 | grep -iE 'Command Line Tools are too outdated' || true
+      args:
+        executable: /bin/bash
+      register: clt_outdated_check
+      changed_when: false
+      failed_when: false
+
+    - name: Fail with clear remediation if CLT is too outdated for current Homebrew
+      ansible.builtin.fail:
+        msg: |
+          Your Xcode Command Line Tools are too old for the current Homebrew.
+          Source-built formulas (rust, llvm, python, omlx …) will fail.
+
+          Fix interactively (GUI prompt + ~5–10 min download), then re-run apConfig:
+
+            sudo rm -rf /Library/Developer/CommandLineTools
+            sudo xcode-select --install
+
+          Verify after install:
+            brew doctor 2>&1 | grep -i 'command line' || echo OK
+      when: clt_outdated_check.stdout | length > 0
+
     - name: Check if Homebrew is installed
       ansible.builtin.stat:
         path: /opt/homebrew/bin/brew
@@ -179,6 +208,120 @@
       community.general.homebrew_tap:
         name: sst/tap
         state: present
+
+    # oMLX — LLM inference server with continuous batching & SSD caching for
+    # Apple Silicon. https://github.com/jundot/omlx
+    #
+    # We install the standalone macOS .dmg app, NOT the brew formula. Reasons:
+    #
+    #   1. The brew formula `jundot/omlx/omlx` bootstraps a venv against brew's
+    #      `python@3.11`, which is broken on macOS 26 due to an Apple SDK /
+    #      runtime libexpat 2.7.1-vs-2.7.2 symbol skew. See KNOWN_ISSUES.md.
+    #      Will resurface for ANY formula that builds pyexpat until Apple ships
+    #      libexpat 2.7.2 in a point-update.
+    #   2. The DMG ships its own bundled Python + expat, sidestepping the
+    #      entire toolchain hell.
+    #   3. The CLI command `omlx` is the ONLY thing the brew variant adds.
+    #      The server, admin dashboard, KV cache, API compat — everything we
+    #      actually use — is identical in the app.
+    #   4. Built-in Sparkle auto-update means `brew upgrade omlx` isn't needed.
+    #
+    # Once upstream fixes the python@3.11 bottle, we can re-add the formula
+    # task alongside this one if we ever want the CLI back.
+    - name: Install oMLX (macOS app from GitHub releases)
+      become: false
+      block:
+        - name: Check whether oMLX.app is already installed
+          ansible.builtin.stat:
+            path: /Applications/oMLX.app
+          register: omlx_app_stat
+
+        - name: Get current macOS major version (for asset selection)
+          ansible.builtin.shell: sw_vers -productVersion | cut -d. -f1
+          register: macos_major
+          changed_when: false
+          when: not omlx_app_stat.stat.exists
+
+        - name: Query GitHub for the latest oMLX release
+          ansible.builtin.uri:
+            url: https://api.github.com/repos/jundot/omlx/releases/latest
+            return_content: true
+            headers:
+              Accept: application/vnd.github+json
+          register: omlx_release
+          when: not omlx_app_stat.stat.exists
+
+        - name: Select the DMG asset matching this macOS major version
+          ansible.builtin.set_fact:
+            omlx_dmg_url: >-
+              {{
+                (omlx_release.json.assets
+                  | selectattr('name', 'match', '.*macos' ~ macos_major.stdout ~ '-.*\.dmg$')
+                  | list
+                  | first).browser_download_url
+              }}
+            omlx_dmg_name: >-
+              {{
+                (omlx_release.json.assets
+                  | selectattr('name', 'match', '.*macos' ~ macos_major.stdout ~ '-.*\.dmg$')
+                  | list
+                  | first).name
+              }}
+          when: not omlx_app_stat.stat.exists
+
+        - name: Fail clearly if no matching DMG exists for this macOS version
+          ansible.builtin.fail:
+            msg: |
+              No oMLX DMG asset matched 'macos{{ macos_major.stdout }}-*.dmg'
+              in release {{ omlx_release.json.tag_name }}. Available assets:
+              {{ omlx_release.json.assets | map(attribute='name') | list }}
+              Either wait for upstream to ship a build for your macOS, or use
+              an older release.
+          when:
+            - not omlx_app_stat.stat.exists
+            - omlx_dmg_url is not defined or (omlx_dmg_url | length) == 0
+
+        - name: Download oMLX DMG
+          ansible.builtin.get_url:
+            url: "{{ omlx_dmg_url | trim }}"
+            dest: "/tmp/{{ omlx_dmg_name | trim }}"
+            mode: "0644"
+            timeout: 300
+          when: not omlx_app_stat.stat.exists
+
+        - name: Mount oMLX DMG
+          ansible.builtin.command: hdiutil attach "/tmp/{{ omlx_dmg_name | trim }}" -nobrowse -quiet -mountpoint /Volumes/oMLX-install
+          when: not omlx_app_stat.stat.exists
+          changed_when: true
+
+        - name: Copy oMLX.app to /Applications
+          # `cp -R` preserves codesignature; `ditto` would also work. Either is
+          # fine since the bundle is Developer-ID signed by the publisher.
+          ansible.builtin.command: cp -R /Volumes/oMLX-install/oMLX.app /Applications/oMLX.app
+          when: not omlx_app_stat.stat.exists
+          changed_when: true
+
+        - name: Unmount oMLX DMG
+          ansible.builtin.command: hdiutil detach /Volumes/oMLX-install -quiet
+          when: not omlx_app_stat.stat.exists
+          changed_when: true
+          failed_when: false
+
+        - name: Remove downloaded DMG
+          ansible.builtin.file:
+            path: "/tmp/{{ omlx_dmg_name | trim }}"
+            state: absent
+          when: not omlx_app_stat.stat.exists
+
+        - name: Report installed oMLX version
+          ansible.builtin.command: /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" /Applications/oMLX.app/Contents/Info.plist
+          register: omlx_installed_version
+          changed_when: false
+          failed_when: false
+
+        - name: Show installed oMLX version
+          ansible.builtin.debug:
+            msg: "oMLX.app installed: v{{ omlx_installed_version.stdout | default('unknown') }}"
 
     - name: Install opencode (from sst/tap)
       become: true
@@ -730,3 +873,95 @@
       shell: "open -a AeroSpace"
       when: aerospace_status.rc != 0
       ignore_errors: true
+
+- name: Stabilize Accessibility code-signing (sketchybar, aerospace)
+  # Re-signs ad-hoc / unstable Homebrew binaries with a stable self-signed
+  # identity (`zaye-codesign`) so macOS TCC accessibility grants survive
+  # `brew upgrade`. See ~/.local/bin/resign-accessibility-binaries for the
+  # one-time keychain setup.
+  hosts: localhost
+  become: false
+  gather_facts: false
+  tasks:
+    - name: Check for zaye-codesign identity in login keychain
+      ansible.builtin.shell: |
+        set -o pipefail
+        security find-identity -p codesigning -v | grep -q ' "zaye-codesign"'
+      args:
+        executable: /bin/bash
+      register: codesign_identity_check
+      failed_when: false
+      changed_when: false
+
+    - name: Warn if zaye-codesign identity is missing
+      ansible.builtin.debug:
+        msg: |
+          ⚠  Self-signed identity 'zaye-codesign' not found in login keychain.
+             Accessibility permissions for sketchybar/aerospace will keep being
+             invalidated on every `brew upgrade` until you create it.
+
+             One-time setup (cannot be scripted):
+               1. Open Keychain Access.
+               2. Menu → Certificate Assistant → Create a Certificate…
+               3. Name: zaye-codesign
+                  Identity Type: Self Signed Root
+                  Certificate Type: Code Signing
+                  (tick "Let me override defaults", validity ~3650 days)
+               4. In the login keychain, double-click the new cert →
+                  Trust → Code Signing → Always Trust.
+               5. Re-run apConfig.
+      when: codesign_identity_check.rc != 0
+
+    - name: Ensure resign LaunchAgent is bootstrapped into the GUI session
+      ansible.builtin.shell: |
+        set -e
+        LABEL="net.zaye.resign-accessibility"
+        PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+        UID_VAL=$(id -u)
+        if [ ! -f "$PLIST" ]; then
+          echo "plist-missing" >&2
+          exit 0
+        fi
+        if launchctl print "gui/$UID_VAL/$LABEL" >/dev/null 2>&1; then
+          echo "already-loaded"
+        else
+          launchctl bootstrap "gui/$UID_VAL" "$PLIST"
+          echo "bootstrapped"
+        fi
+      args:
+        executable: /bin/bash
+      register: resign_agent_load
+      changed_when: "'bootstrapped' in resign_agent_load.stdout"
+      failed_when: false
+
+    - name: Re-sign sketchybar and aerospace with stable identity
+      # Runs the same script the LaunchAgent runs. Idempotent: skips binaries
+      # that are already signed with the correct identity + identifier.
+      ansible.builtin.command: "{{ ansible_facts['env']['HOME'] }}/.local/bin/resign-accessibility-binaries"
+      register: resign_run
+      changed_when: "'sign:' in resign_run.stdout"
+      failed_when: false
+      when: codesign_identity_check.rc == 0
+
+    - name: Show resign script output
+      ansible.builtin.debug:
+        msg: "{{ resign_run.stdout_lines | default([]) }}"
+      when: resign_run.stdout is defined and resign_run.stdout | length > 0
+
+    - name: Report current signing state for verification
+      ansible.builtin.shell: |
+        for b in /opt/homebrew/bin/sketchybar /opt/homebrew/bin/aerospace; do
+          if [ -e "$b" ]; then
+            printf '%s\n' "--- $b ---"
+            codesign -dv "$b" 2>&1 | grep -E '^(Authority|Identifier|Signature)='
+          fi
+        done
+      args:
+        executable: /bin/bash
+      register: resign_verify
+      changed_when: false
+      failed_when: false
+
+    - name: Show post-resign signature info
+      ansible.builtin.debug:
+        msg: "{{ resign_verify.stdout_lines | default([]) }}"

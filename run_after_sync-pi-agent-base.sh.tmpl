@@ -1,12 +1,24 @@
 #!/bin/bash
-# Auto-sync pi-agent-base to ~/.pi/agent after chezmoi apply
-# This makes pi-agent-base/ in chezmoi the source of truth for the global Pi config.
+# Auto-sync pi-agent-base to ~/.pi/agent after chezmoi apply.
 #
-# Excludes:
-#   auth.json   — API keys written by Pi at runtime, never checked in
-#   sessions/   — Conversation history, runtime only
-#   bin/        — Compiled binaries installed by Pi itself
-#   git/        — Downloaded packages from GitHub/npm, managed by Pi
+# `pi-agent-base/` is OPAQUE to chezmoi's normal file placement (it isn't a
+# `dot_*` source path). So:
+#   - Plain files are rsync'd as-is into ~/.pi/agent
+#   - `*.tmpl` files in pi-agent-base/ are rendered through
+#     `chezmoi execute-template` here so they have full access to bw, env, and
+#     chezmoi.data — exactly like a regular chezmoi template would.
+#
+# Excludes from rsync (runtime state, never check in):
+#   auth.json     — API keys / OAuth tokens written by Pi at runtime
+#   sessions/     — conversation history
+#   bin/, git/    — Pi-managed packages and binaries
+#   *.tmpl        — templates, rendered separately to non-.tmpl output
+#   *.bak*        — local editor backups
+#
+# Bitwarden in templates: requires BW_SESSION to be set when chezmoi runs.
+# `cma` already sources ~/.bw-session before invoking chezmoi apply, so this
+# Just Works. If you run `chezmoi apply` directly without cma, you'll get a
+# clear bw error here.
 
 set -e
 
@@ -19,6 +31,9 @@ fi
 
 mkdir -p "$TARGET_DIR"
 
+# -----------------------------------------------------------------------------
+# Pass 1: rsync non-template content
+# -----------------------------------------------------------------------------
 if command -v rsync &> /dev/null; then
     rsync -a --delete \
         --exclude='auth.json' \
@@ -26,11 +41,40 @@ if command -v rsync &> /dev/null; then
         --exclude='bin/' \
         --exclude='git/' \
         --exclude='.DS_Store' \
+        --exclude='*.bak*' \
+        --exclude='*.tmpl' \
         --exclude='**/.git/' \
         "$SOURCE_DIR/" "$TARGET_DIR/"
 else
-    # rsync not available — cp fallback (won't preserve exclusions cleanly)
+    # rsync not available — cp fallback (won't preserve exclusions cleanly).
+    # In particular, .tmpl files would land verbatim. Install rsync.
     cp -R "$SOURCE_DIR/." "$TARGET_DIR/"
 fi
+
+# -----------------------------------------------------------------------------
+# Pass 2: render every *.tmpl in pi-agent-base/ to its real target.
+#   pi-agent-base/models.json.tmpl  →  ~/.pi/agent/models.json   (mode 600)
+#
+# Using `find` instead of bash globstar for compat with macOS bash 3.2.
+# Output is chmod 600 because rendered files commonly contain secrets pulled
+# from bw (the whole reason for templating).
+# -----------------------------------------------------------------------------
+while IFS= read -r tmpl; do
+    [ -z "$tmpl" ] && continue
+    rel="${tmpl#$SOURCE_DIR/}"          # e.g. models.json.tmpl
+    out_rel="${rel%.tmpl}"              # e.g. models.json
+    out_path="$TARGET_DIR/$out_rel"
+    mkdir -p "$(dirname "$out_path")"
+
+    # Render. If bw isn't available / unlocked, this fails loudly.
+    if ! chezmoi execute-template < "$tmpl" > "$out_path.partial"; then
+        rm -f "$out_path.partial"
+        echo "✗ failed to render $rel — check BW_SESSION / bw status" >&2
+        exit 1
+    fi
+    mv "$out_path.partial" "$out_path"
+    chmod 600 "$out_path"
+    echo "✓ rendered $rel → ~/.pi/agent/$out_rel (0600)"
+done < <(find "$SOURCE_DIR" -type f -name '*.tmpl')
 
 echo "✓ Synced pi-agent-base → ~/.pi/agent"

@@ -52,6 +52,17 @@ alias lg="lazygit"
 alias ap="ansible-playbook"
 alias mux="tmuxinator"
 
+# Re-run the tailscale install/migration script (standalone macsys variant).
+# Safe to run anytime; idempotent. Use if Tailscale drifts (DNS broken, SSH
+# disabled, formula crept back in, etc.) without needing cma to work.
+alias tsreinstall="reinstall-tailscale"
+
+# Upgrade Xcode Command Line Tools. Required after each major macOS bump
+# (otherwise brew refuses to source-build rust/llvm/python/omlx/etc).
+# Wipes the old install then triggers Apple's GUI installer dialog.
+# Verify after with: brew doctor 2>&1 | grep -i 'command line' || echo OK
+alias clt-upgrade="sudo rm -rf /Library/Developer/CommandLineTools && sudo xcode-select --install"
+
 alias gcb="git clone --bare"
 alias mcp="mcphost -m ollama:Menlo/Jan-nano-gguf"
 

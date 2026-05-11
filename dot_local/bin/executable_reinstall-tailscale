@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+#
+# reinstall-tailscale
+#
+# Idempotent migration / re-install of the standalone macsys Tailscale variant
+# (brew cask `tailscale-app`). Use any time the install drifts, or after a
+# major macOS upgrade if the System Extension gets disabled.
+#
+# This is the canonical source for the install logic — the chezmoi run_once
+# bootstrap script `run_once_before_015_install_tailscale.sh.tmpl` includes
+# this file verbatim at apply time, so there is only one place to edit.
+#
+# See: .pi/agent-docs/implementation-log/2026/05/2026-05-10.ideaLog.md
+
+set -e
+
+echo "=== Installing/reconciling Tailscale (standalone / macsys variant) ==="
+
+# Variant matrix — see https://tailscale.com/kb/1065/macos-variants
+#
+#   App Store cask `tailscale` (deprecated cask name, sandboxed):
+#     ❌ no `tailscale ssh` server   ✅ MagicDNS via NetworkExtension
+#   brew formula `tailscale` (CLI-only daemon):
+#     ✅ `tailscale ssh` server      ❌ MagicDNS broken on macOS (no NE)
+#   brew cask `tailscale-app` (standalone "macsys" .pkg):  ← WE WANT THIS
+#     ✅ everything the formula has, plus working MagicDNS, plus GUI.
+
+CASK_NAME="tailscale-app"
+APP_PATH="/Applications/Tailscale.app"
+MACSYS_RECEIPT="io.tailscale.ipn.macsys"
+APP_STORE_RECEIPT="io.tailscale.ipn.macos"
+
+# ---------------------------------------------------------------------------
+# 1. Migrate away from the brew formula if it's installed
+# ---------------------------------------------------------------------------
+if brew list --formula tailscale >/dev/null 2>&1; then
+    echo "→ Detected brew formula 'tailscale' (CLI-only). Migrating to standalone."
+
+    if sudo brew services list | grep -E '^tailscale\s+started' >/dev/null 2>&1; then
+        echo "  Stopping tailscaled service…"
+        sudo brew services stop tailscale || true
+    fi
+
+    # Two tailscaleds fighting over the tun device is bad news.
+    if pgrep -x tailscaled >/dev/null 2>&1; then
+        echo "  Killing lingering tailscaled processes…"
+        sudo pkill -x tailscaled || true
+        sleep 1
+    fi
+
+    echo "  Uninstalling brew formula 'tailscale'…"
+    brew uninstall tailscale || true
+
+    if [ -d /opt/homebrew/var/lib/tailscale ]; then
+        echo "  Removing /opt/homebrew/var/lib/tailscale (formula state)…"
+        sudo rm -rf /opt/homebrew/var/lib/tailscale
+    fi
+
+    # Stale resolver entries written by the formula's tailscaled
+    if ls /etc/resolver/*.tailscale >/dev/null 2>&1; then
+        echo "  Cleaning stale /etc/resolver/*.tailscale entries…"
+        sudo rm -f /etc/resolver/*.tailscale
+    fi
+
+    echo "  Migration complete; you will need to re-auth: sudo tailscale up --ssh"
+fi
+
+# ---------------------------------------------------------------------------
+# 2. Detect existing standalone install — distinguish from App Store variant
+# ---------------------------------------------------------------------------
+if [ -d "$APP_PATH" ]; then
+    if pkgutil --pkg-info "$MACSYS_RECEIPT" >/dev/null 2>&1; then
+        echo "✓ Standalone Tailscale.app already installed (macsys receipt found)"
+    elif pkgutil --pkg-info "$APP_STORE_RECEIPT" >/dev/null 2>&1; then
+        echo "⚠️  /Applications/Tailscale.app is the SANDBOXED App Store variant."
+        echo "    Quit it from the menu bar, drag it to Trash, then re-run."
+        echo "    (Bootstrap will continue and try to install the cask alongside.)"
+    else
+        echo "⚠️  /Applications/Tailscale.app exists but has no recognised receipt."
+        echo "    Assuming hand-installed standalone; continuing."
+    fi
+fi
+
+# ---------------------------------------------------------------------------
+# 3. Install the standalone cask
+# ---------------------------------------------------------------------------
+if ! brew list --cask "$CASK_NAME" >/dev/null 2>&1; then
+    echo "→ Installing $CASK_NAME (this runs a .pkg, may prompt for password)…"
+    brew install --cask "$CASK_NAME"
+else
+    echo "✓ $CASK_NAME cask already installed"
+fi
+
+# ---------------------------------------------------------------------------
+# 4. Launch once so the System Extension / NetworkExtension prompts appear
+# ---------------------------------------------------------------------------
+if ! pgrep -x "Tailscale" >/dev/null 2>&1; then
+    echo "→ Launching Tailscale.app to trigger System Extension approval…"
+    open -a Tailscale || true
+fi
+
+# ---------------------------------------------------------------------------
+# 5. Guidance
+# ---------------------------------------------------------------------------
+cat <<'EOF'
+
+=== Next steps ===
+  1. If macOS shows a "System Extension Blocked" prompt:
+       System Settings → Privacy & Security → scroll down → "Allow"
+       (may require one reboot after approval)
+  2. Authenticate / enable SSH:
+       sudo tailscale up --ssh
+       (or if already up: tailscale set --ssh)
+  3. Verify MagicDNS actually works now (was broken under the formula):
+       host unraid.tail68d30.ts.net   # should return a 100.x.y.z address
+       ls /etc/resolver/              # should include tail68d30.ts.net
+  4. Verify SSH:
+       tailscale status | grep ssh
+
+=== Tailscale setup complete ===
+EOF
