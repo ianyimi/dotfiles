@@ -1,0 +1,31 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+#
+# Re-runs whenever the resign script or its LaunchAgent change. Bootstraps the
+# LaunchAgent into the current GUI session and performs an initial re-sign so
+# you don't have to wait for the next `brew upgrade` event.
+#
+# script-hash: {{ include "dot_local/bin/executable_resign-accessibility-binaries" | sha256sum }}
+# plist-hash:  {{ include "Library/LaunchAgents/net.zaye.resign-accessibility.plist" | sha256sum }}
+
+set -euo pipefail
+
+LABEL="net.zaye.resign-accessibility"
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+SCRIPT="$HOME/.local/bin/resign-accessibility-binaries"
+UID_VAL=$(id -u)
+
+mkdir -p "$HOME/.local/state"
+
+if [ -f "$PLIST" ]; then
+  launchctl bootout "gui/$UID_VAL/$LABEL" 2>/dev/null || true
+  launchctl bootstrap "gui/$UID_VAL" "$PLIST"
+  echo "[resign] LaunchAgent $LABEL bootstrapped"
+fi
+
+# Initial run — won't fail the chezmoi apply if the identity is missing,
+# the script just prints setup instructions.
+if [ -x "$SCRIPT" ]; then
+  "$SCRIPT" || true
+fi
+{{- end }}
