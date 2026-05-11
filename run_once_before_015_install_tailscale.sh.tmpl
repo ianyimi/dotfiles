@@ -3,40 +3,47 @@
 
 set -e
 
-echo "=== Installing Tailscale ==="
+echo "=== Installing Tailscale (open-source CLI/daemon) ==="
 
-# Check if Tailscale app is already installed
+# We intentionally install the Homebrew *formula*, NOT the cask.
+#
+# The macOS App Store / standalone GUI builds are sandboxed and cannot run
+# the Tailscale SSH server, so `tailscale set --ssh` fails with:
+#   "The Tailscale SSH server does not run in sandboxed Tailscale GUI builds."
+# See: https://tailscale.com/kb/1065/macos-variants
+#
+# The formula installs `tailscaled` as a background service, which supports
+# Tailscale SSH, exit nodes, subnet routing, and everything else.
+
+# Warn if the sandboxed GUI app is still present
 if [ -d "/Applications/Tailscale.app" ]; then
-    echo "✓ Tailscale already installed"
+    echo "⚠️  /Applications/Tailscale.app is installed (sandboxed GUI variant)."
+    echo "    Tailscale SSH will NOT work while that variant is the active client."
+    echo "    Quit it (and optionally delete it) before continuing."
     echo ""
-    echo "ℹ️  Make sure you're connected to your Tailscale network"
-    echo "   (Click Tailscale in menu bar to connect if needed)"
-    echo ""
-    echo "=== Tailscale setup complete ==="
-    exit 0
 fi
 
-# Install Tailscale if not present
-echo "Installing Tailscale..."
-brew install --cask tailscale
+# Install the open-source tailscaled formula if missing
+if ! brew list --formula tailscale >/dev/null 2>&1; then
+    echo "Installing tailscale formula..."
+    brew install tailscale
+else
+    echo "✓ tailscale formula already installed"
+fi
 
-# Start Tailscale app
-echo "✓ Tailscale installed"
-echo ""
-echo "=== Tailscale Authentication Required ==="
-echo "Opening Tailscale app - please:"
-echo "  1. Click 'Connect' in the Tailscale app"
-echo "  2. Authenticate in your browser"
-echo "  3. Approve the device"
-echo ""
+# Start the daemon as a root service so it can manage networking
+if ! sudo brew services list | grep -E '^tailscale\s+started' >/dev/null 2>&1; then
+    echo "Starting tailscaled via brew services..."
+    sudo brew services start tailscale
+else
+    echo "✓ tailscaled already running"
+fi
 
-open -a Tailscale
-sleep 2
-
-echo "Waiting for you to connect..."
-echo "(Script will continue once you close this terminal or press Ctrl+C)"
 echo ""
-echo "After connecting, you can continue with: chezmoi apply"
+echo "=== Next steps ==="
+echo "  1. Authenticate:     sudo tailscale up --ssh"
+echo "     (or if already up: tailscale set --ssh)"
+echo "  2. Verify:           tailscale status"
 echo ""
 echo "=== Tailscale setup complete ==="
 {{ end -}}
