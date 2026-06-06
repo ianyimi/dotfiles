@@ -1,8 +1,10 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
 
--- Suppress plugin-origin deprecation warnings that we can't fix in our own code.
--- Each entry corresponds to a known third-party plugin that hasn't migrated yet:
+-- Notification filtering.
+--
+-- (1) Plugin-origin deprecation warnings that we can't fix in our own code.
+-- Each entry corresponds to a known third-party plugin that hasn't migrated:
 --   tbl_flatten         — various plugins, replaced by vim.iter():flatten():totable()
 --   client.request      — tailwind-tools.nvim (lsp.lua lines 121, 212),
 --                         snacks.nvim (rename.lua line 98); 0.12 wants client:request()
@@ -12,9 +14,24 @@ local deprecation_patterns = {
 	"client%.request_sync",
 }
 
-local function is_suppressed_deprecation(msg)
+-- (2) Hover "no information" messages. Nvim 0.12+'s `vim.lsp.buf.hover()` and
+-- Noice's hover replacement both emit one of these notifications when no LSP
+-- client has hover content for the cursor position. With multiple LSPs
+-- attached (tailwindcss + vtsls + eslint on a .tsx file), this fires multiple
+-- times per hover attempt and also fires on every hover that hits whitespace,
+-- comments, etc. We don't want any of these — if there's nothing to show on
+-- hover, we want it to be silent (VSCode-style: no popup, no notification).
+-- Overriding vim.lsp.buf.hover would let us dedupe at the source, but Noice
+-- claims that function for itself and emits a warning if another plugin
+-- overwrites it. Cleanest fix: drop these messages at the notification layer.
+local hover_silence_patterns = {
+	"^No information available$",
+	"^Empty hover response$",
+}
+
+local function matches_any(msg, patterns)
 	if type(msg) ~= "string" then return false end
-	for _, pat in ipairs(deprecation_patterns) do
+	for _, pat in ipairs(patterns) do
 		if msg:match(pat) then return true end
 	end
 	return false
@@ -22,7 +39,8 @@ end
 
 local notify_orig = vim.notify
 vim.notify = function(msg, level, opts)
-	if is_suppressed_deprecation(msg) then return end
+	if matches_any(msg, deprecation_patterns) then return end
+	if matches_any(msg, hover_silence_patterns) then return end
 	return notify_orig(msg, level, opts)
 end
 

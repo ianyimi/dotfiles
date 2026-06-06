@@ -1,26 +1,41 @@
+-- nvim-treesitter `main` branch — full rewrite with a different API than master.
+--
+-- Why we're on main:
+--   master was archived 2026-04-03 (read-only). Its custom query predicates
+--   (set-lang-from-info-string!, downcase!) were never updated for Nvim 0.10+'s
+--   changed query-match shape, which crashes markdown injection on Nvim 0.12.
+--   See https://github.com/nvim-treesitter/nvim-treesitter/issues/8618 (closed
+--   "Not planned"). The fix is to migrate to main, where those broken
+--   predicates were deleted (the custom predicates file is gone entirely and
+--   Nvim core's @injection.language capture handles the markdown case correctly).
+--
+-- Setup docs:
+--   :help nvim-treesitter
+--   https://github.com/nvim-treesitter/nvim-treesitter
+--
+-- System requirements (installed via ~/.bootstrap/macos.yml):
+--   - Nvim 0.12+
+--   - tree-sitter-cli 0.26.1+ (brew install tree-sitter-cli — NOT npm)
+--   - tar, curl, C compiler
+--
+-- Note: main branch does NOT support lazy-loading. Must be lazy = false.
+-- After install, verify with :checkhealth nvim-treesitter and :TSLog.
+
 return {
 	"nvim-treesitter/nvim-treesitter",
-	version = false,
-	event = { "BufReadPost", "BufWritePost", "BufNewFile", "VeryLazy" },
-	dependencies = {
-		"windwp/nvim-ts-autotag",
-	},
-	lazy = vim.fn.argc(-1) == 0, -- load treesitter early when opening a file from the cmdline
-	init = function(plugin)
-		-- PERF: add nvim-treesitter queries to the rtp and it's custom query predicates early
-		-- This is needed because a bunch of plugins no longer `require("nvim-treesitter")`, which
-		-- no longer trigger the **nvim-treesitter** module to be loaded in time.
-		-- Luckily, the only things that those plugins need are the custom queries, which we make available
-		-- during startup.
-		require("lazy.core.loader").add_to_rtp(plugin)
-		require("nvim-treesitter.query_predicates")
-	end,
-	cmd = { "TSUpdateSync", "TSUpdate", "TSInstall" },
-	opts = {
-		auto_install = true,
-		highlight = { enable = true },
-		-- indent = { enable = true },
-		ensure_installed = {
+	branch = "main",
+	lazy = false,
+	build = ":TSUpdate",
+	dependencies = { "windwp/nvim-ts-autotag" },
+	config = function()
+		-- setup() is optional — only needed to override defaults like install_dir.
+		require("nvim-treesitter").setup({})
+
+		-- Parsers — installed asynchronously. No-op if already present.
+		-- First run will install in the background; restart Nvim once they finish
+		-- if you want a fully-highlighted experience immediately.
+		-- See :help nvim-treesitter.install()
+		require("nvim-treesitter").install({
 			"astro",
 			"bash",
 			"c",
@@ -62,59 +77,53 @@ return {
 			"vimdoc",
 			"xml",
 			"yaml",
-		},
-	},
-	config = function(_, opts)
-		if type(opts.ensure_installed) == "table" then
-			opts.ensure_installed = require("util").dedup(opts.ensure_installed)
-		end
-		require("nvim-treesitter.configs").setup(opts)
-		require("nvim-ts-autotag").setup()
+		})
 
-		-- nvim-treesitter master is archived (see :Git log on the plugin) and never
-		-- migrated its custom query predicates to Nvim 0.10+'s new query-match shape
-		-- where match[capture_id] can be a node LIST instead of a single TSNode.
-		-- Two directives in nvim-treesitter/lua/nvim-treesitter/query_predicates.lua
-		-- call vim.treesitter.get_node_text directly on whatever is in match[id]:
-		--    set-lang-from-info-string!   (used by markdown/injections.scm)
-		--    downcase!                    (used by HTML / various)
-		-- When the capture resolves to a node-list, get_node_text tries node:range()
-		-- on a Lua table and throws "attempt to call method 'range' (a nil value)",
-		-- which then poisons every parse that touches the same query — including
-		-- treesitter highlighter decoration providers, breaking highlighting in any
-		-- buffer that gets rendered while the broken parse is cached.
-		--
-		-- We re-register both directives with the same logic but with node-list
-		-- defensiveness: if the capture is a list, use the first node.
-		local query = vim.treesitter.query
-		local function first_node(match, id)
-			local v = match[id]
-			if type(v) == "table" and not v.range then
-				return v[1] -- node-list → take first
+		-- Per-buffer highlighting + indent. On main there is no global
+		-- `highlight.enable` — you start treesitter explicitly per buffer.
+		-- Catch-all FileType autocmd with pcall: tries to start the parser for
+		-- whatever the buffer's filetype is, silently does nothing if no parser
+		-- exists (e.g. for filetypes we never installed, or before background
+		-- install finishes on first run).
+		local function start_treesitter(bufnr)
+			local ok = pcall(vim.treesitter.start, bufnr)
+			if ok then
+				-- Indentation (provided by nvim-treesitter; experimental but stable)
+				vim.bo[bufnr].indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
 			end
-			return v
 		end
 
-		local markdown_alias_map = {
-			ex = "elixir", pl = "perl", rs = "rust", sh = "bash",
-			js = "javascript", ts = "typescript", py = "python",
-			htm = "html", yml = "yaml", md = "markdown",
-		}
+		vim.api.nvim_create_autocmd("FileType", {
+			group = vim.api.nvim_create_augroup("zaye_treesitter_start", { clear = true }),
+			callback = function(args) start_treesitter(args.buf) end,
+		})
 
-		query.add_directive("set-lang-from-info-string!", function(match, _, bufnr, pred, metadata)
-			local node = first_node(match, pred[2])
-			if not node then return end
-			local alias = vim.treesitter.get_node_text(node, bufnr):lower()
-			metadata["injection.language"] = markdown_alias_map[alias] or alias
-		end, { force = true, all = true })
+		-- Re-trigger on every BufEnter as a safety net: on first install, parsers
+		-- arrive AFTER the file was already opened, so the FileType autocmd's
+		-- pcall failed (parser didn't exist yet). When the buffer regains focus
+		-- after the install finishes, this retries silently. Idempotent —
+		-- vim.treesitter.start on an already-attached buffer is a no-op.
+		vim.api.nvim_create_autocmd("BufEnter", {
+			group = vim.api.nvim_create_augroup("zaye_treesitter_start_bufenter", { clear = true }),
+			callback = function(args)
+				if vim.bo[args.buf].buftype == "" and not vim.b[args.buf].ts_started then
+					start_treesitter(args.buf)
+					vim.b[args.buf].ts_started = true
+				end
+			end,
+		})
 
-		query.add_directive("downcase!", function(match, _, bufnr, pred, metadata)
-			local node = first_node(match, pred[2])
-			if not node then return end
-			local text = vim.treesitter.get_node_text(node, bufnr):lower()
-			local cap = pred[2]
-			metadata[cap] = metadata[cap] or {}
-			metadata[cap].text = text
-		end, { force = true, all = true })
+		-- Start treesitter on any buffers that are already open when this config
+		-- runs (happens on :Lazy sync of an existing session, or when the plugin
+		-- config function runs after the file has already been loaded).
+		for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+			if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].buftype == "" then
+				start_treesitter(bufnr)
+				vim.b[bufnr].ts_started = true
+			end
+		end
+
+		-- nvim-ts-autotag is a separate plugin with its own setup
+		require("nvim-ts-autotag").setup()
 	end,
 }

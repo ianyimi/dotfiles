@@ -20,18 +20,24 @@ return {
 					},
 					hover = {
 						enabled = true,
-						-- Stay silent when no info — our smart_hover already emits one notify
+						-- Don't emit "No information available" / "Empty hover response"
+						-- when no LSP client has hover info. With tailwindcss + vtsls +
+						-- eslint attached to a .tsx file, those messages fire often and
+						-- noisily. We want VSCode-style behavior: if there's nothing to
+						-- show, do nothing.
 						silent = true,
 					},
 					signature = {
 						auto_open = { enabled = false },
 					},
 				},
-				-- Customize hover popup view to match theme
+				-- Hover popup styling. We don't override `position` — Noice's default
+				-- (auto-place above or below cursor based on viewport space) is what
+				-- we want. Our previous `position = { row = 1, col = 0 }` was forcing
+				-- the popup ONTO the cursor line, covering the symbol being hovered.
 				views = {
 					hover = {
 						border = { style = 'rounded' },
-						position = { row = 1, col = 0 },
 						size = { max_width = 100, max_height = 30 },
 					},
 				},
