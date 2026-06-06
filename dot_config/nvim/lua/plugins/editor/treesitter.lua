@@ -56,7 +56,9 @@ return {
 			"jsdoc",
 			"json",
 			"json5",
-			"jsonc",
+			-- jsonc removed: not a separate parser on nvim-treesitter `main`.
+			-- JSONC files highlight via the `json` parser plus comment injection.
+			-- (Warning was: "[nvim-treesitter] warning: skipping unsupported language: jsonc")
 			"lua",
 			"luadoc",
 			"luap",

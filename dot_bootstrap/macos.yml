@@ -390,6 +390,16 @@
         name: fnm
         state: present
 
+    - name: Check Install - oxlint
+      community.general.homebrew:
+        name: oxlint
+        state: latest
+
+    - name: Check Install - oxfmt
+      community.general.homebrew:
+        name: oxfmt
+        state: latest
+
     - name: Check Install - RipGrep
       community.general.homebrew:
         name: ripgrep
