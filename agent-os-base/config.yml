@@ -1,8 +1,0 @@
-version: 3.0
-default_profile: default
-
-# Optional: define inheritance relationships for profiles
-# Profiles not listed here still work, they just have no inheritance
-profiles:
-  create-z3-app:
-    inherits_from: default

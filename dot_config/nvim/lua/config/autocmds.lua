@@ -203,12 +203,14 @@ vim.api.nvim_create_autocmd("FileChangedShellPost", {
 vim.api.nvim_create_autocmd('User', {
 	pattern = 'VeryLazy',
 	callback = function()
-		pcall(vim.cmd.vunmap, 'gra')
-		pcall(vim.cmd.unmap, 'gra')
-		pcall(vim.cmd.unmap, 'gri')
-		pcall(vim.cmd.unmap, 'grn')
-		pcall(vim.cmd.unmap, 'grr')
-		pcall(vim.cmd.unmap, 'grt')
+		-- Remove all built-in LSP gr* keymaps to avoid conflicts
+		local gr_maps = { 'gra', 'gri', 'grn', 'grr', 'grt', 'grx' } -- Added grx (codelens)
+		for _, map in ipairs(gr_maps) do
+			pcall(vim.cmd.vunmap, map)
+			pcall(vim.cmd.unmap, map)
+			pcall(vim.keymap.del, 'n', map, { silent = true })
+		end
+		-- Silently clean up conflicting keymaps (no notification needed)
 	end
 })
 

@@ -12,6 +12,7 @@ Run this when:
 - Project structure changed (new apps/packages in monorepo)
 - Debug hierarchy needs updating (new error surfaces found)
 - Mission or focus changed significantly
+- Design assets changed (new Claude Design exports, token changes, new sections)
 
 ---
 
@@ -35,6 +36,9 @@ Scan:
 - Manifest files (package.json, Cargo.toml, go.mod, turbo.json, pnpm-workspace.yaml, etc.)
 - `apps/` and `packages/` directories (monorepo packages added/removed)
 - Current `.pi/agent-docs/product/` files
+- `.pi/design/` folder (new subfolders, changed README, new/changed token tables)
+
+Also check if `.pi/design/` exists. If not, ask whether the project now has visual designs that should be tracked there.
 
 Report what has changed since the harness was last updated.
 

@@ -1,0 +1,14 @@
+# /Users/zaye/.config/tmuxinator/zaye-dotfiles.yml
+
+name: zaye-pi
+root: ~/.local/share/chezmoi/pi-agent-base
+
+windows:
+  - nvim:
+      layout: tiled
+      panes:
+        - nv
+  - agents:
+      layout: even-horizontal
+      panes:
+        - pi

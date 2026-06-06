@@ -4,17 +4,17 @@ root: ~/Documents/Projects/vex.git/dev/
 windows:
   - node:
       layout: even-horizontal
-      # Synchronize all panes of this window, can be enabled before or after the pane commands run.
-      # 'before' represents legacy functionality and will be deprecated in a future release, in favour of 'after'
-      # synchronize: after
       panes:
-        - neofetch
-        - neofetch
+        - pnpm dev
+        - pnpm dev:vex
   - nvim:
-      layout: 47ac,215x58,0,0{107x58,0,0,8,107x58,108,0,9}
+      layout: main-vertical
       panes:
         - nv
-        - neofetch
+        - claude
+        - ""
   - agents:
       layout: even-horizontal
-      panes: claude
+      panes:
+        - pi
+        - pi

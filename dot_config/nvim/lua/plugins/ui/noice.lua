@@ -18,8 +18,21 @@ return {
 						['vim.lsp.util.stylize_markdown'] = true,
 						['cmp.entry.get_documentation'] = true,
 					},
+					hover = {
+						enabled = true,
+						-- Stay silent when no info — our smart_hover already emits one notify
+						silent = true,
+					},
 					signature = {
 						auto_open = { enabled = false },
+					},
+				},
+				-- Customize hover popup view to match theme
+				views = {
+					hover = {
+						border = { style = 'rounded' },
+						position = { row = 1, col = 0 },
+						size = { max_width = 100, max_height = 30 },
 					},
 				},
 				status = {

@@ -6,35 +6,50 @@ return {
 
     conform.setup({
       formatters_by_ft = {
-        -- eslint_d first (import sorting), then prettierd (formatting)
-        -- stop_after_first = false means ALL formatters run sequentially
-        javascript = { "eslint_d", "prettierd", stop_after_first = false },
-        typescript = { "eslint_d", "prettierd", stop_after_first = false },
-        javascriptreact = { "eslint_d", "prettierd", stop_after_first = false },
-        typescriptreact = { "eslint_d", "prettierd", stop_after_first = false },
-        svelte = { "eslint_d", "prettierd", stop_after_first = false },
-        css = { "prettierd", stop_after_first = false },
-        html = { "prettierd", stop_after_first = false },
-        json = { "prettierd", stop_after_first = false },
-        yaml = { "prettierd", stop_after_first = false },
-        markdown = { "prettierd", stop_after_first = false },
-        ["markdown.mdx"] = { "prettierd", stop_after_first = false },
-        mdx = { "prettierd", stop_after_first = false },
-        graphql = { "prettierd", stop_after_first = false },
-        liquid = { "prettierd", stop_after_first = false },
-        lua = { "stylua", stop_after_first = false },
-        python = { "isort", "black", stop_after_first = false },
+        -- Use oxfmt (30x faster than Prettier) as primary, prettierd as fallback
+        -- ESLint LSP handles linting, oxfmt handles formatting
+        javascript = { "oxfmt" },
+        typescript = { "oxfmt" },
+        javascriptreact = { "oxfmt" },
+        typescriptreact = { "oxfmt" },
+        json = { "oxfmt" }, -- oxfmt supports JSON
+        -- Keep prettierd for file types not supported by oxfmt
+        svelte = { "prettierd" },
+        css = { "prettierd" },
+        html = { "prettierd" },
+        yaml = { "prettierd" },
+        markdown = { "prettierd" },
+        ["markdown.mdx"] = { "prettierd" },
+        mdx = { "prettierd" },
+        graphql = { "prettierd" },
+        liquid = { "prettierd" },
+        lua = { "stylua" },
+        python = { "isort", "black" }, -- Keep both for Python
       },
-      -- format_on_save causes cursor jumps on undo/redo - see commit 8dbbb4b
-      -- Commenting out to test if this fixes the issue
-      format_on_save = {
-        lsp_fallback = true,
-        async = false,
-        timeout_ms = 1000
-      }
+      -- Disable format_on_save to prevent performance issues and cursor jumps
+      -- Use manual formatting with <leader>mp instead
+      -- format_on_save = {
+      --   lsp_fallback = true,
+      --   async = false,
+      --   timeout_ms = 2000
+      -- }
     })
 
     -- Configure individual formatters
+    -- Configure oxfmt (super fast Rust-based formatter)
+    conform.formatters.oxfmt = {
+      command = "npx",
+      args = { "oxfmt@latest", "--stdin-filepath", "$FILENAME" },
+      stdin = true,
+      -- Oxfmt is extremely fast, even via npx
+      timeout_ms = 2000,
+      -- Try to find local oxfmt first, fallback to npx
+      condition = function()
+        -- Always available via npx
+        return true
+      end,
+    }
+    
     -- Use built-in prettier (stdio). Prefer `prettierd` if available.
     conform.formatters.shfmt = {
       prepend_args = { "-i", "4" },
@@ -44,7 +59,7 @@ return {
       conform.format({
         lsp_fallback = true,
         async = false,
-        timeout_ms = 1000,
+        timeout_ms = 3000, -- Increased for monorepos
       })
     end, { desc = "Format file or selection (in visual mode)" })
   end,

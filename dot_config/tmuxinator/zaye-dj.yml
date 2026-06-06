@@ -1,0 +1,14 @@
+name: zaye-dj
+root: ~/Documents/Music
+
+windows:
+  - download:
+      layout: main-vertical
+      panes:
+        - PYTHONUNBUFFERED=1 ~/Downloads/spotdl-venv/bin/python ~/Documents/Music/.pi/scripts/sync.py
+        - nv
+  - shell:
+      layout: main-vertical
+      panes:
+        - neofetch
+        - neofetch

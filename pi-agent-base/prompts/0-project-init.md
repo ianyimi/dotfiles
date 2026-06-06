@@ -29,6 +29,7 @@ Project: <name once known>
 - [ ] Phase 2 — Tech Stack + Library Map
 - [ ] Phase 3 — Dev Processes + Environment
 - [ ] Phase 4 — Mission + Roadmap
+- [ ] Phase 4b — Design Assets
 - [ ] Phase 5 — Workflow Tier
 - [ ] Phase 6 — Prompt Customization
 - [ ] Phase 7 — Debug Hierarchy
@@ -54,6 +55,7 @@ Project: <name once known>
 | 2 | `.pi/agent-docs/product/tech-stack.md` |
 | 3 | `.pi/agent-docs/product/dev-processes.md` |
 | 4 | `.pi/agent-docs/product/mission.md`, `.pi/agent-docs/product/roadmap.md` |
+| 4b | `.pi/design/README.md`, `.pi/design/claude-design/README.md` (if applicable) |
 | 5 | Append workflow tier section to `tech-stack.md` |
 | 6a | `.pi/prompts/1-dev-spec.md` |
 | 6b | `.pi/prompts/2-sync-spec.md` |
@@ -393,6 +395,135 @@ _Updated by the developer. Agent reads this for context when writing specs._
 
 ## Later
 -
+```
+
+---
+
+## Phase 4b — Design Assets
+
+Ask whether the project has visual designs that the agent should reference when writing UI code.
+
+Ask:
+
+> Does this project have visual designs or brand assets the agent should reference when writing UI code?
+>
+> A) **Yes — from Claude Design** (claude.ai/design sessions). I'll export files into `.pi/design/claude-design/`.
+> B) **Yes — other source** (Figma, Sketch, PDF brand guide, screenshots, etc.). I'll provide the files.
+> C) **Yes — designs exist but not digitized yet.** I'll add them later.
+> D) **No — no visual designs.** UI is built ad-hoc from developer intuition.
+
+**If A (Claude Design):**
+
+Create `.pi/design/` with the following structure:
+
+```
+.pi/design/
+  README.md
+  claude-design/
+    README.md
+```
+
+Generate `.pi/design/README.md`:
+
+```markdown
+# <Project Name> — Design System Assets
+
+This folder contains all design assets for <project>. Read this file before
+writing any UI code so implementations match the intended visual design.
+
+## Active Design
+
+`claude-design/` — source of truth from Claude Design sessions.
+
+## Folder Structure
+
+<!-- Update this as designs are added -->
+
+```
+
+Generate `.pi/design/claude-design/README.md`:
+
+```markdown
+# Claude Design — <Project Name> Visual Reference
+
+**Source:** Exported from Claude Design (claude.ai/design) sessions.
+
+## Directory layout
+
+<!-- Add subfolders as sections are exported -->
+
+## Token Translation Table
+
+<!-- Build this when comparing Claude Design token names to the project's
+CSS variable names. Claude Design uses its own token vocabulary that differs
+from shadcn/Tailwind/etc. Never copy Claude Design CSS directly — always
+translate tokens. -->
+
+| Concept | Claude Design token | Project token | Notes |
+|---------|-------------------|-------------|-------|
+
+## Updating
+
+When Claude Design exports a new revision:
+1. Drop the new files into the appropriate subfolder
+2. Update the README if folder structure changes
+3. If token names changed, add/update rows in the translation table above
+4. If `globals.css` changed, propagate via the translation table to the project's actual globals file
+```
+
+**If B (other source):**
+
+Create `.pi/design/` with:
+
+```
+.pi/design/
+  README.md
+  assets/            ← For provided files
+```
+
+Generate `.pi/design/README.md` noting the source and file types. Add a stub
+for the asset index. Ask the user what format the designs are in (Figma links,
+PDF brand guide, PNG screenshots, etc.) and record it.
+
+**If C (not digitized yet):**
+
+Create `.pi/design/README.md` with a placeholder noting designs will be added:
+
+```markdown
+# <Project Name> — Design System Assets
+
+## Status
+
+Designs exist but are not yet digitized. The developer will add them to this folder.
+
+## What to do now
+
+- When designs are ready, drop them into `.pi/design/` and update this README
+- If using Claude Design, use the `claude-design/` subfolder structure
+```
+
+**If D (no designs):**
+
+Do not create `.pi/design/`. Note in the ideaLog that this project has no
+visual design reference — UI decisions are ad-hoc.
+
+### Add design reference to AGENTS.md
+
+For any project WITH designs (A, B, or C), add a Design section to the
+AGENTS.md template in Phase 10:
+
+```markdown
+## Design
+→ `.pi/design/README.md`
+
+<one-line summary of the active design source>
+```
+
+For projects WITHOUT designs (D), add:
+
+```markdown
+## Design
+No visual design reference. UI is built ad-hoc.
 ```
 
 ---

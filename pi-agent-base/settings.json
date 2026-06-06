@@ -1,13 +1,11 @@
 {
   "enableSkillCommands": true,
-  "skills": [
-    "/Users/zaye/.pi/agent/skills"
-  ],
+  "skills": ["/Users/zaye/.pi/agent/skills"],
   "autoCompaction": true,
   "quietStartup": true,
   "lastChangelogVersion": "0.68.1",
-  "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-4-7",
+  "defaultProvider": "fireworks",
+  "defaultModel": "accounts/fireworks/models/kimi-k2p6",
   "packages": [
     "npm:pi-btw",
     "npm:pi-docparser",
@@ -16,7 +14,5 @@
     "npm:pi-smart-fetch",
     "git:https://github.com/ianyimi/pi-image-preview"
   ],
-  "suppressWarnings": [
-    "tmux-extended-keys"
-  ]
+  "suppressWarnings": ["tmux-extended-keys"]
 }

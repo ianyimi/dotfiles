@@ -1,6 +1,0 @@
-inherits_from: default
-
-# Uncomment and modify to exclude specific inherited files:
-exclude_inherited_files:
-- standards/global/*
-- standards/backend/*

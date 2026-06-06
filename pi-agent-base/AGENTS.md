@@ -61,6 +61,7 @@ Commands are prompt templates — type `/name` to invoke. They execute immediate
 |--------|--------|---------|
 | `0-project-init` | `/0-project-init` | Bootstrap agent harness for any project |
 | `sync-harness` | `/sync-harness` | Update harness when project structure changes |
+| `sync-project-harness` | `/sync-project-harness` | Port new paradigms from the base harness into the current project |
 | `build-prompt` | `/build-prompt` | Create a new project-specific prompt interactively |
 | `implement-spec` | `/implement-spec` | Execute an approved spec (optional, set up per project) |
 
@@ -81,25 +82,58 @@ Commands are prompt templates — type `/name` to invoke. They execute immediate
 | `review` | `/review` | Code review against codebase conventions |
 | `document` | `/document` | Write or update inline documentation |
 | `excalidraw-diagram` | `/excalidraw-diagram` | Create Excalidraw diagram JSON files |
+| `sync-tmux-layout` | `/sync-tmux-layout` | Re-scan tmux session → update tmux-workspace.md + chezmoi tmuxinator config |
+| `design` | `/design` | Save, update, or reference visual design assets in .pi/design/ |
 
 ---
 
 ## Tmux Environment
 
-Use the `tmux_pane` tool to check pane output. Typical layout:
-- Pane 0: pi (this session)
-- Pane 1: dev server
-- Pane 2: test runner / other service
+Each project has a named tmux session. The project's `.pi/AGENTS.md` contains a terse pane summary and links to `.pi/agent-docs/product/tmux-workspace.md` for the full map with exact pane targets, per-service capture commands, and rules.
 
-Call `tmux_pane` with `{ "pane": "1" }` to check server logs before/after changes.
+**Always use the exact session:window.pane target** (e.g. `project-vex:0.0`) — never guess by index alone.
+
+```
+tmux_pane({ pane: "<session>:<window>.<pane>" })
+// or via bash:
+tmux capture-pane -t <session>:<window>.<pane> -p -S -100
+```
+
+**Never start a dev server or background service that is already running.** Check the project's tmux-workspace.md to see what is permanently running before executing any `dev` or `start` command. Starting duplicates causes port conflicts.
+
+Run `/sync-tmux-layout` to re-scan the current session and update both the project tmux-workspace.md and the chezmoi tmuxinator config.
 
 ---
 
-## Project Harness
+## Design Assets
 
-If the project has `.pi/AGENTS.md`, read it — it contains project-specific context: stack, dev commands, workflow tier, debug hierarchy, and active specs. That file takes precedence over general assumptions.
+Each project may have a `.pi/design/` folder containing visual design assets — UI mockups, brand guidelines, CSS tokens, Claude Design exports, screenshots, and component specs. The agent **always checks `.pi/design/README.md` before writing any UI code** so implementations match the intended visual design.
 
-If `.pi/` does not exist, tell the user to run `0-project-init` before starting work.
+The `.pi/design/` folder is maintained by the developer (exporting from Claude Design) and by the agent (updating README, propagating token changes). It is NOT auto-synced — the developer drops files, the agent reads them.
+
+If `.pi/design/` doesn't exist, the agent should ask whether there are visual designs to reference before proceeding with UI work.
+
+## Agent Harness
+
+The **agent harness** is everything in `.pi/` — `AGENTS.md`, `agent-docs/` (standards, specs, product docs, implementation log), `design/` (visual assets), `prompts/`, and project-local skills. The full harness for each project takes precedence over everything in this global base harness.
+
+If the project has `.pi/AGENTS.md`, read it. That file is the entry point. If `.pi/` does not exist, tell the user to run `/0-project-init` before starting work.
+
+## Dotfiles & Base Harness
+
+The global base harness lives in chezmoi and is synced to `~/.pi/agent/` on every `cma`.
+
+| Location | Purpose |
+|----------|---------|
+| `~/.local/share/chezmoi/` | Chezmoi source — source of truth for all dotfiles |
+| `~/.local/share/chezmoi/pi-agent-base/` | Source of truth for this global Pi agent harness |
+| `~/.pi/agent/` | Live global harness (auto-synced from `pi-agent-base/` on `cma`) |
+| `~/.local/share/chezmoi/dot_config/tmuxinator/` | Tmuxinator session configs managed by chezmoi |
+| `~/.zshrc` | Shell config — defines aliases including `cma` |
+
+**`cma` alias** — runs `chezmoi apply && source ~/.zshrc`. Use after editing anything in the chezmoi source to deploy changes to the live system. It also triggers `run_after_sync-pi-agent-base.sh` which syncs `pi-agent-base/` → `~/.pi/agent/`.
+
+To propagate a pattern from a project to all projects: edit `~/.local/share/chezmoi/pi-agent-base/`, then run `cma`.
 
 ---
 

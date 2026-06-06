@@ -157,7 +157,9 @@ function M.on_rename(from, to, rename)
   local clients = M.get_clients()
   for _, client in ipairs(clients) do
     if client.supports_method("workspace/willRenameFiles") then
-      local resp = client.request_sync("workspace/willRenameFiles", changes, 1000, 0)
+      -- Nvim 0.12+: use colon method call (client:request_sync) instead of
+      -- deprecated client.request_sync to avoid "deprecated" warnings.
+      local resp = client:request_sync("workspace/willRenameFiles", changes, 1000, 0)
       if resp and resp.result ~= nil then
         vim.lsp.util.apply_workspace_edit(resp.result, client.offset_encoding)
       end

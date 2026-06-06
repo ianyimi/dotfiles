@@ -70,5 +70,51 @@ return {
 		end
 		require("nvim-treesitter.configs").setup(opts)
 		require("nvim-ts-autotag").setup()
+
+		-- nvim-treesitter master is archived (see :Git log on the plugin) and never
+		-- migrated its custom query predicates to Nvim 0.10+'s new query-match shape
+		-- where match[capture_id] can be a node LIST instead of a single TSNode.
+		-- Two directives in nvim-treesitter/lua/nvim-treesitter/query_predicates.lua
+		-- call vim.treesitter.get_node_text directly on whatever is in match[id]:
+		--    set-lang-from-info-string!   (used by markdown/injections.scm)
+		--    downcase!                    (used by HTML / various)
+		-- When the capture resolves to a node-list, get_node_text tries node:range()
+		-- on a Lua table and throws "attempt to call method 'range' (a nil value)",
+		-- which then poisons every parse that touches the same query — including
+		-- treesitter highlighter decoration providers, breaking highlighting in any
+		-- buffer that gets rendered while the broken parse is cached.
+		--
+		-- We re-register both directives with the same logic but with node-list
+		-- defensiveness: if the capture is a list, use the first node.
+		local query = vim.treesitter.query
+		local function first_node(match, id)
+			local v = match[id]
+			if type(v) == "table" and not v.range then
+				return v[1] -- node-list → take first
+			end
+			return v
+		end
+
+		local markdown_alias_map = {
+			ex = "elixir", pl = "perl", rs = "rust", sh = "bash",
+			js = "javascript", ts = "typescript", py = "python",
+			htm = "html", yml = "yaml", md = "markdown",
+		}
+
+		query.add_directive("set-lang-from-info-string!", function(match, _, bufnr, pred, metadata)
+			local node = first_node(match, pred[2])
+			if not node then return end
+			local alias = vim.treesitter.get_node_text(node, bufnr):lower()
+			metadata["injection.language"] = markdown_alias_map[alias] or alias
+		end, { force = true, all = true })
+
+		query.add_directive("downcase!", function(match, _, bufnr, pred, metadata)
+			local node = first_node(match, pred[2])
+			if not node then return end
+			local text = vim.treesitter.get_node_text(node, bufnr):lower()
+			local cap = pred[2]
+			metadata[cap] = metadata[cap] or {}
+			metadata[cap].text = text
+		end, { force = true, all = true })
 	end,
 }

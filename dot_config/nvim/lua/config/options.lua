@@ -1,5 +1,44 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = "\\"
+
+-- Suppress plugin-origin deprecation warnings that we can't fix in our own code.
+-- Each entry corresponds to a known third-party plugin that hasn't migrated yet:
+--   tbl_flatten         — various plugins, replaced by vim.iter():flatten():totable()
+--   client.request      — tailwind-tools.nvim (lsp.lua lines 121, 212),
+--                         snacks.nvim (rename.lua line 98); 0.12 wants client:request()
+local deprecation_patterns = {
+	"tbl_flatten",
+	"client%.request",
+	"client%.request_sync",
+}
+
+local function is_suppressed_deprecation(msg)
+	if type(msg) ~= "string" then return false end
+	for _, pat in ipairs(deprecation_patterns) do
+		if msg:match(pat) then return true end
+	end
+	return false
+end
+
+local notify_orig = vim.notify
+vim.notify = function(msg, level, opts)
+	if is_suppressed_deprecation(msg) then return end
+	return notify_orig(msg, level, opts)
+end
+
+-- Also suppress at the source so it doesn't even reach the notify path
+if vim.deprecate then
+	local deprecate_orig = vim.deprecate
+	vim.deprecate = function(name, alt, version, ...)
+		if type(name) == "string" then
+			for _, pat in ipairs(deprecation_patterns) do
+				if name:match(pat) then return end
+			end
+		end
+		return deprecate_orig(name, alt, version, ...)
+	end
+end
+
 -- Set filetype to `bigfile` for files larger than 1.5 MB
 -- Only vim syntax will be enabled (with the correct filetype)
 -- LSP, treesitter and other ft plugins will be disabled.
@@ -7,6 +46,34 @@ vim.g.maplocalleader = "\\"
 vim.g.bigfile_size = 1024 * 1024 * 1.5 -- 1.5 MB
 -- Fix markdown indentation settings
 vim.g.markdown_recommended_style = 0
+
+-- Enable syntax highlighting for fenced code blocks in markdown.
+-- This is what makes ```css ... ``` highlight as CSS inside LSP hover popups
+-- (and any other markdown buffer). Required for tailwindcss hover, JSDoc code
+-- examples, etc. Used by both vim's markdown syntax and treesitter markdown_inline
+-- injection queries.
+vim.g.markdown_fenced_languages = {
+	"css",
+	"scss",
+	"html",
+	"javascript",
+	"js=javascript",
+	"typescript",
+	"ts=typescript",
+	"jsx=javascriptreact",
+	"tsx=typescriptreact",
+	"json",
+	"lua",
+	"bash",
+	"sh=bash",
+	"zsh=bash",
+	"python",
+	"go",
+	"rust",
+	"yaml",
+	"toml",
+	"sql",
+}
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
@@ -55,6 +122,12 @@ vim.opt.shortmess:append("A")
 
 vim.opt.autoread = true
 vim.opt.updatetime = 250
+vim.opt.timeoutlen = 500 -- Faster key sequence timeout
+vim.opt.ttimeoutlen = 10 -- Faster escape key
+
+-- LSP performance optimizations
+vim.opt.foldmethod = "manual" -- Avoid expensive fold calculations
+vim.opt.synmaxcol = 200 -- Limit syntax highlighting to 200 columns
 
 vim.opt.undofile = true
 vim.opt.undolevels = 10000

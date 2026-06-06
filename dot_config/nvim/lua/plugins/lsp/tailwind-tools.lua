@@ -24,35 +24,36 @@ return {
 		},
 		extension = {
 			patterns = {
+				-- Conservative patterns - only match obvious class utilities
 				javascript = {
 					{ "cn%(([^)]*)%)" },
-					{ "cva%(([^)]*)%)" },
 					{ "cx%(([^)]*)%)" },
 					{ "clsx%(([^)]+)%)" },
+					{ "cva%(([^)]*)%)" }, -- Basic CVA support
 				},
 				javascriptreact = {
 					{ "cn%(([^)]*)%)" },
-					{ "cva%(([^)]*)%)" },
 					{ "cx%(([^)]*)%)" },
 					{ "clsx%(([^)]+)%)" },
+					{ "cva%(([^)]*)%)" },
 				},
 				typescript = {
 					{ "cn%(([^)]*)%)" },
-					{ "cva%(([^)]*)%)" },
 					{ "cx%(([^)]*)%)" },
 					{ "clsx%(([^)]+)%)" },
+					{ "cva%(([^)]*)%)" },
 				},
 				typescriptreact = {
 					{ "cn%(([^)]*)%)" },
-					{ "cva%(([^)]*)%)" },
 					{ "cx%(([^)]*)%)" },
 					{ "clsx%(([^)]+)%)" },
+					{ "cva%(([^)]*)%)" },
 				},
 				astro = {
 					{ "cn%(([^)]*)%)" },
-					{ "cva%(([^)]*)%)" },
 					{ "cx%(([^)]*)%)" },
 					{ "clsx%(([^)]+)%)" },
+					{ "cva%(([^)]*)%)" },
 				},
 			},
 		},

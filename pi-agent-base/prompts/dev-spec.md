@@ -320,10 +320,26 @@ Review the spec and let me know if anything needs adjustment.
 
 - **Nothing speculative.** Every line of code must be used by something else in this spec.
 - **Tests are the real spec.** Every test file should have exact expected values.
-- **JSDoc is required.** All exported code must have complete JSDoc.
+- **JSDoc is required.** All exported code must have complete JSDoc. See
+  `.pi/agent-docs/standards/jsdoc-conventions.md` for the lint-rule-grounded
+  reference (failure modes, templates, overload patterns). If that file
+  doesn't exist, check `~/.pi/agent/skills/agent-os/jsdoc-conventions/template.md`.
 - **Implementation order matters.** Dependencies come before dependents.
+  Files in a step appear in **declaration-before-consumer order**.
 - **Testable at every step.** After completing any step, `build` and `test` must work.
 - **Task checkboxes in every step.** Each step has `- [ ]` checkboxes for every file and verification action.
 - **Scope is a feature.** A tight spec that covers its scope completely is better than a broad spec that covers everything partially.
 - **Pseudo-code lives in the function body.** Never below the code block.
-- **Tests live next to code.** Test files are colocated with the source files they test.
+- **Tests live next to code.** Test files (`foo.test.ts`) are colocated with
+  the source files they test — `### foo.test.ts (NEW)` appears IMMEDIATELY
+  AFTER `### foo.ts (NEW)`, never pooled at the end of the step.
+- **Real runtimes over mocks for runtime-coupled code.** If the code under
+  test is tightly coupled to a runtime (database, framework context, ORM),
+  use the official test harness (e.g. `convex-test` for Convex, `@testing-library/react`
+  for React). Hand-rolled mocks for trivial pure-logic only.
+- **Library packages own their test fixtures.** A package shouldn't need
+  an application's data to verify its own correctness. Library tests run
+  with `<package-manager> --filter <pkg> test` in isolation.
+- **Decisions section stays terse.** A one-line table in spec.md; full
+  rationale in the companion `design-walkthrough.md` § *Decisions Reference*.
+  See `.pi/agent-docs/standards/spec-structure.md` for the full layout rules.
