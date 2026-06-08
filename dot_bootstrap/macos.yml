@@ -286,6 +286,11 @@
         name: neovim
         state: latest
 
+    - name: Check Install - Tree-sitter CLI
+      community.general.homebrew:
+        name: tree-sitter-cli
+        state: present
+
     - name: Check Install - node.js
       community.general.homebrew:
         name: node
