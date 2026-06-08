@@ -4,8 +4,8 @@
   "autoCompaction": true,
   "quietStartup": true,
   "lastChangelogVersion": "0.68.1",
-  "defaultProvider": "fireworks",
-  "defaultModel": "accounts/fireworks/models/kimi-k2p6",
+  "defaultProvider": "omlx",
+  "defaultModel": "Qwen3.6-35B-A3B-MLX-8bit",
   "packages": [
     "npm:pi-btw",
     "npm:pi-docparser",
