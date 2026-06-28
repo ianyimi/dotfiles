@@ -151,10 +151,10 @@ end
 
 -- Set up debug keybindings
 function M.setup()
-  vim.keymap.set("n", "<leader>ldc", M.show_active_clients, { desc = "LSP Debug: Show clients" })
-  vim.keymap.set("n", "<leader>ldh", M.show_lsp_handlers, { desc = "LSP Debug: Show handlers" })
-  vim.keymap.set("n", "<leader>ldt", M.test_hover_responses, { desc = "LSP Debug: Test hover" })
-  vim.keymap.set("n", "<leader>ldp", M.diagnose_hover_popup, { desc = "LSP Debug: Diagnose hover popup" })
+  -- vim.keymap.set("n", "<leader>ldc", M.show_active_clients, { desc = "LSP Debug: Show clients" })
+  -- vim.keymap.set("n", "<leader>ldh", M.show_lsp_handlers, { desc = "LSP Debug: Show handlers" })
+  -- vim.keymap.set("n", "<leader>ldt", M.test_hover_responses, { desc = "LSP Debug: Test hover" })
+  -- vim.keymap.set("n", "<leader>ldp", M.diagnose_hover_popup, { desc = "LSP Debug: Diagnose hover popup" })
 end
 
 return M

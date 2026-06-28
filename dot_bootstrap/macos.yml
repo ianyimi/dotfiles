@@ -105,6 +105,12 @@
         state: present
       ignore_errors: true
 
+    - name: Check Install - Helium Browser
+      community.general.homebrew_cask:
+        name: helium-browser
+        state: present
+      ignore_errors: true
+
     - name: Check Install - Handbrake
       community.general.homebrew_cask:
         name: handbrake

@@ -260,15 +260,11 @@ return {
 								vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
 
 								-- Apply treesitter highlighting if available.
-								-- Migrated from nvim-treesitter.parsers.has_parser (master branch API,
-								-- doesn't exist on main) to vim.treesitter.language.add, which is
-								-- Nvim core API: returns true if the parser was loaded successfully,
-								-- false/raises if not available.
-								local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
-								local ok_has, has = pcall(vim.treesitter.language.add, lang)
-								if ok_has and has ~= false then
-									pcall(vim.treesitter.start, self.state.bufnr, lang)
-								else
+								-- On nvim-treesitter `main` branch: vim.treesitter.start(bufnr)
+								-- auto-detects the language from the buffer's filetype — no lang
+								-- argument. vim.treesitter.language.add/get_lang are removed.
+								local ok_start, _ = pcall(vim.treesitter.start, self.state.bufnr)
+								if not ok_start then
 									-- Fallback to regex highlighting
 									require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
 								end
@@ -495,13 +491,11 @@ return {
 									vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', ft)
 
 									-- Apply treesitter highlighting if available.
-									-- Migrated to vim.treesitter.language.add (Nvim core API) from
-									-- nvim-treesitter.parsers.has_parser (master-only, gone on main).
-									local lang = (vim.treesitter.language and vim.treesitter.language.get_lang(ft)) or ft
-									local ok_has, has = pcall(vim.treesitter.language.add, lang)
-									if ok_has and has ~= false then
-										pcall(vim.treesitter.start, self.state.bufnr, lang)
-									else
+									-- On nvim-treesitter `main` branch: vim.treesitter.start(bufnr)
+									-- auto-detects the language from the buffer's filetype — no lang
+									-- argument. vim.treesitter.language.add/get_lang are removed.
+									local ok_start, _ = pcall(vim.treesitter.start, self.state.bufnr)
+									if not ok_start then
 										-- Fallback to regex highlighting
 										require('telescope.previewers.utils').regex_highlighter(self.state.bufnr, ft)
 									end

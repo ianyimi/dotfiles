@@ -85,8 +85,10 @@ function M.lazy_file()
       local ft = vim.filetype.match({ buf = event.buf })
       if ft then
         -- Add treesitter highlights and fallback to syntax
-        local lang = vim.treesitter.language.get_lang(ft)
-        if not (lang and pcall(vim.treesitter.start, event.buf, lang)) then
+        -- On nvim-treesitter `main` branch: vim.treesitter.start(bufnr)
+        -- auto-detects the language from the buffer's filetype — no lang
+        -- argument. vim.treesitter.language.get_lang is removed.
+        if not pcall(vim.treesitter.start, event.buf) then
           vim.bo[event.buf].syntax = ft
         end
 
