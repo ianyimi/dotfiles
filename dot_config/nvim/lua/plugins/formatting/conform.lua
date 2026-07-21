@@ -28,8 +28,9 @@ return {
         lua = { "stylua" },
         python = { "isort", "black" }, -- Keep both for Python
       },
-      -- Disable format_on_save to prevent performance issues and cursor jumps
-      -- Use manual formatting with <leader>mp instead
+      -- format_on_save runs oxfmt on every BufWritePre. Cursor jumps on undo
+      -- are prevented by undojoin in the ESLint and Tailwind BufWritePre hooks.
+      -- Use <leader>mp for manual formatting.
       format_on_save = {
         lsp_fallback = true,
         async = false,

@@ -267,7 +267,36 @@ return {
 				})
 			elseif server == "eslint" then
 				lspconfig.eslint.setup({
-					on_attach = on_attach,
+					on_attach = function(client, bufnr)
+						on_attach(client, bufnr)
+						-- codeActionOnSave is a VS Code concept — Neovim doesn't read it.
+						-- EslintFixAll is the Neovim-native equivalent: runs eslint --fix
+						-- (perfectionist sorting, import dedup, jsdoc fixes, etc.)
+						-- before the file is written. Completely separate from conform/oxfmt
+						-- which handles whitespace/formatting — they don't interfere.
+						vim.api.nvim_create_autocmd("BufWritePre", {
+							buffer = bufnr,
+							callback = function()
+								-- undojoin merges ESLint's buffer changes into the previous undo
+								-- block so they don't create a separate entry that causes cursor
+								-- jumps on undo. pcall handles E790 on first save (nothing to join).
+								pcall(vim.cmd, "undojoin")
+								-- Direct LSP request with explicit 2.5s timeout instead of the
+								-- EslintFixAll command's nil (default ~1s). Type-aware rules in a
+								-- monorepo consistently exceed 1s, causing silent timeouts.
+								local eslint_client = vim.lsp.get_clients({ bufnr = bufnr, name = "eslint" })[1]
+								if eslint_client then
+									eslint_client.request_sync("workspace/executeCommand", {
+										command = "eslint.applyAllFixes",
+										arguments = {{
+											uri = vim.uri_from_bufnr(bufnr),
+											version = vim.lsp.util.buf_versions[bufnr],
+										}},
+									}, 2500, bufnr)
+								end
+							end,
+						})
+					end,
 					capabilities = capabilities,
 					filetypes = {
 						"javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact",
@@ -275,12 +304,8 @@ return {
 					},
 					settings = {
 						useFlatConfig = true, -- Enable ESLint 9+ flat config support
-						format = false, -- Disable ESLint formatting - use oxfmt instead
-						-- Keep auto-fix available but not automatic
-						codeActionOnSave = {
-							enable = false, -- Manual code actions only
-						},
-						-- Gentle performance optimizations
+						format = false, -- oxfmt handles formatting, not ESLint
+						codeActionOnSave = { enable = false }, -- handled by BufWritePre above
 						workingDirectories = { mode = "auto" }, -- Smart project detection
 						run = "onSave", -- Less CPU intensive than onType
 					},
@@ -374,6 +399,26 @@ return {
 				-- If keymaps are missing, restore them
 				if not has_leader_ca then
 					setup_lsp_keymaps(bufnr)
+				end
+			end,
+		})
+
+		-- Auto-sort Tailwind classes on save
+		-- Uses tailwind-tools.nvim :TailwindSortSync command
+		vim.api.nvim_create_autocmd("BufWritePre", {
+			group = vim.api.nvim_create_augroup("tailwind_auto_sort", { clear = true }),
+			pattern = { "*.tsx", "*.jsx", "*.ts", "*.js", "*.html", "*.vue", "*.svelte", "*.astro" },
+			callback = function()
+				-- Only sort if tailwindcss LSP is attached to this buffer
+				local clients = vim.lsp.get_clients({ bufnr = 0 })
+				for _, client in ipairs(clients) do
+					if client.name == "tailwindcss" then
+						-- undojoin merges Tailwind's sort into the previous undo block,
+						-- same as ESLint above, preventing cursor jumps on undo.
+						pcall(vim.cmd, "undojoin")
+						pcall(vim.cmd, "TailwindSortSync")
+						break
+					end
 				end
 			end,
 		})

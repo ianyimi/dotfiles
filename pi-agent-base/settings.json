@@ -5,7 +5,7 @@
   "quietStartup": true,
   "lastChangelogVersion": "0.68.1",
   "defaultProvider": "omlx",
-  "defaultModel": "Qwen3.6-35B-A3B-MLX-8bit",
+  "defaultModel": "Ornith-1.0-35B-8bit",
   "packages": [
     "npm:pi-btw",
     "npm:pi-docparser",

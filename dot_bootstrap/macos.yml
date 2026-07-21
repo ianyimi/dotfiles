@@ -302,6 +302,12 @@
         name: node
         state: present
 
+    - name: Check Install - eslint (required for LSP and plugin support)
+      community.general.npm:
+        name: eslint
+        global: true
+        state: present
+
     - name: Check Install - eslint_d (fast eslint daemon for neovim)
       community.general.npm:
         name: eslint_d
@@ -521,7 +527,8 @@
       ignore_errors: true
       community.general.homebrew:
         name: sketchybar
-        state: present
+        state: latest
+      register: sketchybar_install
 
     - name: Check if SbarLua is installed
       ansible.builtin.stat:
@@ -657,6 +664,10 @@
     - name: Restart SketchyBar to apply new icon configurations
       ansible.builtin.shell: "brew services restart sketchybar"
 
+    - name: Restart SketchyBar if it was updated
+      ansible.builtin.shell: "brew services restart sketchybar"
+      when: sketchybar_install is changed
+
 - name: Brew Install (Languages)
   hosts: localhost
   become: false
@@ -714,6 +725,7 @@
           - nikitabobko/tap/aerospace
         state: latest
       ignore_errors: true
+      register: aerospace_install
 
     - name: Check if Aerospace is running
       shell: "pgrep -f 'Aerospace'"
@@ -724,4 +736,9 @@
     - name: Start Aerospace if not running
       shell: "open -a AeroSpace"
       when: aerospace_status.rc != 0
+      ignore_errors: true
+
+    - name: Restart Aerospace if it was updated
+      shell: "killall AeroSpace && sleep 1 && open -a AeroSpace"
+      when: aerospace_install is changed
       ignore_errors: true

@@ -185,6 +185,9 @@ function __icon_map() {
    "Discord" | "Discord Canary" | "Discord PTB")
         icon_result=":discord:"
         ;;
+   "djay Pro")
+        icon_result=":djay:"
+        ;;
    "Docker" | "Docker Desktop")
         icon_result=":docker:"
         ;;
@@ -265,6 +268,9 @@ function __icon_map() {
         ;;
    "Grammarly Editor")
         icon_result=":grammarly:"
+        ;;
+   "Helium")
+        icon_result=":helium:"
         ;;
    "Home Assistant")
         icon_result=":home_assistant:"
