@@ -21,16 +21,25 @@
           - jq
         state: present
 
-    - name: Verify paru is available (ships with CachyOS)
+    - name: Check if paru is available
       ansible.builtin.command: which paru
       register: paru_check
       failed_when: false
       changed_when: false
 
-    - name: Warn if paru missing
-      ansible.builtin.debug:
-        msg: "paru not found — AUR tasks will fail. Install with: git clone https://aur.archlinux.org/paru.git && cd paru && makepkg -si"
+    - name: Install paru (available in the CachyOS repo)
+      become: true
+      community.general.pacman:
+        name: paru
+        state: present
       when: paru_check.rc != 0
+      register: paru_install
+      ignore_errors: true
+
+    - name: Warn if paru could not be installed
+      ansible.builtin.debug:
+        msg: "paru not found and repo install failed — AUR tasks will fail. Install manually: git clone https://aur.archlinux.org/paru.git && cd paru && makepkg -si"
+      when: paru_check.rc != 0 and (paru_install is failed)
 
     - name: Configure git with GitHub token from Bitwarden
       block:
