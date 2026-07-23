@@ -18,19 +18,10 @@ fi
 {{ else if eq .chezmoi.os "linux" }}
 echo "=== Verifying Bitwarden CLI (Linux) ==="
 
-# Install Bitwarden CLI if not present
-if ! command -v bw &>/dev/null; then
-    echo "Installing Bitwarden CLI via snap..."
-    if command -v snap &>/dev/null; then
-        sudo snap install bw
-    else
-        echo "⚠ snap not available, trying npm..."
-        if command -v npm &>/dev/null; then
-            sudo npm install -g @bitwarden/cli
-        else
-            echo "⚠ Cannot install Bitwarden CLI - install snap or npm first"
-        fi
-    fi
+# Bitwarden CLI install is handled by bootstrap.sh (pacman). Idempotent safety net:
+if ! command -v bw &>/dev/null && command -v pacman &>/dev/null; then
+    echo "Installing Bitwarden CLI (pacman)..."
+    sudo pacman -S --needed --noconfirm bitwarden-cli || true
 fi
 
 if command -v bw &>/dev/null && bw login --check &>/dev/null; then

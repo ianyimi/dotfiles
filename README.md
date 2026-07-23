@@ -327,7 +327,7 @@ bw get item "GitHub Personal Access Token"
 
 ### Ansible playbook fails
 
-Check `~/.bootstrap/macos.yml` (macOS) or `~/.bootstrap/linux.yml` (Linux) for errors. Common issues:
+Check `~/.bootstrap/macos.yml` (macOS) or `~/.bootstrap/cachyos.yml` (Linux) for errors. Common issues:
 
 - Missing sudo password
 - Homebrew not in PATH (macOS)

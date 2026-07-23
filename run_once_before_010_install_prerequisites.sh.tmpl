@@ -40,29 +40,20 @@ fi
 {{ else if eq .chezmoi.os "linux" }}
 echo "=== Installing Prerequisites (Linux) ==="
 
-# Update package lists
-echo "Updating package lists..."
-sudo apt-get update
-
-# Install essential packages
-echo "Installing essential packages..."
-sudo apt-get install -y \
-    git \
-    curl \
-    wget \
-    build-essential \
-    software-properties-common \
-    apt-transport-https \
-    ca-certificates \
-    gnupg \
-    lsb-release
+# Arch/CachyOS — bootstrap.sh normally handles this already; idempotent safety net
+if command -v pacman &>/dev/null; then
+    echo "Installing essential packages (pacman)..."
+    sudo pacman -S --needed --noconfirm git base-devel curl
+else
+    echo "⚠ Unsupported package manager — ensure git, curl, and build tools are installed manually."
+fi
 
 # Ensure git is available
-if ! command -v git &>/dev/null; then
-    echo "Installing git..."
-    sudo apt-get install -y git
+if command -v git &>/dev/null; then
+    echo "✓ git available"
 else
-    echo "✓ git already installed"
+    echo "✗ git not found — install it and re-run 'chezmoi apply'"
+    exit 1
 fi
 
 {{ end }}
