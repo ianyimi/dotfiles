@@ -94,7 +94,6 @@
         name:
           - neovim
           - tmux
-          - tmuxinator
           - starship
           - fzf
           - ripgrep
@@ -104,7 +103,6 @@
           - zsh-syntax-highlighting
           - nodejs
           - npm
-          - fnm
           - luarocks
           - go
           - tree-sitter-cli
@@ -135,6 +133,8 @@
     - name: Install AUR packages
       ansible.builtin.shell: paru -S --needed --noconfirm {{ item }}
       loop:
+        - tmuxinator # AUR (ruby gem)
+        - fnm-bin # AUR
         - lazydocker
         - oxlint # VERIFY package name on machine
       register: aur_result
