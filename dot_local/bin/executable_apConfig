@@ -65,6 +65,22 @@ case "$(uname -s)" in
         ;;
 esac
 
+# Self-heal: ensure ansible is installed
+if ! command -v ansible-playbook &>/dev/null; then
+    echo -e "${YELLOW}→${NC} ansible not found, installing..."
+    case "$(uname -s)" in
+        Darwin*) brew install ansible ;;
+        Linux*)
+            if command -v pacman &>/dev/null; then
+                sudo pacman -S --needed --noconfirm ansible
+            else
+                echo -e "${RED}✗${NC} Install ansible manually and re-run."
+                exit 1
+            fi
+            ;;
+    esac
+fi
+
 if [ ! -f "$PLAYBOOK" ]; then
     echo -e "${YELLOW}⚠${NC}  Applying chezmoi first to get bootstrap files..."
     chezmoi apply

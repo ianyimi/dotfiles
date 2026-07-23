@@ -160,8 +160,8 @@ install_chezmoi() {
 # Function to install Linux prerequisites (Arch/CachyOS)
 install_prerequisites_linux() {
     if $IS_ARCH; then
-        echo -e "${YELLOW}→${NC} Installing prerequisites (git, base-devel, curl)..."
-        sudo pacman -S --needed --noconfirm git base-devel curl
+        echo -e "${YELLOW}→${NC} Installing prerequisites (git, base-devel, curl, ansible)..."
+        sudo pacman -S --needed --noconfirm git base-devel curl ansible
         echo -e "${GREEN}✓${NC} Prerequisites installed"
     else
         # Non-Arch Linux: just ensure git exists
