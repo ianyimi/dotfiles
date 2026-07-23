@@ -101,7 +101,9 @@
           - lazygit
           - zsh-autosuggestions
           - zsh-syntax-highlighting
-          - nodejs
+          # nodejs intentionally omitted: CachyOS ships nodejs-lts-jod which
+          # provides 'nodejs' and conflicts with the 'nodejs' (current) package.
+          # fnm manages actual node versions anyway.
           - npm
           - luarocks
           - go
