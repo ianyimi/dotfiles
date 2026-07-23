@@ -54,7 +54,7 @@
 
         - name: Warn if gh not authenticated and no BW_SESSION
           ansible.builtin.debug:
-            msg: "Skipping gh auth - BW_SESSION not set. Run 'bw-session-check && source ~/.bw-session' then re-run."
+            msg: "Skipping gh auth - BW_SESSION not set. Run 'bw-session-check', then re-run 'bash ~/.local/bin/apConfig' (it sources ~/.bw-session itself; works from fish)."
           when:
             - gh_auth_status.rc != 0
             - lookup('env', 'BW_SESSION') | length == 0

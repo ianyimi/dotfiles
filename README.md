@@ -9,8 +9,13 @@ Supports **macOS** and **Linux (Ubuntu)** with a single bootstrap command.
 On a **brand new Mac or CachyOS (Arch Linux) machine** with nothing installed, run this single command:
 
 ```bash
-URL="https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+# Works from bash, zsh, AND fish (no shell-specific syntax):
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/feat/cachyos/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh
 ```
+
+> **Note:** the script itself is bash — always run it via `bash /tmp/bootstrap.sh`.
+> Never `source` it or paste its contents into a fish prompt.
+> (Once on `master`, replace `feat/cachyos` with `master` in the URL.)
 
 **You'll be prompted for:**
 
@@ -171,7 +176,7 @@ export GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxx"
 
 ```bash
 # Run bootstrap (works on macOS and Linux)
-URL="https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh"; (command -v curl >/dev/null && curl -fsSL "$URL" -o /tmp/bootstrap.sh || wget -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/<your-username>/dotfiles/master/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh
 
 # Projects clone with apCloneProjects
 # Then apply configs
@@ -404,23 +409,15 @@ Original setup forked from [Logan Donley's dotfiles](https://github.com/logandon
 
 Use this command to bypass GitHub's CDN cache when testing changes:
 
-**macOS:**
+**Universal (bash, zsh, AND fish)** — the inner script runs entirely in bash, so no
+shell-specific syntax (`VAR=`, `$(...)`) ever touches your interactive shell:
 
 ```bash
-curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+bash -c 'curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/feat/cachyos/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh' && bash /tmp/bootstrap.sh
 ```
 
-**Linux (Ubuntu):**
-
-```bash
-wget --no-cache -q "https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)" -O /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
-```
-
-**Universal (both platforms):**
-
-```bash
-URL="https://raw.githubusercontent.com/ianyimi/dotfiles/feat/linux-port/bootstrap.sh?$(date +%s)"; (command -v curl >/dev/null && curl -H "Cache-Control: no-cache" -fsSL "$URL" -o /tmp/bootstrap.sh || wget --no-cache -qO /tmp/bootstrap.sh "$URL") && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
-```
+> Replace `feat/cachyos` with the branch you're testing. The `?$(date +%s)` query
+> string bypasses GitHub's CDN cache (evaluated inside `bash -c`, so it's fish-safe).
 
 ### Reset script
 
@@ -429,7 +426,7 @@ Interactive reset script with menu or flags.
 **Interactive menu (recommended):**
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh
 ```
 
 **Available flags:**
@@ -450,31 +447,31 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 `--dotfiles` - Quick reset, removes only dotfiles and chezmoi config. Resets shell to bash.
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --dotfiles
 ```
 
 `--apps` - Remove all installed applications (Ghostty, Discord, Spotify, Arc, etc.) and CLI tools.
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --apps && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --apps
 ```
 
 `--wm` - Remove window manager tools (Aerospace, SketchyBar, JankyBorders). Restores default macOS menu bar and dock.
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --wm && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --wm
 ```
 
 `--all` - Full factory reset. Removes everything including apps, Homebrew, and Xcode CLT.
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --all && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --all
 ```
 
 Multiple flags - Reset everything except Tailscale, Bitwarden, Homebrew, and Xcode CLT (useful for re-testing bootstrap).
 
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles --apps --wm && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --dotfiles --apps --wm
 ```
 
 ---

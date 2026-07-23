@@ -14,7 +14,7 @@ NC='\033[0m'
 # Configuration
 GITHUB_USERNAME="ianyimi"
 REPO_URL="https://github.com/${GITHUB_USERNAME}/dotfiles"
-BRANCH="feat/linux-port"  # Change to "master" for production
+BRANCH="${DOTFILES_BRANCH:-feat/cachyos}"  # Change default to "master" for production; override: DOTFILES_BRANCH=x bash bootstrap.sh
 
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════${NC}"
 echo -e "${CYAN}${BOLD}   Universal Dotfiles Bootstrap${NC}"
@@ -474,34 +474,6 @@ init_chezmoi() {
 }
 
 # Function to run Linux setup
-run_linux_setup() {
-    echo "Running Linux setup..."
-
-    # Install Ansible if not present
-    if ! command -v ansible &>/dev/null; then
-        echo -e "${YELLOW}→${NC} Installing Ansible..."
-        sudo apt-get update
-        sudo apt-get install -y ansible
-        echo -e "${GREEN}✓${NC} Ansible installed"
-    else
-        echo -e "${GREEN}✓${NC} Ansible already installed"
-    fi
-
-    # Run Linux playbook
-    LINUX_PLAYBOOK="$HOME/.bootstrap/linux.yml"
-    if [ -f "$LINUX_PLAYBOOK" ]; then
-        echo -e "${YELLOW}→${NC} Running Linux Ansible playbook..."
-        read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG </dev/tty
-        if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
-            # Run ansible with sudo - will prompt for password naturally
-            sudo ansible-playbook "$LINUX_PLAYBOOK" </dev/tty
-        fi
-    else
-        echo -e "${YELLOW}⚠${NC}  Linux playbook not found at $LINUX_PLAYBOOK"
-        echo "    Apply chezmoi first, then run 'ansible-playbook ~/.bootstrap/linux.yml'"
-    fi
-}
-
 # Function to run OS-specific setup
 run_os_setup() {
     echo ""
@@ -522,7 +494,7 @@ run_os_setup() {
                 fi
             else
                 echo -e "${YELLOW}⚠${NC}  apConfig not found at $APCONFIG_PATH"
-                echo "    Reload your shell and run 'apConfig' to complete setup."
+                echo "    Run: bash ~/.local/bin/apConfig   (works from any shell)"
             fi
             ;;
         Linux*)
@@ -532,13 +504,13 @@ run_os_setup() {
             APCONFIG_PATH="$HOME/.local/bin/apConfig"
             if [ -x "$APCONFIG_PATH" ]; then
                 echo -e "${YELLOW}→${NC} Found apConfig script"
-                read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG
+                read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG </dev/tty
                 if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
                     "$APCONFIG_PATH"
                 fi
             else
                 echo -e "${YELLOW}⚠${NC}  apConfig not found at $APCONFIG_PATH"
-                echo "    Reload your shell and run 'apConfig' to complete setup."
+                echo "    Run: bash ~/.local/bin/apConfig   (works from any shell, including fish)"
             fi
             ;;
         *)
@@ -636,12 +608,20 @@ main() {
     echo -e "${GREEN}${BOLD}═══════════════════════════════════════${NC}"
     echo ""
     echo -e "${BLUE}Next steps:${NC}"
-    echo "  1. Restart your terminal or run: source ~/.zshrc (or ~/.bashrc)"
-    echo "  2. If apConfig didn't run automatically, run: apConfig"
-    echo "  3. Your secrets will be populated from Bitwarden"
+    if [[ "$OS" == "Linux"* ]]; then
+        echo "  1. Log out and log back in — your login shell switches to zsh and"
+        echo "     Hyprland picks up the new config cleanly"
+        echo "  2. If apConfig didn't run automatically: bash ~/.local/bin/apConfig"
+        echo "  3. Your secrets will be populated from Bitwarden"
+        echo "  4. Steam: enable Proton in Steam > Settings > Compatibility"
+    else
+        echo "  1. Restart your terminal or run: source ~/.zshrc"
+        echo "  2. If apConfig didn't run automatically, run: apConfig"
+        echo "  3. Your secrets will be populated from Bitwarden"
+    fi
     echo ""
-    echo -e "${YELLOW}Tip:${NC} You can re-run this script anytime with:"
-    echo "  curl -fsSL https://raw.githubusercontent.com/$GITHUB_USERNAME/dotfiles/master/bootstrap.sh | bash"
+    echo -e "${YELLOW}Tip:${NC} You can re-run this script anytime with (any shell):"
+    echo "  curl -fsSL https://raw.githubusercontent.com/$GITHUB_USERNAME/dotfiles/$BRANCH/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh"
     echo ""
 }
 
