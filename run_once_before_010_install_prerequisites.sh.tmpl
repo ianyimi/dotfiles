@@ -1,9 +1,9 @@
-{{- if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 
 set -e
 
-echo "=== Installing Prerequisites ==="
+{{ if eq .chezmoi.os "darwin" }}
+echo "=== Installing Prerequisites (macOS) ==="
 
 # Check and install Xcode Command Line Tools (includes git)
 if ! xcode-select -p &>/dev/null; then
@@ -37,5 +37,25 @@ else
     echo "✓ git already installed"
 fi
 
+{{ else if eq .chezmoi.os "linux" }}
+echo "=== Installing Prerequisites (Linux) ==="
+
+# Arch/CachyOS — bootstrap.sh normally handles this already; idempotent safety net
+if command -v pacman &>/dev/null; then
+    echo "Installing essential packages (pacman)..."
+    sudo pacman -S --needed --noconfirm git base-devel curl
+else
+    echo "⚠ Unsupported package manager — ensure git, curl, and build tools are installed manually."
+fi
+
+# Ensure git is available
+if command -v git &>/dev/null; then
+    echo "✓ git available"
+else
+    echo "✗ git not found — install it and re-run 'chezmoi apply'"
+    exit 1
+fi
+
+{{ end }}
+
 echo "=== Prerequisites installation complete ==="
-{{ end -}}
