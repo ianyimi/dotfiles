@@ -55,15 +55,12 @@ echo -e "${BLUE}[2/2]${NC} Running system configuration (ansible)..."
 echo "This will install all applications and CLI tools..."
 echo ""
 
-case "$OS" in
-    Darwin*)
-        PLAYBOOK="$HOME/.bootstrap/macos.yml"
-        ;;
-    Linux*)
-        PLAYBOOK="$HOME/.bootstrap/linux.yml"
-        ;;
+# Select playbook by OS
+case "$(uname -s)" in
+    Darwin*) PLAYBOOK="$HOME/.bootstrap/macos.yml" ;;
+    Linux*)  PLAYBOOK="$HOME/.bootstrap/cachyos.yml" ;;
     *)
-        echo -e "${RED}✗${NC} Unsupported operating system: $OS"
+        echo -e "${RED}✗${NC} Unsupported OS: $(uname -s)"
         exit 1
         ;;
 esac

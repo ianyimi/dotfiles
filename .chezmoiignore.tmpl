@@ -29,18 +29,18 @@ CLAWDBOT_FILES_EXPLAINED.md
 INSTALLATION_REVIEW.md
 SETUP_COMPLETE.md
 
-# Don't install the OS-specific folders as directories themselves
-# These are handled by run_before_000_setup_os_symlinks.sh.tmpl
-darwin/
-linux/
-shared/
-
-# Root dot_local is no longer used (moved to shared/darwin/linux)
-dot_local/
-
-# OS-specific ignores for files at root level (if any remain)
-{{ if eq .chezmoi.os "darwin" }}
-# On macOS: ignore any root-level Linux files
-{{ else if eq .chezmoi.os "linux" }}
-# On Linux: ignore any root-level macOS files
+# ── Platform gating ──────────────────────────────────────────
+{{ if ne .chezmoi.os "darwin" }}
+# macOS-only files (never deploy on Linux)
+.aerospace.toml
+.config/sketchybar
+.config/aerospace-monitor
+.glzr
+.bootstrap/macos.yml
+{{ end }}
+{{ if ne .chezmoi.os "linux" }}
+# Linux-only files (never deploy on macOS)
+.config/hypr
+.config/noctalia
+.bootstrap/cachyos.yml
 {{ end }}

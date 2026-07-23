@@ -25,6 +25,14 @@ echo ""
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
+# Detect Arch-based distro (CachyOS, Arch, etc.)
+IS_ARCH=false
+if [[ "$OS" == "Linux" ]]; then
+    if [[ -f /etc/arch-release ]] || grep -qi 'arch\|cachyos' /etc/os-release 2>/dev/null; then
+        IS_ARCH=true
+    fi
+fi
+
 # Setup PATH for tools that might already be installed
 # This ensures command -v checks work even when running via curl | bash
 if [[ "$ARCH" == "arm64" ]] && [[ -f /opt/homebrew/bin/brew ]]; then
@@ -114,8 +122,11 @@ install_chezmoi() {
             fi
             ;;
         Linux*)
-            # Linux
-            if command -v snap &>/dev/null; then
+            # Linux (check pacman first — CachyOS/Arch have no snap)
+            if command -v pacman &>/dev/null; then
+                # Arch/CachyOS
+                sudo pacman -S --needed --noconfirm chezmoi
+            elif command -v snap &>/dev/null; then
                 sudo snap install chezmoi --classic
             elif command -v apt-get &>/dev/null; then
                 # Debian/Ubuntu
@@ -124,9 +135,6 @@ install_chezmoi() {
             elif command -v dnf &>/dev/null; then
                 # Fedora
                 sudo dnf install -y chezmoi
-            elif command -v pacman &>/dev/null; then
-                # Arch
-                sudo pacman -S --noconfirm chezmoi
             else
                 # Fallback to official installer
                 sh -c "$(curl -fsLS get.chezmoi.io)"
@@ -147,6 +155,66 @@ install_chezmoi() {
     esac
 
     echo -e "${GREEN}✓${NC} chezmoi installed successfully"
+}
+
+# Function to install Linux prerequisites (Arch/CachyOS)
+install_prerequisites_linux() {
+    if $IS_ARCH; then
+        echo -e "${YELLOW}→${NC} Installing prerequisites (git, base-devel, curl)..."
+        sudo pacman -S --needed --noconfirm git base-devel curl
+        echo -e "${GREEN}✓${NC} Prerequisites installed"
+    else
+        # Non-Arch Linux: just ensure git exists
+        if ! command -v git &>/dev/null; then
+            echo -e "${RED}✗${NC} git not found. Install git with your package manager and re-run."
+            exit 1
+        fi
+        echo -e "${GREEN}✓${NC} git available"
+    fi
+}
+
+# Function to setup Tailscale on Linux (systemd)
+setup_tailscale_linux() {
+    echo ""
+    echo -e "${BLUE}Setting up Tailscale...${NC}"
+
+    # Install Tailscale if not present
+    if ! command -v tailscale &>/dev/null; then
+        echo -e "${YELLOW}→${NC} Installing Tailscale..."
+        if $IS_ARCH; then
+            sudo pacman -S --needed --noconfirm tailscale
+        else
+            curl -fsSL https://tailscale.com/install.sh | sh
+        fi
+        echo -e "${GREEN}✓${NC} Tailscale installed"
+    else
+        echo -e "${GREEN}✓${NC} Tailscale already installed"
+    fi
+
+    # Enable + start the daemon
+    if ! systemctl is-active --quiet tailscaled; then
+        echo -e "${YELLOW}→${NC} Enabling tailscaled service..."
+        sudo systemctl enable --now tailscaled
+        sleep 2
+    else
+        echo -e "${GREEN}✓${NC} tailscaled already running"
+    fi
+
+    # Check if already connected
+    if tailscale status &>/dev/null; then
+        echo -e "${GREEN}✓${NC} Tailscale already connected"
+        return 0
+    fi
+
+    # Authenticate
+    echo ""
+    echo -e "${YELLOW}→${NC} Tailscale authentication required"
+    echo "  A login URL will be displayed below."
+    echo "  Open it in your browser and authenticate to continue."
+    echo ""
+    sudo tailscale up --accept-routes
+
+    echo -e "${GREEN}✓${NC} Tailscale connected"
 }
 
 # Function to setup Tailscale (must connect before Bitwarden for self-hosted access)
@@ -247,25 +315,16 @@ setup_bitwarden() {
     # Install Bitwarden CLI if not present
     if ! command -v bw &>/dev/null; then
         echo -e "${YELLOW}→${NC} Installing Bitwarden CLI..."
-        case "$OS" in
-            Darwin*)
-                brew install bitwarden-cli
-                ;;
-            Linux*)
-                # Try snap first (not available on ARM64), fall back to npm
-                if command -v snap &>/dev/null && [[ "$ARCH" != "aarch64" ]] && [[ "$ARCH" != "arm64" ]]; then
-                    sudo snap install bw
-                elif command -v npm &>/dev/null; then
-                    sudo npm install -g @bitwarden/cli
-                else
-                    # Install npm first, then bw
-                    echo -e "${YELLOW}→${NC} Installing npm first..."
-                    sudo apt-get update
-                    sudo apt-get install -y npm
-                    sudo npm install -g @bitwarden/cli
-                fi
-                ;;
-        esac
+        if [[ "$OS" == "Darwin"* ]]; then
+            brew install bitwarden-cli
+        elif $IS_ARCH; then
+            sudo pacman -S --needed --noconfirm bitwarden-cli
+        elif command -v npm &>/dev/null; then
+            npm install -g @bitwarden/cli
+        else
+            echo -e "${RED}✗${NC} Cannot install Bitwarden CLI (no pacman/npm). Install manually and re-run."
+            exit 1
+        fi
         echo -e "${GREEN}✓${NC} Bitwarden CLI installed"
     else
         echo -e "${GREEN}✓${NC} Bitwarden CLI already installed"
@@ -467,8 +526,20 @@ run_os_setup() {
             fi
             ;;
         Linux*)
-            # Linux
-            run_linux_setup
+            # Linux (CachyOS/Arch)
+            echo "Running Linux setup..."
+
+            APCONFIG_PATH="$HOME/.local/bin/apConfig"
+            if [ -x "$APCONFIG_PATH" ]; then
+                echo -e "${YELLOW}→${NC} Found apConfig script"
+                read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG
+                if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
+                    "$APCONFIG_PATH"
+                fi
+            else
+                echo -e "${YELLOW}⚠${NC}  apConfig not found at $APCONFIG_PATH"
+                echo "    Reload your shell and run 'apConfig' to complete setup."
+            fi
             ;;
         *)
             echo -e "${YELLOW}⚠${NC}  No OS-specific setup available for $OS"
@@ -513,6 +584,25 @@ main() {
 
         echo ""
         echo -e "${CYAN}${BOLD}[6/6] Running OS-specific setup...${NC}"
+        run_os_setup
+    elif [[ "$OS" == "Linux"* ]]; then
+        echo -e "${CYAN}${BOLD}[1/5] Installing prerequisites...${NC}"
+        install_prerequisites_linux
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[2/5] Installing chezmoi...${NC}"
+        install_chezmoi
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[3/5] Setting up Tailscale...${NC}"
+        setup_tailscale_linux
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[4/5] Initializing dotfiles...${NC}"
+        init_chezmoi
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[5/5] Running OS-specific setup...${NC}"
         run_os_setup
     else
         # Linux

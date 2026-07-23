@@ -1,0 +1,361 @@
+---
+# CachyOS (Arch-based) system provisioning playbook.
+# Mirrors macos.yml structure. Run via apConfig (ansible-playbook ~/.bootstrap/cachyos.yml --ask-become-pass).
+# Notes:
+#   - pacman tasks require become: true
+#   - paru (AUR) tasks must run as the regular user (become: false) — paru ships with CachyOS
+#   - Tailscale / Bitwarden CLI / chezmoi are owned by bootstrap.sh; idempotent checks only here
+
+- name: Prerequisites (Git, paru, GitHub Auth)
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Ensure base packages
+      become: true
+      community.general.pacman:
+        name:
+          - git
+          - base-devel
+          - github-cli
+          - jq
+        state: present
+
+    - name: Verify paru is available (ships with CachyOS)
+      ansible.builtin.command: which paru
+      register: paru_check
+      failed_when: false
+      changed_when: false
+
+    - name: Warn if paru missing
+      ansible.builtin.debug:
+        msg: "paru not found — AUR tasks will fail. Install with: git clone https://aur.archlinux.org/paru.git && cd paru && makepkg -si"
+      when: paru_check.rc != 0
+
+    - name: Configure git with GitHub token from Bitwarden
+      block:
+        - name: Check if gh is authenticated
+          ansible.builtin.command: gh auth status
+          register: gh_auth_status
+          failed_when: false
+          changed_when: false
+
+        - name: Authenticate gh with Bitwarden token
+          ansible.builtin.shell: |
+            bw get password "GitHub Personal Access Token" | gh auth login --with-token
+          environment:
+            BW_SESSION: "{{ lookup('env', 'BW_SESSION') }}"
+            NODE_OPTIONS: "--no-deprecation"
+          when:
+            - gh_auth_status.rc != 0
+            - lookup('env', 'BW_SESSION') | length > 0
+          timeout: 30
+          no_log: true
+
+        - name: Warn if gh not authenticated and no BW_SESSION
+          ansible.builtin.debug:
+            msg: "Skipping gh auth - BW_SESSION not set. Run 'bw-session-check && source ~/.bw-session' then re-run."
+          when:
+            - gh_auth_status.rc != 0
+            - lookup('env', 'BW_SESSION') | length == 0
+
+- name: Machine setup (shell)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Get my user
+      ansible.builtin.set_fact:
+        remote_regular_user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
+
+    - name: Ensure zsh is installed
+      community.general.pacman:
+        name: zsh
+        state: present
+
+    - name: Determine the path to zsh
+      ansible.builtin.shell: "command -v zsh"
+      register: zsh_path
+      changed_when: false
+
+    - name: Change shell to zsh
+      ansible.builtin.user:
+        name: "{{ remote_regular_user }}"
+        shell: "{{ zsh_path.stdout }}"
+      when: zsh_path.stdout != ""
+
+- name: Pacman Install (CLI)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check Install - Core CLI stack
+      community.general.pacman:
+        name:
+          - neovim
+          - tmux
+          - tmuxinator
+          - starship
+          - fzf
+          - ripgrep
+          - bat
+          - lazygit
+          - zsh-autosuggestions
+          - zsh-syntax-highlighting
+          - nodejs
+          - npm
+          - fnm
+          - luarocks
+          - go
+          - tree-sitter-cli
+          - fastfetch
+          - wl-clipboard
+        state: present
+
+    - name: Check Install - Bootstrap-owned tools (idempotent safety)
+      community.general.pacman:
+        name:
+          - tailscale
+          - bitwarden-cli
+          - chezmoi
+          - ansible
+        state: present
+
+    - name: Optional cleanup - remove kitty (ghostty-only setup)
+      community.general.pacman:
+        name: kitty
+        state: absent
+      ignore_errors: true
+
+- name: AUR Install (paru)
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Install AUR packages
+      ansible.builtin.shell: paru -S --needed --noconfirm {{ item }}
+      loop:
+        - lazydocker
+        - oxlint # VERIFY package name on machine
+      register: aur_result
+      changed_when: "'installing' in aur_result.stdout | default('')"
+      ignore_errors: true
+
+- name: NPM Globals + curl installers
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check Install - eslint
+      community.general.npm:
+        name: eslint
+        global: true
+        state: present
+
+    - name: Check Install - eslint_d
+      community.general.npm:
+        name: eslint_d
+        global: true
+        state: present
+
+    - name: Check Install - prettierd
+      community.general.npm:
+        name: "@fsouza/prettierd"
+        global: true
+        state: present
+
+    - name: Check Install - Lunajson
+      ansible.builtin.command: luarocks --local install lunajson
+      changed_when: false
+
+    - name: Check Install - pnpm
+      block:
+        - name: Check if pnpm is already installed
+          ansible.builtin.command: pnpm --version
+          register: pnpm_check
+          failed_when: false
+          changed_when: false
+
+        - name: Install pnpm if not installed
+          ansible.builtin.shell: "curl -fsSL https://get.pnpm.io/install.sh | sh -"
+          args:
+            creates: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
+          environment:
+            PNPM_HOME: "{{ ansible_facts['env']['HOME'] }}/.local/share/pnpm"
+          when: pnpm_check.rc != 0
+
+    - name: Check if Claude Code is installed
+      ansible.builtin.command: which claude
+      register: claude_code_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Claude Code (native install with auto-updates)
+      ansible.builtin.shell: curl -fsSL https://claude.ai/install.sh | bash
+      when: claude_code_check.rc != 0
+
+    - name: Ensure GitHub Dash extension is installed
+      block:
+        - name: Check if GitHub Dash extension is installed
+          ansible.builtin.command: gh extension list
+          register: gh_ext_list
+          changed_when: false
+          failed_when: false
+
+        - name: Install GitHub Dash extension if not present
+          ansible.builtin.command: gh extension install dlvhdr/gh-dash
+          when: "'gh-dash' not in gh_ext_list.stdout | default('')"
+
+- name: Pi Coding Agent + Extensions
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check if pi is installed
+      ansible.builtin.command: which pi
+      register: pi_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install Pi Coding Agent (AUR)
+      ansible.builtin.shell: paru -S --needed --noconfirm pi-coding-agent # VERIFY AUR name
+      when: pi_check.rc != 0
+      register: pi_aur
+      ignore_errors: true
+
+    - name: Install Pi Coding Agent (npm fallback)
+      community.general.npm:
+        name: "@earendil-works/pi-coding-agent"
+        global: true
+        state: present
+      when: pi_check.rc != 0 and (pi_aur is failed)
+
+    - name: Install Pi BTW extension
+      ansible.builtin.shell: pi install npm:pi-btw
+      args:
+        creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/pi-btw"
+
+    - name: Install Pi DocParser extension
+      ansible.builtin.shell: pi install npm:pi-docparser
+      args:
+        creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/pi-docparser"
+
+    - name: Install Pi Image Preview extension (fork with space support)
+      ansible.builtin.shell: pi install git:https://github.com/ianyimi/pi-image-preview
+      args:
+        creates: "{{ ansible_facts['env']['HOME'] }}/.pi/git/github.com/ianyimi/pi-image-preview"
+
+    - name: Install LSP Pi extension
+      ansible.builtin.shell: pi install npm:lsp-pi
+      args:
+        creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/lsp-pi"
+
+    - name: Install Browser Annotations Pi extension
+      ansible.builtin.shell: pi install npm:@browser-annotations/pi
+      args:
+        creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/@browser-annotations/pi"
+
+    - name: Install Pi Smart Fetch extension
+      ansible.builtin.shell: pi install npm:pi-smart-fetch
+      args:
+        creates: "{{ ansible_facts['env']['HOME'] }}/.pi/extensions/pi-smart-fetch"
+
+- name: GUI Apps
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check Install - Discord
+      community.general.pacman:
+        name: discord
+        state: present
+      ignore_errors: true
+
+    - name: Check Install - Obsidian
+      community.general.pacman:
+        name: obsidian
+        state: present
+      ignore_errors: true
+
+- name: GUI Apps (AUR)
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Install AUR GUI apps
+      ansible.builtin.shell: paru -S --needed --noconfirm {{ item }}
+      loop:
+        - spotify
+        - ghostty # check pacman repos first — may be in [extra] now
+        - helium-browser-bin # VERIFY name; already installed on machine, --needed makes this a no-op
+      register: aur_gui_result
+      changed_when: "'installing' in aur_gui_result.stdout | default('')"
+      ignore_errors: true
+
+- name: Gaming (Steam + Proton)
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check Install - Steam + gamescope (multilib enabled by default on CachyOS)
+      community.general.pacman:
+        name:
+          - steam
+          - gamescope
+        state: present
+      ignore_errors: true
+
+- name: Gaming (AUR)
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Install proton-ge-custom
+      ansible.builtin.shell: paru -S --needed --noconfirm proton-ge-custom-bin # VERIFY name; or enable Proton in Steam settings
+      register: proton_result
+      changed_when: "'installing' in proton_result.stdout | default('')"
+      ignore_errors: true
+
+- name: Fonts
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check Install - Nerd Fonts
+      community.general.pacman:
+        name:
+          - ttf-hack-nerd
+          - ttf-jetbrains-mono-nerd
+          - ttf-cascadia-code-nerd
+        state: present
+      ignore_errors: true
+
+- name: Hyprland Ecosystem
+  hosts: localhost
+  become: true
+  connection: local
+  tasks:
+    - name: Check Install - Hyprland core tools
+      community.general.pacman:
+        name:
+          - hyprland
+          - uwsm
+          - hyprpicker
+        state: present
+      ignore_errors: true
+
+- name: Hyprland Ecosystem (AUR)
+  hosts: localhost
+  become: false
+  connection: local
+  tasks:
+    - name: Check noctalia is installed (keep user install, never reinstall)
+      ansible.builtin.command: which noctalia
+      register: noctalia_check
+      failed_when: false
+      changed_when: false
+
+    - name: Install noctalia if missing
+      ansible.builtin.shell: paru -S --needed --noconfirm noctalia-shell # VERIFY name on machine
+      when: noctalia_check.rc != 0
+      ignore_errors: true
