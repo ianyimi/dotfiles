@@ -148,19 +148,23 @@
   become: false
   connection: local
   tasks:
+    # npm global prefix is /usr/lib on Arch — needs root (unlike brew on macOS)
     - name: Check Install - eslint
+      become: true
       community.general.npm:
         name: eslint
         global: true
         state: present
 
     - name: Check Install - eslint_d
+      become: true
       community.general.npm:
         name: eslint_d
         global: true
         state: present
 
     - name: Check Install - prettierd
+      become: true
       community.general.npm:
         name: "@fsouza/prettierd"
         global: true
@@ -226,6 +230,7 @@
       ignore_errors: true
 
     - name: Install Pi Coding Agent (npm fallback)
+      become: true
       community.general.npm:
         name: "@earendil-works/pi-coding-agent"
         global: true
