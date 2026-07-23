@@ -166,6 +166,8 @@ if [ -d "$FNM_PATH" ]; then
   eval "`fnm env`"
 fi
 {{ else -}}
+# user-level npm global prefix (set by cachyos.yml ansible playbook)
+export PATH="$HOME/.local/share/npm/bin:$PATH"
 [ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 [ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 # fnm

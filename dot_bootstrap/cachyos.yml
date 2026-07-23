@@ -41,6 +41,17 @@
         msg: "paru not found and repo install failed — AUR tasks will fail. Install manually: git clone https://aur.archlinux.org/paru.git && cd paru && makepkg -si"
       when: paru_check.rc != 0 and (paru_install is failed)
 
+    # paru builds as the regular user but calls 'sudo pacman -U' internally.
+    # Ansible tasks have no TTY, so that sudo prompt fails. Allow passwordless
+    # pacman for this user (standard pattern for AUR helper automation).
+    - name: Allow passwordless pacman for AUR helper
+      become: true
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/20-aur-pacman
+        content: "{{ ansible_user_id }} ALL=(ALL) NOPASSWD: /usr/bin/pacman\n"
+        mode: "0440"
+        validate: "visudo -cf %s"
+
     - name: Configure git with GitHub token from Bitwarden
       block:
         - name: Check if gh is authenticated
@@ -147,7 +158,7 @@
         - tmuxinator # AUR (ruby gem)
         - fnm-bin # AUR
         - lazydocker
-        - oxlint # VERIFY package name on machine
+        - oxlint-bin # prebuilt; plain 'oxlint' compiles the whole oxc toolchain from source
       register: aur_result
       changed_when: "'installing' in aur_result.stdout | default('')"
       ignore_errors: true
@@ -157,23 +168,26 @@
   become: false
   connection: local
   tasks:
-    # npm global prefix is /usr/lib on Arch — needs root (unlike brew on macOS)
+    # npm global prefix defaults to root-owned /usr/lib on Arch. Use a
+    # user-level prefix instead — no sudo needed, matches fnm/pnpm philosophy.
+    # ~/.local/share/npm/bin is added to PATH by the linux branch of .zshrc.
+    - name: Configure user-level npm global prefix
+      ansible.builtin.shell: npm config set prefix "$HOME/.local/share/npm"
+      changed_when: false
+
     - name: Check Install - eslint
-      become: true
       community.general.npm:
         name: eslint
         global: true
         state: present
 
     - name: Check Install - eslint_d
-      become: true
       community.general.npm:
         name: eslint_d
         global: true
         state: present
 
     - name: Check Install - prettierd
-      become: true
       community.general.npm:
         name: "@fsouza/prettierd"
         global: true
@@ -239,7 +253,6 @@
       ignore_errors: true
 
     - name: Install Pi Coding Agent (npm fallback)
-      become: true
       community.general.npm:
         name: "@earendil-works/pi-coding-agent"
         global: true
