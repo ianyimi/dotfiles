@@ -1,9 +1,12 @@
 import { readFileSync } from "node:fs";
 import { CHECKS } from "./checks/index.ts";
 import { contextCommand } from "./commands/context.ts";
+import { runDeps } from "./commands/deps.ts";
 import { runDoctor } from "./commands/doctor.ts";
 import { envCheck } from "./commands/env.ts";
+import { implementDone, implementNext, implementStatus, implementVerify } from "./commands/implement.ts";
 import { logAppend, logBackfillSha, logCommitMsg, logSessionEnd } from "./commands/log.ts";
+import { buildPolishPacket } from "./commands/polish.ts";
 import { indexRebuild } from "./commands/index.ts";
 import { initFinish, initScaffold, initStatus, initWritePhase } from "./commands/init.ts";
 import { runPlatform } from "./commands/platform.ts";
@@ -220,6 +223,55 @@ const COMMANDS: Record<string, Command> = {
         default:
           throw new HarnessError("usage", `log: unknown subcommand ${JSON.stringify(sub)} — expected append | session-end | backfill-sha | commit-msg`);
       }
+    },
+  },
+  deps: {
+    help: "deps clone|sync|add|remove|list — dependency source clones",
+    run: (props) => runDeps({ args: props.args, cwd: props.cwd, stdout: props.stdout, stderr: props.stderr }),
+  },
+  implement: {
+    help: "implement <slug> [status|next|verify <Tn>|done <Tn>] — spec implementation state machine",
+    run: (props) => {
+      const parsed = parseArgs({
+        argv: props.args,
+        spec: { positionals: ["slug", "...rest"], flags: ["json", "force", "confirmed"], options: ["from", "reason"] },
+      });
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      const slug = parsed.positionals["slug"] as string;
+      const sub = parsed.rest[0] ?? "status";
+      const groupId = parsed.rest[1];
+      switch (sub) {
+        case "status": {
+          const code = implementStatus({ root, slug, stdout: props.stdout });
+          if (parsed.rest.length === 0) props.stdout("\ndrive the loop with the implement skill");
+          return code;
+        }
+        case "next":
+          return implementNext({ root, slug, from: parsed.options["from"], stdout: props.stdout });
+        case "verify":
+          if (groupId === undefined) throw new HarnessError("usage", "verify requires a group id, e.g. `verify T1`");
+          return implementVerify({ root, slug, groupId, confirmed: parsed.flags["confirmed"], stdout: props.stdout });
+        case "done":
+          if (groupId === undefined) throw new HarnessError("usage", "done requires a group id, e.g. `done T1`");
+          return implementDone({
+            root,
+            slug,
+            groupId,
+            force: parsed.flags["force"],
+            reason: parsed.options["reason"],
+            stdout: props.stdout,
+          });
+        default:
+          throw new HarnessError("usage", `implement: unknown subcommand ${JSON.stringify(sub)} — expected status | next | verify | done`);
+      }
+    },
+  },
+  polish: {
+    help: "polish <slug> — emit the polish packet (high-importance projects only)",
+    run: (props) => {
+      const parsed = parseArgs({ argv: props.args, spec: { positionals: ["slug"], flags: ["json"] } });
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      return buildPolishPacket({ root, slug: parsed.positionals["slug"] as string, stdout: props.stdout });
     },
   },
   env: {

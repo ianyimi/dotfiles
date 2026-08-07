@@ -1,10 +1,10 @@
-# Implementation Summary — Specs 01–04
+# Implementation Summary — Specs 01–06
 
 > Implemented and verified 2026-08-06/07 on branch `feat/agent-harness`.
 > Package: `/Users/zaye/.local/share/chezmoi/harness/` (`@zaye/harness` 0.1.0).
-> Status: **specs 01–04 complete** — 232 tests green, `tsc --noEmit` clean, all four manual
-> verification smokes pass. Specs 05–08 not started.
-> (Specs 01–02 section below is the original summary; the Specs 03–04 section follows it.)
+> Status: **specs 01–06 complete** — 275 tests green, `tsc --noEmit` clean, all six manual
+> verification smokes pass. Specs 07–09 not started.
+> (Sections below are per-session summaries: 01–02, 03–04, 05, 06.)
 
 ## What works right now
 
@@ -135,13 +135,76 @@ Confirmed against `@oh-my-pi/pi-coding-agent@17.2.10` source: `disabledProviders
 6. **`context-rules-stale` gates on "has ever synced"** — the spec's `appliesWhen: always` would warn on every never-synced project and broke the clean-fixture goldens from specs 01–03.
 7. **templates.test.ts extended, not duplicated** — spec 03's Step 10 test file overlapped spec 02's; merged into one.
 
+---
+
+# Spec 05 (third session)
+
+## What works now
+
+| Command | Does |
+|---|---|
+| `harness implement <slug> [status]` | Task-group table (ID/Title/Steps/Verify/State — done/failed/next/pending). Bare form = status + skill hint. |
+| `harness implement <slug> next [--from Tn]` | The working packet (D12: packaging, never analysis): group heading, Why/Verify, verbatim step checkboxes, the matching spec.md section, `harness context` results, dep-registry note when clones exist, naming-conventions pointer. This stdout IS the implement skill's context bundle. |
+| `harness implement <slug> verify <Tn> [--confirmed]` | Runs the group's `Verify:` command (`sh -c`, 300s timeout, runtime bin dir prepended to PATH) and records attempts/result/exit/40-line tail in `.implement-state.json`. `Verify: manual` requires `--confirmed`. |
+| `harness implement <slug> done <Tn> [--force --reason]` | Gated on a recorded passing verify; ticks exactly that group's checkboxes byte-faithfully; appends the session-log line via 03's `appendLogLine`; `--force` demands a reason, recorded in state + log. |
+| `harness polish <slug>` | Emits the polish packet (spec edge cases, `touches[]`, checklist path) — hard-gated on `workflow.importance === "high"` with the proposal's exact refusal message. |
+
+## New files (05)
+
+- `test/specFixture.ts` — the seeded demo-feature spec (3 groups incl. a `Verify: manual` one).
+- `src/lib/specTasks.ts` (+test) — `parseSpecTasks` (C-05a format: `## Tn — title`, Why/Verify lines, checkbox steps; Verify mandatory) and `tickGroup` (byte-preserving checkbox ticking).
+- `src/lib/implementState.ts` (+test) — the C-05b `.implement-state.json` ledger (sorted keys, atomic, tolerant load).
+- `src/commands/implement.ts` (+test) — the four state-machine functions; golden-pinned status table and next packet.
+- `src/commands/polish.ts` (+test) — `buildPolishPacket`, golden-pinned.
+- Skills: `implement` (+`references/verification.md` — max-2-retries protocol, never weaken a Verify command, forced-skip discipline) and `polish` (+`references/polish-checklist.md` — proposal §14 verbatim, incl. the exact output format). 12 embedded skills total.
+
+## Verification (05)
+
+- `bun test`: **257 pass, 0 fail** (616 assertions, 35 files). `tsc --noEmit` clean.
+- Manual smoke: status golden → verify T1 (pass) → done T1 (boxes ticked, `next: T2`) → status shows T2 next → T3 manual gate blocks without `--confirmed` → polish refuses on medium importance and emits the golden packet on high.
+
+## Deviations (05)
+
+1. **Verify subprocess PATH** — `implementVerify` prepends the running runtime's bin dir to the child PATH; without it, `bun`-invoking Verify commands fail with exit 127 under login shells that don't export `~/.bun/bin` (caught by tests).
+2. None else — 05's C-05a/C-05b/C-05c contracts matched what 02/03 shipped without changes (the ledger reconciliation from the spec-authoring session paid off).
+
+---
+
+# Spec 06 (third session, continued)
+
+## What works now
+
+| Command | Does |
+|---|---|
+| `harness deps clone [<pkg>]` | Shallow-clones each `manifest.json#dependencies` pin at its best-matching tag (`v<version>` → `<version>` → `<pkg>@<version>` → unique `@/-` suffix scan) into `.agent/dependencies/<dirname>`. No tag match → default branch + `(no tag match)` marker + warn. Unreachable repo → warn and continue; one bad dep never fails the batch. Byte-idempotent. |
+| `harness deps sync [<pkg>]` | Detects drift between the registry and the PROJECT manifest pin (package.json / Cargo.toml / pyproject.toml readers), re-clones, and updates registry + manifest pin together. |
+| `harness deps add <pkg> --repo <url> [--version]` | Version defaults from the project manifest; a failed clone never leaves a dead pin. |
+| `harness deps remove <pkg>` / `deps list` | Removes clone dir + registry row + manifest pin atomically; list prints the registry table. |
+
+Doctor gained `stale-dependencies` (info, 14 checks total): version drift → `harness deps sync <pkg>` hint; registered-but-missing clone → `deps clone` hint; reference-only clones (not in the project manifest) stay silent.
+
+## New files (06)
+
+- `test/helpers.ts` — `mkBareRepoWithTags` (local bare repo with `v1.0.0` + `pkg@1.1.0` tags; **no test touches the network**).
+- `src/lib/git.ts` — `lsRemoteTags` + `shallowCloneAtRef` (execFileSync, `file://` prefix on local paths so `--depth 1` is honored, dest removed on failure; these THROW typed errors — the documented deviation from the file's safe-default wrappers).
+- `src/lib/depsRegistry.ts` (+golden test) — registry.md parse/serialize, sorted, tolerant of hand-edits.
+- `src/commands/deps.ts` (+test) — `depDirname` (`@tanstack/form` → `tanstack__form`), `resolveRepoUrl`, `readProjectPin` (npm ranges, Cargo plain+table forms, pyproject specifiers), `resolveTag` (never guesses between monorepo packages), `cloneOne`, `runDeps`.
+- `src/checks/staleDependencies.ts` (+test).
+
+## Verification (06)
+
+- `bun test`: **275 pass, 0 fail** (677 assertions, 38 files) — first full run green. `tsc --noEmit` clean.
+- Manual smoke (local bare repo): `deps add` resolves `v3.23.8`, `list` shows the row, pin bump → doctor prints the exact drift finding → `deps sync` clears it, second `clone` leaves the registry byte-identical, `remove` leaves only `.gitignore` + `registry.md`. The `.gitignore` contract is verified against real `git check-ignore`.
+
+## Deviations (06)
+
+1. **Check file named `staleDependencies.ts`** (camelCase) — matches the existing check-file convention rather than the spec's literal `stale-dependencies.ts`.
+2. **01's scaffold `REGISTRY_HEADER` updated** to be byte-identical to `serializeRegistry({ rows: [] })` — one registry format, two writers; the fixture registry was re-pinned to the same golden (spec 06 Step 7).
+
 ## What's next (not yet built)
 
-Spec 09 (added after developer review of the built surface — slash-command shims incl.
-`/harness-init`, the generated `docs/harness-guide.md`, the init discovery pass, the
-configurable commit gate, and the `context-coverage` check), then specs 05–08 in order:
-implement/polish loop (05), dependency clones (06), template mechanism (07), integration +
-worktree + the migration runbook for maprios/vex/dotfiles (08). Recommended order: 09 first —
-it amends only 01/04 surfaces and is the UX felt immediately.
+07 (template mechanism), 08 (integration + worktree + the migration runbook for
+maprios/vex/dotfiles), 09 (slash-command shims incl. `/harness-init`, `docs/harness-guide.md`,
+the init discovery pass, the configurable commit gate, `context-coverage`).
 
-Specs 03–04 changes are uncommitted on `feat/agent-harness` for your review (01–02 were committed earlier).
+Specs 03–06 changes are uncommitted on `feat/agent-harness` for your review (01–02 were committed earlier).

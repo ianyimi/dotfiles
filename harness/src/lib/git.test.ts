@@ -1,9 +1,21 @@
 import { describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { gitInit, mkTmpProject, rmProject } from "../../test/helpers.ts";
-import { changedFilesSince, commitsTouching, headCommitDate, headCommitIso, headSha, isRepo, recentChangedFiles, uncommittedFiles } from "./git.ts";
+import { gitInit, mkBareRepoWithTags, mkTmpProject, rmProject } from "../../test/helpers.ts";
+import {
+  changedFilesSince,
+  commitsTouching,
+  headCommitDate,
+  headCommitIso,
+  headSha,
+  isRepo,
+  lsRemoteTags,
+  recentChangedFiles,
+  shallowCloneAtRef,
+  uncommittedFiles,
+} from "./git.ts";
 
 describe("git wrappers", () => {
   test("safe defaults outside a repo", () => {
@@ -33,6 +45,29 @@ describe("git wrappers", () => {
     writeFileSync(join(dir, "brand-new.ts"), "export const n = 1;\n"); // untracked
     expect(uncommittedFiles({ root: dir })).toEqual(["brand-new.ts", "src/index.ts"]);
     rmProject({ dir });
+  });
+});
+
+describe("deps git helpers (06)", () => {
+  const repo = mkBareRepoWithTags();
+  const mkDest = () => join(mkdtempSync(join(tmpdir(), "harness-clone-")), "pkg");
+  test("lsRemoteTags lists both tags sorted; throws on unreachable repo", () => {
+    expect(lsRemoteTags({ repoUrl: repo.dir })).toEqual(["pkg@1.1.0", "v1.0.0"]);
+    expect(() => lsRemoteTags({ repoUrl: "/nope/missing.git" })).toThrow(/ls-remote failed/);
+  });
+  test("shallowCloneAtRef: tag → content + sha + depth 1; no ref → default branch tip", () => {
+    const a = mkDest();
+    expect(shallowCloneAtRef({ repoUrl: repo.dir, ref: "v1.0.0", dest: a })).toBe(repo.shaByTag["v1.0.0"]!);
+    expect(readFileSync(join(a, "lib.ts"), "utf8")).toBe("export const v = 1;\n");
+    expect(execFileSync("git", ["-C", a, "rev-list", "--count", "HEAD"], { encoding: "utf8" }).trim()).toBe("1");
+    const b = mkDest();
+    expect(shallowCloneAtRef({ repoUrl: repo.dir, dest: b })).toBe(repo.shaByTag["pkg@1.1.0"]!);
+    expect(readFileSync(join(b, "lib.ts"), "utf8")).toBe("export const v = 2;\n");
+  });
+  test("bad ref throws git-clone-failed and leaves no dest", () => {
+    const dest = mkDest();
+    expect(() => shallowCloneAtRef({ repoUrl: repo.dir, ref: "v9.9.9", dest })).toThrow(/clone failed/);
+    expect(existsSync(dest)).toBe(false);
   });
 
   test("headCommitDate pins to the committer date", () => {

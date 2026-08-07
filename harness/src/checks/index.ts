@@ -6,6 +6,7 @@ import decisionsInconsistent from "./decisionsInconsistent.ts";
 import envVarsUndocumented from "./envVarsUndocumented.ts";
 import indexStale from "./indexStale.ts";
 import shimsStale from "./shimsStale.ts";
+import staleDependencies from "./staleDependencies.ts";
 import namingViolations from "./namingViolations.ts";
 import openSpecsStale from "./openSpecsStale.ts";
 import preferencesOverBudget from "./preferencesOverBudget.ts";
@@ -33,4 +34,5 @@ export const CHECKS: DoctorCheck[] = [
   envVarsUndocumented,
   shimsStale,
   contextRulesStale,
+  staleDependencies,
 ];

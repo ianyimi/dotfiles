@@ -1,4 +1,4 @@
-import { mkdtempSync, cpSync, rmSync } from "node:fs";
+import { mkdtempSync, cpSync, rmSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -44,6 +44,40 @@ export function gitInit(props: { dir: string; date?: string }): void {
   run(["init", "-q"]);
   run(["add", "-A"]);
   run(["commit", "-q", "-m", "init", "--allow-empty"]);
+}
+
+/**
+ * Builds a local BARE git repo fixture with two commits and two tags:
+ * v1.0.0 → lib.ts "export const v = 1;\n"; pkg@1.1.0 (default-branch tip) → "export const v = 2;\n".
+ * Stand-in for a network remote — no test in this suite may hit the network.
+ *
+ * @returns dir - Absolute bare-repo path (usable as DependencyPin.repo); shaByTag - commit sha per tag.
+ */
+export function mkBareRepoWithTags(): { dir: string; shaByTag: Record<string, string> } {
+  const work = mkdtempSync(join(tmpdir(), "harness-dep-work-"));
+  const out = mkdtempSync(join(tmpdir(), "harness-dep-bare-"));
+  const git = (args: string[]): string =>
+    execFileSync("git", ["-C", work, "-c", "user.email=t@t", "-c", "user.name=t", ...args], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  git(["init", "-b", "main"]);
+  writeFileSync(join(work, "lib.ts"), "export const v = 1;\n");
+  git(["add", "-A"]);
+  git(["commit", "-m", "one"]);
+  git(["tag", "v1.0.0"]);
+  writeFileSync(join(work, "lib.ts"), "export const v = 2;\n");
+  git(["add", "-A"]);
+  git(["commit", "-m", "two"]);
+  git(["tag", "pkg@1.1.0"]);
+  const shaByTag = {
+    "v1.0.0": git(["rev-parse", "v1.0.0^{commit}"]).trim(),
+    "pkg@1.1.0": git(["rev-parse", "pkg@1.1.0^{commit}"]).trim(),
+  };
+  const dir = join(out, "repo.git");
+  execFileSync("git", ["clone", "--bare", "--quiet", work, dir], { stdio: "ignore" });
+  rmSync(work, { recursive: true, force: true });
+  return { dir, shaByTag };
 }
 
 /**
