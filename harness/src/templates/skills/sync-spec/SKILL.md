@@ -18,7 +18,8 @@ description: Run AFTER implementation and BEFORE commit on high-care projects. A
    globs) against the spec's code blocks. Load `references/pattern-extraction.md`; classify
    every deviation: naming, structure, API shape, style, scope.
 3. **Update the spec** — edit spec.md until it matches reality; tick finished boxes in
-   spec-tasks.md; all boxes checked → set frontmatter `status: done` in both files.
+   spec-tasks.md; all boxes checked → set frontmatter `status: done` in both files, then run
+   `harness tasks move "<spec title>" --to done` (skip when it reports task-not-found).
 4. **Preferences** — for each style deviation seen ≥2 times (or stated explicitly): append ONE
    line to `docs/standards/preferences.md` in exactly the format `- P-NNN (YYYY-MM-DD) <rule>`
    — NNN = highest existing id + 1 (never reuse ids), date = the HEAD commit date
@@ -32,6 +33,7 @@ description: Run AFTER implementation and BEFORE commit on high-care projects. A
 6. **Naming** — the developer renamed something the spec generated? Update
    `naming-conventions.md` (fix the rule's pattern/examples, or record the identifier
    convention in prose), then run `harness struct` so directory-structure.md re-annotates.
+   Multi-file impact? Load `.agent/skills/shared-references/cascade-checks.md` first.
 7. **Structure + index** — new files or folders? `harness struct`. Standards files added or
    changed? `harness index rebuild`.
 8. **Report** — list every file updated and every P-/AP- entry added. Nothing is changed

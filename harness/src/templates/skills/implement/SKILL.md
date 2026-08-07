@@ -31,7 +31,8 @@ harness_model_role: default
       `references/verification.md` and follow the retry protocol.
    f. On pass: `harness implement <slug> done <Tn>`, then continue to the next group.
 3. All groups done: if `manifest.json#workflow.post_implement_polish` is true and importance is
-   "high", suggest running the polish skill. Then hand off to the commit skill.
+   "high", suggest running the polish skill. Run `harness tasks move "<spec slug>" --to done`
+   (modules.tasks; noop-safe). Then hand off to the commit skill.
 
 ## Platform note
 Claude Code / pi: task groups run serially. Between groups, re-run `status` and read the fresh

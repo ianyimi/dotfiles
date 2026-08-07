@@ -2,10 +2,12 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { HarnessError } from "../lib/errors.ts";
+import { parseFrontmatter } from "../lib/frontmatter.ts";
 import { writeFileAtomic } from "../lib/fsx.ts";
 import { headSha } from "../lib/git.ts";
 import { loadManifest, validateManifest, DEFAULT_BUDGETS, type DependencyPin } from "../lib/manifest.ts";
 import { AGENT_DIR, P } from "../lib/paths.ts";
+import { loadTemplate } from "../lib/templateStore.ts";
 
 const TEMPLATES = join(dirname(fileURLToPath(import.meta.url)), "..", "templates");
 const BASE_VERSION = "0.1.0";
@@ -78,13 +80,25 @@ function withVerifiedAt(content: string, sha: string): string {
 }
 
 /**
- * `harness init scaffold` — idempotent .agent/ skeleton creation (D5). Fills gaps only.
+ * `harness init scaffold [--template <name>]` — idempotent .agent/ skeleton creation (D5).
+ * Fills gaps only. With a template: seeds win over embedded defaults (D-07-4) and structural
+ * phase data is STAGED into the progress file with checkboxes unticked (D-07-1) — only
+ * write-phase, validating as always, commits it.
  *
  * @param props.root - Project root.
+ * @param props.template - Optional init-template name (loaded FIRST — not-found aborts early).
  * @param props.stdout - Line sink; created paths are printed.
  * @returns EXIT.OK.
+ * @throws {HarnessError} "template-not-found" / "template-invalid" before any write.
  */
-export function initScaffold(props: { root: string; stdout: (s: string) => void }): number {
+export function initScaffold(props: { root: string; template?: string; stdout: (s: string) => void }): number {
+  const tpl = props.template !== undefined ? loadTemplate({ name: props.template }) : null;
+  const skillsAbs = join(props.root, P.skills);
+  const preExistingSkills = new Set(
+    existsSync(skillsAbs)
+      ? readdirSync(skillsAbs, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name)
+      : [],
+  );
   const created: string[] = [];
   const ensureDir = (rel: string): void => {
     const abs = join(props.root, rel);
@@ -122,6 +136,41 @@ export function initScaffold(props: { root: string; stdout: (s: string) => void 
     if (!existsSync(dest)) {
       cpSync(join(skillsSrc, entry.name), dest, { recursive: true });
       created.push(`${P.skills}/${entry.name}/`);
+    }
+  }
+
+  if (tpl !== null) {
+    // a. skills_seed overwrites the embedded defaults just copied — but never a dir that
+    //    pre-existed this run (idempotent re-scaffold keeps project customizations).
+    for (const skillName of tpl.skillsSeed) {
+      if (preExistingSkills.has(skillName)) continue;
+      const dest = join(props.root, P.skills, skillName);
+      rmSync(dest, { recursive: true, force: true });
+      cpSync(join(tpl.dir, "skills_seed", skillName), dest, { recursive: true });
+      created.push(`skill ${skillName} (from template)`);
+    }
+    // b. standards_seed → docs/standards, mirrored paths, missing targets only.
+    for (const rel of tpl.standardsSeed) {
+      const dest = join(props.root, P.standards, rel);
+      if (!existsSync(dest)) {
+        mkdirSync(dirname(dest), { recursive: true });
+        cpSync(join(tpl.dir, "standards_seed", rel), dest);
+        created.push(`${P.standards}/${rel} (from template)`);
+      }
+    }
+    // c+d. Stage prefilled phase data (unticked) + record the template name in frontmatter.
+    if (existsSync(progressPath(props.root))) {
+      let progress = readProgress(props.root);
+      for (const key of Object.keys(tpl.template.prefilled).sort()) {
+        const phase = Number(key);
+        if (phaseData(progress, phase) !== null) continue; // never overwrite an existing block
+        const data = (tpl.template.prefilled as Record<string, unknown>)[key];
+        progress = `${progress.trimEnd()}\n\n### Phase ${phase}\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\`\n`;
+      }
+      if (!progress.startsWith("---\n")) {
+        progress = `---\ntemplate: ${props.template as string}\n---\n\n${progress}`;
+      }
+      writeFileAtomic({ path: progressPath(props.root), content: progress });
     }
   }
 
@@ -233,11 +282,15 @@ export function initWritePhase(props: {
       const p6 = phaseData(progress, 6);
       if (p6 === null) throw new HarnessError("init-incomplete", "phase 7 requires phase 6 data — run write-phase 6 first (empty dependencies list is fine)");
       const p3 = phaseData(progress, 3);
+      const templateName = parseFrontmatter({ text: progress }).data["template"];
       const manifestValue = {
         schema_version: "1.0",
         project: p1["project"],
         description: p1["description"],
-        harness: { base_version: BASE_VERSION },
+        harness: {
+          base_version: BASE_VERSION,
+          ...(typeof templateName === "string" && templateName !== "" ? { template: templateName } : {}),
+        },
         platforms: data["platforms"],
         workflow: data["workflow"],
         modules: data["modules"],
@@ -291,7 +344,7 @@ export function initStatus(props: { root: string; stdout: (s: string) => void })
     const m = l.match(/Phase (\d+)/);
     const n = m !== null ? Number(m[1]) : 0;
     const hasData = phaseData(progress, n) !== null;
-    return hasData && l.startsWith("- [ ]") ? `${l}  (prefilled — confirm or edit)` : l;
+    return hasData && l.startsWith("- [ ]") ? `${l} — prefilled (confirm or edit)` : l;
   });
   props.stdout(out.join("\n"));
   return 0;

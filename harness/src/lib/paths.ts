@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { EXIT, HarnessError } from "./errors.ts";
 
@@ -23,6 +24,16 @@ export const P = {
   depsRegistry: join(AGENT_DIR, "dependencies", "registry.md"),
   envManifest: join(AGENT_DIR, "env.manifest.md"),
 } as const;
+
+/**
+ * User-level harness directory (templates, caches). `HARNESS_HOME` env var overrides the
+ * default `~/.harness` — read at call time so tests can point it at a temp dir.
+ *
+ * @returns Absolute path of the harness home directory (not created — callers ensureDir).
+ */
+export function harnessHome(): string {
+  return process.env["HARNESS_HOME"] ?? join(homedir(), ".harness");
+}
 
 /**
  * Walks up from cwd to find the project root (master §2.10). The nearest `.agent/`

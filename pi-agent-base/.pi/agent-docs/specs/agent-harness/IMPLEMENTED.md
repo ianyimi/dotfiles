@@ -1,10 +1,11 @@
-# Implementation Summary — Specs 01–06
+# Implementation Summary — Specs 01–08
 
 > Implemented and verified 2026-08-06/07 on branch `feat/agent-harness`.
 > Package: `/Users/zaye/.local/share/chezmoi/harness/` (`@zaye/harness` 0.1.0).
-> Status: **specs 01–06 complete** — 275 tests green, `tsc --noEmit` clean, all six manual
-> verification smokes pass. Specs 07–09 not started.
-> (Sections below are per-session summaries: 01–02, 03–04, 05, 06.)
+> Status: **specs 01–08 complete** — 308 tests green (incl. the capstone e2e), `tsc --noEmit`
+> clean, all manual smokes pass. Spec 09 not started; 08's Migration Runbook not yet executed
+> (it runs live with the developer, deletion gates and all).
+> (Sections below are per-session summaries: 01–02, 03–04, 05, 06, 07–08.)
 
 ## What works right now
 
@@ -201,10 +202,46 @@ Doctor gained `stale-dependencies` (info, 14 checks total): version drift → `h
 1. **Check file named `staleDependencies.ts`** (camelCase) — matches the existing check-file convention rather than the spec's literal `stale-dependencies.ts`.
 2. **01's scaffold `REGISTRY_HEADER` updated** to be byte-identical to `serializeRegistry({ rows: [] })` — one registry format, two writers; the fixture registry was re-pinned to the same golden (spec 06 Step 7).
 
-## What's next (not yet built)
+---
 
-07 (template mechanism), 08 (integration + worktree + the migration runbook for
-maprios/vex/dotfiles), 09 (slash-command shims incl. `/harness-init`, `docs/harness-guide.md`,
-the init discovery pass, the configurable commit gate, `context-coverage`).
+# Specs 07 + 08 (third session, continued)
 
-Specs 03–06 changes are uncommitted on `feat/agent-harness` for your review (01–02 were committed earlier).
+## What works now
+
+| Command | Does |
+|---|---|
+| `harness template save <name> [--force]` | Snapshots an initialized project's STRUCTURAL answers into `~/.harness/templates/<name>/` (`HARNESS_HOME` honored): domains, dep names+repos (**versions stripped** — they re-resolve per project), workflow/modules/platforms, `naming-conventions.md` as a standards seed, and every skill that differs from the embedded defaults (sha256 dir diff) as a skills seed. Project name/description/mission/env values are never templated. |
+| `harness template list / inspect / delete` | Store management; `inspect` prints the exact 5-line summary; `delete` refuses to rm anything without a template.json. |
+| `harness init scaffold --template <name>` | Seeds win over embedded defaults; structural phase data is **staged** into `.setup-progress.md` with checkboxes unticked — `init status` marks those phases `prefilled (confirm or edit)`, and `write-phase` validates exactly as always. The template name lands in `manifest.harness.template` at phase 7. |
+| `harness tasks add <title> [--to]` / `tasks move <substr> --to <section>` | The only sanctioned way skills touch `docs/tasks.md`. Stable section ids (`in-progress`/`inbox`/`done`), tolerant parser (unknown user sections preserved, never targeted), idempotent moves, ambiguity errors listing matches. |
+| `harness worktree <feature> [--path]` | For `repo.type: bare-git-worktrees`: creates a sibling worktree + branch, records it in `manifest.repo.worktrees`, opens a tmux window only when `$TMUX` is set (injected runner — tests never touch tmux). Clear errors for branch-exists / path-exists / wrong repo type. |
+
+Plus: `shared-references/cascade-checks.md` (proposal §10's cascade table as an actionable checklist with the verbatim confirmation-block format) ships into `.agent/skills/shared-references/` on scaffold, and six skill-template edits wire `harness tasks` + the cascade pointer into dev-spec, sync-spec, commit, and implement.
+
+## The capstone e2e (`test/e2e.test.ts`)
+
+From a bare temp dir: git init → scaffold → write-phases 1–9 → finish → sync (symlinks verified) → index rebuild → **doctor exit 0** → spec new → implement status → tasks add/move → log append → commit-msg → `harness state` asserted against a **full golden** (SHA-normalized) proving the cold-start claim: active spec, open tasks, and last session all readable from one `harness state` call.
+
+## New files (07–08)
+
+- `src/lib/templateStore.ts` (+test) — `InitTemplate` schema, name-guarded `templateDir`, tolerant `loadTemplate`/`listTemplates`.
+- `src/commands/template.ts` (+test incl. the save→re-init round-trip centerpiece) — `deriveTemplate` (manifest-derived, post-hoc; sha256 skill diffing), `runTemplate`.
+- `src/lib/tasksFile.ts` (+test) — sections model, byte-stable serializer, `addTask`/`moveTask`.
+- `src/commands/tasks.ts` (+test), `src/commands/worktree.ts` (+test, 7 cases).
+- `src/templates/skills/shared-references/cascade-checks.md`; init skill gained the "Using a Template" section + the questions-that-remain table.
+- `harnessHome()` in paths; `mkHarnessHome`/`rmHarnessHome` test helpers (the real `~/.harness` is never touched by tests).
+
+## Deviations (07–08)
+
+1. **`specTasks` parser accepts bare `Why:`/`Verify:` lines** (empty values) — 02's `spec new` template writes them as fill-me placeholders; 05's parser required values, so `implement status` on a fresh spec crashed. Presence is the contract now; an empty Verify means "draft". Caught by the e2e.
+2. **templates.test.ts scoped to dirs containing SKILL.md** — `shared-references/` is deliberately not a skill (D08-6) and gets its own assertion.
+3. **Seed overwrite guard**: `--template` seeds overwrite embedded defaults only for skill dirs that did NOT pre-exist the scaffold run — keeps re-scaffold idempotent without clobbering project customizations (implements D-07-4's intent precisely).
+
+## What's next
+
+- **Spec 09** (slash-command shims incl. `/harness-init`, `docs/harness-guide.md`, the init
+  discovery pass, the configurable commit gate, `context-coverage`) — the last unbuilt spec.
+- **08's Migration Runbook** — executed live with the developer (dotfiles → maprios → vex),
+  every deletion behind an explicit confirmation; runs after the code is committed.
+
+Specs 03–08 changes are uncommitted on `feat/agent-harness` for your review (01–02 were committed earlier).

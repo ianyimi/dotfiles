@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { gitInit, mkTmpProject, rmProject, runCli } from "../../test/helpers.ts";
+import { gitInit, mkHarnessHome, mkTmpProject, rmHarnessHome, rmProject, runCli } from "../../test/helpers.ts";
 import { loadManifest } from "../lib/manifest.ts";
 
 /** Writes phase data to a temp file and runs write-phase against it. */
@@ -157,5 +157,86 @@ describe("init write-phase", () => {
     expect(r.stdout).toContain("- [x] Phase 1 — Project Identity");
     expect(r.stdout).toContain("- [ ] Phase 2 — Project Purpose + Team");
     rmProject({ dir });
+  });
+});
+
+describe("init scaffold --template (07)", () => {
+  test("unknown template aborts before any writes", async () => {
+    const home = mkHarnessHome();
+    const dir = mkTmpProject({ fixture: "empty-project" });
+    gitInit({ dir });
+    const r = await runCli({ argv: ["init", "scaffold", "--template", "nope"], cwd: dir });
+    expect(r.code).toBe(2);
+    expect(r.stderr).toContain("not found");
+    expect(existsSync(join(dir, ".agent"))).toBe(false);
+    rmProject({ dir });
+    rmHarnessHome({ dir: home });
+  });
+
+  test("staging never overwrites an existing Collected Data block", async () => {
+    const home = mkHarnessHome();
+    const tplDir = join(home, "templates", "stager");
+    const { mkdirSync } = await import("node:fs");
+    mkdirSync(tplDir, { recursive: true });
+    writeFileSync(
+      join(tplDir, "template.json"),
+      JSON.stringify({
+        schema_version: "1.0",
+        name: "stager",
+        saved_at: "2026-08-07",
+        saved_at_sha: "",
+        source_project: "x",
+        harness_version: "0.1.0",
+        prefilled: { "3": { domains: ["from-template"] } },
+      }),
+    );
+    const dir = mkTmpProject({ fixture: "ts-monorepo" });
+    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await writePhase(dir, 3, { domains: ["hand-entered"] });
+    const before = readFileSync(join(dir, ".agent/.setup-progress.md"), "utf8");
+    await runCli({ argv: ["init", "scaffold", "--template", "stager"], cwd: dir });
+    const after = readFileSync(join(dir, ".agent/.setup-progress.md"), "utf8");
+    expect(after).toContain('"hand-entered"');
+    expect(after).not.toContain('"from-template"');
+    expect(after).toContain(before.slice(before.indexOf("### Phase 3"))); // original block byte-unchanged
+    rmProject({ dir });
+    rmHarnessHome({ dir: home });
+  });
+
+  test("full prefilled flow lands in manifest.harness.template with re-resolved versions", async () => {
+    const home = mkHarnessHome();
+    const tplDir = join(home, "templates", "round-trip");
+    const { mkdirSync } = await import("node:fs");
+    mkdirSync(tplDir, { recursive: true });
+    writeFileSync(
+      join(tplDir, "template.json"),
+      JSON.stringify({
+        schema_version: "1.0",
+        name: "round-trip",
+        saved_at: "2026-08-07",
+        saved_at_sha: "",
+        source_project: "x",
+        harness_version: "0.1.0",
+        prefilled: {
+          "3": { domains: ["backend"] },
+          "6": { dependencies: [{ package: "yaml", repo: "github.com/eemeli/yaml" }] },
+          "7": SAMPLE[7],
+        },
+      }),
+    );
+    const dir = mkTmpProject({ fixture: "ts-monorepo" });
+    gitInit({ dir });
+    await runCli({ argv: ["init", "scaffold", "--template", "round-trip"], cwd: dir });
+    await writePhase(dir, 1, SAMPLE[1]);
+    // The staged phase-6 block has no versions — the skill re-resolves before submitting.
+    await writePhase(dir, 6, { dependencies: [{ package: "yaml", repo: "github.com/eemeli/yaml", version: "9.9.9" }] });
+    await writePhase(dir, 7, SAMPLE[7]);
+    for (const n of [2, 3, 4, 5, 8, 9] as const) await writePhase(dir, n, SAMPLE[n]);
+    await runCli({ argv: ["init", "finish"], cwd: dir });
+    const { manifest } = loadManifest({ root: dir });
+    expect(manifest.harness.template).toBe("round-trip");
+    expect(manifest.dependencies[0]?.version).toBe("9.9.9");
+    rmProject({ dir });
+    rmHarnessHome({ dir: home });
   });
 });

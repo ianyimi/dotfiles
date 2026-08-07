@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { CHECKS } from "./checks/index.ts";
 import { contextCommand } from "./commands/context.ts";
@@ -13,6 +14,9 @@ import { runPlatform } from "./commands/platform.ts";
 import { prefCompact, prefRemove } from "./commands/pref.ts";
 import { specList, specNew } from "./commands/spec.ts";
 import { runSync } from "./commands/sync.ts";
+import { runTasks } from "./commands/tasks.ts";
+import { runTemplate } from "./commands/template.ts";
+import { worktreeAdd } from "./commands/worktree.ts";
 import { stateCommand } from "./commands/state.ts";
 import { structCommand } from "./commands/struct.ts";
 import { parseArgs } from "./lib/args.ts";
@@ -75,8 +79,10 @@ const COMMANDS: Record<string, Command> = {
         root = props.cwd;
       }
       switch (sub) {
-        case "scaffold":
-          return initScaffold({ root, stdout: props.stdout });
+        case "scaffold": {
+          const parsed = parseArgs({ argv: rest, spec: { options: ["template"] } });
+          return initScaffold({ root, template: parsed.options["template"], stdout: props.stdout });
+        }
         case "write-phase": {
           const parsed = parseArgs({ argv: rest, spec: { positionals: ["phase"], options: ["data"] } });
           const dataRaw = parsed.options["data"];
@@ -283,6 +289,35 @@ const COMMANDS: Record<string, Command> = {
       const root = resolveProjectRoot({ cwd: props.cwd });
       const reporter = new Reporter({ json: false, write: props.stdout });
       const code = envCheck({ root, env: process.env as Record<string, string | undefined>, reporter });
+      reporter.flush();
+      return code;
+    },
+  },
+  template: {
+    help: "template save <name> [--force] | list | inspect <name> | delete <name>",
+    run: (props) => runTemplate({ args: props.args, cwd: props.cwd, stdout: props.stdout }),
+  },
+  tasks: {
+    help: 'tasks add <title> [--to <section>] | move <title-substr> --to <section>',
+    run: (props) => {
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      return runTasks({ args: props.args, root, stdout: props.stdout });
+    },
+  },
+  worktree: {
+    help: "worktree <feature> [--path <p>] — new sibling worktree + branch (+tmux window)",
+    run: (props) => {
+      const parsed = parseArgs({ argv: props.args, spec: { positionals: ["feature"], options: ["path"] } });
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      const reporter = new Reporter({ json: false, write: props.stdout });
+      const code = worktreeAdd({
+        root,
+        feature: parsed.positionals["feature"] as string,
+        path: parsed.options["path"],
+        env: process.env as Record<string, string | undefined>,
+        tmuxSpawn: (p) => execFileSync("tmux", p.args, { stdio: "ignore" }),
+        reporter,
+      });
       reporter.flush();
       return code;
     },

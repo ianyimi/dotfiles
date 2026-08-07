@@ -61,9 +61,11 @@ export function parseSpecTasks(props: { text: string }): SpecTasks {
     const steps: TaskStep[] = [];
     for (let i = h.line + 1; i < endLine; i++) {
       const line = lines[i] as string;
-      const whyMatch = line.match(/^Why: (.*)$/);
+      // "Why:"/"Verify:" may be present with an empty value (spec new's fill-me template) —
+      // presence is the contract; an empty Verify means "draft, not yet runnable".
+      const whyMatch = line.match(/^Why:\s?(.*)$/);
       if (whyMatch !== null && why === "") why = (whyMatch[1] as string).trim();
-      const verifyMatch = line.match(/^Verify: (.*)$/);
+      const verifyMatch = line.match(/^Verify:\s?(.*)$/);
       if (verifyMatch !== null && verify === null) verify = (verifyMatch[1] as string).trim();
       const stepMatch = line.match(/^- \[( |x)\] (.*)$/);
       if (stepMatch !== null) {

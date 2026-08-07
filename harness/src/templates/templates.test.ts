@@ -38,7 +38,16 @@ describe("embedded skill templates", () => {
     );
   });
 
-  for (const skill of readdirSync(SKILLS_DIR, { withFileTypes: true }).filter((e) => e.isDirectory())) {
+  test("shared-references ships the cascade checklist (no SKILL.md — not a skill, D08-6)", () => {
+    const text = readFileSync(join(SKILLS_DIR, "shared-references", "cascade-checks.md"), "utf8");
+    expect(text).toContain("Confirm this full set before I apply anything");
+    expect(readdirSync(join(SKILLS_DIR, "shared-references"))).not.toContain("SKILL.md");
+  });
+
+  const skillOnlyDirs = readdirSync(SKILLS_DIR, { withFileTypes: true }).filter(
+    (e) => e.isDirectory() && readdirSync(join(SKILLS_DIR, e.name)).includes("SKILL.md"),
+  );
+  for (const skill of skillOnlyDirs) {
     const skillPath = join(SKILLS_DIR, skill.name, "SKILL.md");
 
     test(`${skill.name}/SKILL.md ≤150 lines with name + description frontmatter`, () => {

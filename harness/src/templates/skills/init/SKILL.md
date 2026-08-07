@@ -15,6 +15,17 @@ description: Initialize or update the agent harness for a project. Triggers on "
 3. Run `harness init status`. If phases are already complete, announce "Resuming setup from
    Phase N" and skip completed phases.
 
+## Using a Template
+
+If the developer named a template ("use the <name> template", `--template <name>`):
+1. `harness template list` — if the name is missing, show the list and stop.
+2. Run `harness init scaffold --template <name>` instead of plain scaffold.
+3. `harness init status`: phases marked `prefilled (confirm or edit)` carry staged data from
+   the template. Skip codebase inference for those phases — present the staged block as the
+   draft, confirm or edit, then `harness init write-phase <n> --data -` as usual.
+4. Phase 6 staged deps have no versions: re-resolve each from THIS project's manifest files
+   before submitting. All other phases proceed normally (see references/phases.md).
+
 ## The Loop (phases 1–9)
 
 For each phase, in order:

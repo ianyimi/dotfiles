@@ -1,8 +1,24 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { mkTmpProject, rmProject } from "../../test/helpers.ts";
-import { resolveProjectRoot } from "./paths.ts";
+import { harnessHome, resolveProjectRoot } from "./paths.ts";
+
+describe("harnessHome", () => {
+  test("HARNESS_HOME override wins; default is ~/.harness", () => {
+    const prev = process.env["HARNESS_HOME"];
+    try {
+      process.env["HARNESS_HOME"] = "/tmp/custom-home";
+      expect(harnessHome()).toBe("/tmp/custom-home");
+      delete process.env["HARNESS_HOME"];
+      expect(harnessHome()).toBe(join(homedir(), ".harness"));
+    } finally {
+      if (prev !== undefined) process.env["HARNESS_HOME"] = prev;
+      else delete process.env["HARNESS_HOME"];
+    }
+  });
+});
 
 describe("resolveProjectRoot", () => {
   test("finds .agent at cwd", () => {

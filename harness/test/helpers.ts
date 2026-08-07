@@ -81,6 +81,29 @@ export function mkBareRepoWithTags(): { dir: string; shaByTag: Record<string, st
 }
 
 /**
+ * Creates a temp dir and sets HARNESS_HOME to it (call in beforeEach). Tests must never
+ * touch the real ~/.harness.
+ *
+ * @returns Its absolute path.
+ */
+export function mkHarnessHome(): string {
+  const dir = mkdtempSync(join(tmpdir(), "harness-home-"));
+  process.env["HARNESS_HOME"] = dir;
+  return dir;
+}
+
+/**
+ * Removes a temp harness home and unsets the env var.
+ *
+ * @param props.dir - Path from mkHarnessHome.
+ * @returns Nothing.
+ */
+export function rmHarnessHome(props: { dir: string }): void {
+  rmSync(props.dir, { recursive: true, force: true });
+  delete process.env["HARNESS_HOME"];
+}
+
+/**
  * Runs the CLI in-process with argv and a working directory, capturing output.
  * In-process (not subprocess) so tests are fast and coverage attributes correctly.
  *

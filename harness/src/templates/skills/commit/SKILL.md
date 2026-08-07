@@ -33,7 +33,7 @@ harness_model_role: smol
    why — never a file list).
 5. **Update project documents** (consult `manifest.json#modules`; proposal §12 step 3):
    - `docs/product/roadmap.md` — tick milestone tasks completed this session (modules.roadmap)
-   - `docs/tasks.md` — move finished tasks to "## Recently Done" (modules.tasks)
+   - `docs/tasks.md` — run `harness tasks move "<title>" --to done` per finished task (modules.tasks)
    - `docs/decisions/` — if today's "Decisions made" holds an architectural decision not yet
      recorded, ask whether to write an ADR now (modules.decisions)
    - new files created this session → run `harness struct` (refreshes directory-structure.md)

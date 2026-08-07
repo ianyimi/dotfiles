@@ -63,3 +63,17 @@ Data: `{ "mission_md": "<markdown>", "roadmap_md": "<markdown, optional>" }`
 ## Phase 10 — Generate + Sync
 
 No data — run `harness init finish`, then sync/index if available.
+
+## Questions that remain under a template
+
+| Phase | Under a template |
+|---|---|
+| 1 | Name + description — always asked |
+| 2 | Purpose + team — asked (unless a hand-edited template pins `team`) |
+| 3 | Confirm-only (staged domains) |
+| 4 | Tech-stack confirm — inference-driven, always |
+| 5 | Env var names, ports, dev commands — always asked |
+| 6 | Dependency VERSION confirm — names/repos staged, versions re-resolved here |
+| 7 | Confirm-only (staged workflow/modules/platforms) |
+| 8 | Naming CONFIRMATION — the seeded naming-conventions.md is presented for confirm-or-edit |
+| 9 | Mission + roadmap — always asked |

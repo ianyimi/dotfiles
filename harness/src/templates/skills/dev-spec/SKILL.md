@@ -22,6 +22,7 @@ harness_model_role: slow
    code in the spec — then `anti-patterns.md`, `preferences.md`, then the domain files from
    `harness context`. Note existing patterns to mirror.
 3. **Edge cases** — present design questions, edge cases, scope check. Confirm in/out of scope.
+   Renaming/removing anything that exists? Load `.agent/skills/shared-references/cascade-checks.md`.
 4. **Build order** — load `references/build-order.md`; order task groups by its rules.
 5. **spec-tasks.md** — run `harness spec new "<slug>"`; fill spec-tasks.md with ordered task
    groups, each with `Why:` and `Verify:`. Show the developer. "Just the tasks"? Stop and wait.
@@ -34,4 +35,5 @@ harness_model_role: slow
 8. **Review build order** — build+test runnable after every step? Every step tagged
    `[dev]`/`[agent]`? Files in declaration-before-consumer order?
 9. **Present + update tasks** — spec path, agent/dev split, build-order summary; set frontmatter
-   `touches:` to the paths it will change; move the task to "In Progress" in `docs/tasks.md`.
+   `touches:` to the paths it will change; run `harness tasks move "<task title>" --to in-progress`
+   (on task-not-found: `harness tasks add "<spec title>" --to in-progress`).
