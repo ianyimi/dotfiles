@@ -110,6 +110,30 @@ describe("init write-phase", () => {
     const finish = await runCli({ argv: ["init", "finish"], cwd: dir });
     expect(finish.code).toBe(0);
     expect(finish.stdout).toContain("harness initialized for sample-app");
+    expect(finish.stdout).toContain("setup-report.md");
+
+    // 09: guide + setup report written; report reflects the confirmed config; no stray tokens.
+    const guide = readFileSync(join(dir, ".agent/docs/harness-guide.md"), "utf8");
+    expect(guide).toContain("# Agent Harness Guide — sample-app");
+    expect(guide).toContain("Where knowledge goes");
+    expect(guide).not.toContain("{{");
+    const report = readFileSync(join(dir, ".agent/docs/setup-report.md"), "utf8");
+    expect(report).toContain("# Harness Setup Report — sample-app");
+    expect(report).toContain("- **Standards domains**: backend, testing");
+    expect(report).toContain("## What discovery found");
+
+    // The guide is maintained, not regenerated: a hand edit survives a re-finish.
+    writeFileSync(join(dir, ".agent/docs/harness-guide.md"), `${guide}\nHAND EDIT\n`);
+    writeFileSync(join(dir, ".agent/.setup-progress.md"), readFileSync(join(dir, ".agent/AGENTS.md"), "utf8")); // fake progress to re-run finish
+    const progressTemplate = [
+      "# Harness Setup Progress",
+      ...Array.from({ length: 9 }, (_, i) => `- [x] Phase ${i + 1} — X`),
+      "- [ ] Phase 10 — Generate + Sync",
+      "## Collected Data",
+    ].join("\n");
+    writeFileSync(join(dir, ".agent/.setup-progress.md"), progressTemplate);
+    await runCli({ argv: ["init", "finish"], cwd: dir });
+    expect(readFileSync(join(dir, ".agent/docs/harness-guide.md"), "utf8")).toContain("HAND EDIT");
 
     const { manifest } = loadManifest({ root: dir });
     expect(manifest.project).toBe("sample-app");

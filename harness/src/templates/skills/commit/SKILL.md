@@ -31,20 +31,18 @@ harness_model_role: smol
    `references/session-log-format.md`; if type/scope/title reads wrong, edit
    `.agent/docs/session-log/YYYY/MM/YYYY-MM-DD.commit.md` directly (title ≤ 72 chars, body says
    why — never a file list).
-5. **Update project documents** (consult `manifest.json#modules`; proposal §12 step 3):
-   - `docs/product/roadmap.md` — tick milestone tasks completed this session (modules.roadmap)
-   - `docs/tasks.md` — run `harness tasks move "<title>" --to done` per finished task (modules.tasks)
-   - `docs/decisions/` — if today's "Decisions made" holds an architectural decision not yet
-     recorded, ask whether to write an ADR now (modules.decisions)
-   - new files created this session → run `harness struct` (refreshes directory-structure.md)
-   Collect every change for the step-8 summary. Nothing is silently changed.
-6. **Regenerate state.** Run `harness state`.
-7. **Commit — by mode.**
+5. **The gate.** Load `references/commit-checklist.md` (customized for this project at init).
+   Run every "Must pass" item — report each ✅/🔴 — and PERFORM every "Must be current" update.
+   Any failure → present the failures and STOP: do not present the commit message unless the
+   developer explicitly waives the failing items (record a waiver line in today's session-log
+   entry via `harness log append` machinery). Nothing is silently changed; collect every update
+   for the step-7 summary.
+6. **Commit — by mode.**
    - `message-only`: present the message ready to copy. The developer stages + commits via
      lazygit and pastes it. Do NOT run `git commit`.
    - `agent-commits`: show `git status --porcelain`; confirm the exact file list with the
      developer (structured question tool). On confirmation:
      `git add <files> && git commit -F .agent/docs/session-log/YYYY/MM/YYYY-MM-DD.commit.md`,
      then `harness log backfill-sha --sha "$(git rev-parse HEAD)"`.
-8. **Summary.** "Updated: [files]. Needs your attention: [list]." Include the commit message
+7. **Summary.** "Updated: [files]. Needs your attention: [list]." Include the commit message
    (message-only) or the new commit SHA (agent-commits).

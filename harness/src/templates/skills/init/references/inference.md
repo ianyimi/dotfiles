@@ -2,6 +2,20 @@
 
 Read these sources per phase; present inferences for confirmation instead of asking.
 
+## Existing agent setups (mine FIRST — highest signal)
+
+An existing `.pi/`, `.claude/`, `CLAUDE.md`, `AGENTS.md`, or `.cursorrules` records how this
+project already wants to be worked on. Per phase:
+
+- `.pi/agent-docs/product/tech-stack.md` → phase 4 draft
+- `.pi/agent-docs/product/dev-processes.md` → phase 5 draft (+ env vars)
+- `.pi/agent-docs/product/mission.md`, `roadmap.md` → phase 9 draft
+- `.pi/agent-docs/standards/*` → discovery-pass content (preferences/anti-patterns/debug refs)
+- `.claude/commands/*.md`, `CLAUDE.md` → workflow expectations (phase 7) + discovery content
+
+Present mined drafts as "found in your existing setup — confirm or correct". Never delete the
+old trees — the developer removes them after verifying the new harness.
+
 ## Manifest files (Phase 1, 4, 6)
 
 - `package.json` — name, scripts, dependencies, workspaces; `pnpm-workspace.yaml`, `turbo.json`

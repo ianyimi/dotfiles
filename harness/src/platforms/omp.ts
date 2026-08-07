@@ -71,6 +71,19 @@ export default function (pi: HookAPI) {
 }
 `;
 
+/** Slash-command shim: `.omp/prompts/<name>.md` → `/name` (09 D09-1; OMP prompts parse
+ * `description` frontmatter and support $ARGUMENTS). */
+function promptShim(props: { name: string; description: string }): string {
+  return `---
+description: ${props.description}
+---
+
+${GENERATED_MARKER}
+Invoke the \`${props.name}\` skill: read \`.agent/skills/${props.name}/SKILL.md\` and follow it exactly,
+starting with its Preflight. Arguments: $ARGUMENTS
+`;
+}
+
 /** Anti-pattern TTSR rules file, generated only when opt-in pattern: lines exist. */
 function rulesFile(props: { regexes: string[] }): string {
   return `---
@@ -105,6 +118,12 @@ export const ompAdapter: PlatformAdapter = {
         path: `.omp/agents/${skill.name}.md`,
         content: agentFile({ name: skill.name, description, role }),
       });
+    }
+
+    for (const skill of [...ctx.skills].sort((a, b) => (a.name < b.name ? -1 : 1))) {
+      const description = skill.frontmatter["description"];
+      if (typeof description !== "string" || description === "") continue;
+      files.push({ path: `.omp/prompts/${skill.name}.md`, content: promptShim({ name: skill.name, description }) });
     }
 
     for (const rule of ctx.contextRules ?? []) {

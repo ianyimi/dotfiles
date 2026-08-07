@@ -17,6 +17,7 @@ Sessions → session-log/.
 
 ## Pointers
 
+- Harness guide (read before editing `.agent/`): `.agent/docs/harness-guide.md`
 - Mission: `.agent/docs/product/mission.md`
 - Tech stack: `.agent/docs/product/tech-stack.md`
 - Dev processes: `.agent/docs/product/dev-processes.md`

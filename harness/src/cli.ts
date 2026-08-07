@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { CHECKS } from "./checks/index.ts";

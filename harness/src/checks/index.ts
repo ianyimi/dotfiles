@@ -1,6 +1,7 @@
 import type { DoctorCheck } from "../commands/doctor.ts";
 import agentsMdDirectivesOverBudget from "./agentsMdDirectivesOverBudget.ts";
 import antiPatternsOverBudget from "./antiPatternsOverBudget.ts";
+import contextCoverage from "./contextCoverage.ts";
 import contextRulesStale from "./contextRulesStale.ts";
 import decisionsInconsistent from "./decisionsInconsistent.ts";
 import envVarsUndocumented from "./envVarsUndocumented.ts";
@@ -35,4 +36,5 @@ export const CHECKS: DoctorCheck[] = [
   shimsStale,
   contextRulesStale,
   staleDependencies,
+  contextCoverage,
 ];

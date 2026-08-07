@@ -29,6 +29,18 @@ Three developer-experience gaps closed:
    answers (a sensible default ships so commit works pre-customization), and the commit skill
    runs every checklist item and refuses to present the message until all pass or the developer
    explicitly waives them.
+5. **The setup report** (added 2026-08-07). `init finish` writes `docs/setup-report.md` — a
+   developer-facing explanation of everything configured (platforms, modules, domains, workflow,
+   commit gate) and how agents will use the harness, with a "review this and request changes"
+   framing; the init skill appends its discovery findings and presents the path as its last act.
+6. **Migration-by-init** (replaces runbook execution as the default path). The init skill's
+   inference explicitly mines EXISTING agent setups — `.pi/agent-docs/**`, `.claude/commands/`,
+   `CLAUDE.md`/`AGENTS.md` files — as primary draft sources per phase; the developer runs
+   `/harness-init` per project themselves and deletes old trees afterward (08's runbook remains
+   the reference for what maps where and what is safe to delete).
+7. **Distribution-lite.** `src/cli.ts` gets a `#!/usr/bin/env bun` shebang and the package is
+   globally linkable (`bun link` → a `harness` command on PATH, running from this source tree);
+   `harness/README.md` documents install + the command surface. Compiled binaries stay deferred.
 
 ## Design Decisions
 

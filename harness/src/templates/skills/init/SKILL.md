@@ -40,12 +40,29 @@ For each phase, in order:
    Never accumulate phases — progress must survive context compaction.
 
 Phase 8 (naming conventions) applies to high-care projects; for low-care projects confirm the
-skip and submit `{ "naming_conventions_md": "" }`. See `references/naming-interview.md`
-(available once spec 02 skills are installed) for the question set.
+skip and submit `{ "naming_conventions_md": "" }`. See `references/naming-interview.md` for the
+question set.
+
+## Commit gate (after phase 9)
+
+`/commit` is the final command before code goes upstream. Show the developer the default
+checklist (`.agent/skills/commit/references/commit-checklist.md`, installed by scaffold),
+pre-filled with THIS project's build/test commands from phase 5 and module-gated items from
+phase 7. Ask: what else must be checked or updated on every commit? What should be removed?
+Write the result back to that file.
+
+## Discovery pass (after the commit gate, before finish)
+
+Read `references/discovery.md`. Mine any EXISTING agent setup first (`.pi/agent-docs/**`,
+`.claude/commands/`, `CLAUDE.md`/`AGENTS.md` files), then sweep the ENTIRE codebase domain by
+domain and write observed practices into `docs/standards/` with `applies_to` globs. Present a
+summary of every file created or extended before moving on.
 
 ## Finish (phase 10)
 
-1. `harness init finish` — validates phases 1–9, writes the real AGENTS.md, deletes progress.
-2. Run `harness sync` if available (generates platform bridges), then `harness index rebuild`
-   if available.
-3. Report: what was created, what the developer can delete from any old harness, next steps.
+1. `harness init finish` — validates phases 1–9, writes the real AGENTS.md + the harness guide
+   + `docs/setup-report.md`, deletes progress.
+2. Run `harness sync` (bridges + code map), then `harness index rebuild` + `harness struct`.
+3. Append your discovery summary to `docs/setup-report.md` (its final section), then present
+   the report path to the developer: it explains everything configured and how agents will use
+   the harness — invite questions, corrections, and change requests.

@@ -83,7 +83,22 @@ describe("ompAdapter.plan", () => {
       ".omp/instructions/naming-2.instructions.md",
       ".omp/instructions/std-backend-0.instructions.md",
       ".omp/instructions/std-backend-1.instructions.md",
+      ".omp/prompts/dev-spec.md",
+      ".omp/prompts/implement.md",
     ]);
+  });
+
+  test("prompt shims: one per described skill, /init keeps its name on OMP", () => {
+    const shim = file(".omp/prompts/dev-spec.md") as string;
+    expect(shim).toContain("description: Write a scoped implementation spec.");
+    expect(shim).toContain("Invoke the `dev-spec` skill");
+    expect(shim).toContain("$ARGUMENTS");
+    const ctx2 = {
+      ...ctx,
+      skills: [...ctx.skills, { name: "init", dir: ".agent/skills/init", frontmatter: { name: "init", description: "Init the harness." } }],
+    };
+    const paths = ompAdapter.plan({ ctx: ctx2 }).files.map((f) => f.path);
+    expect(paths).toContain(".omp/prompts/init.md");
   });
 
   test("goldens: agent / instructions / config / hook", () => {

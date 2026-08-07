@@ -113,6 +113,8 @@ const OMP_FILES = [
   ".omp/instructions/naming-2.instructions.md",
   ".omp/instructions/std-backend-0.instructions.md",
   ".omp/instructions/std-backend-1.instructions.md",
+  ".omp/prompts/dev-spec.md",
+  ".omp/prompts/implement.md",
 ];
 
 function syncedFixture(): string {
@@ -147,7 +149,7 @@ describe("runSync engine", () => {
     expect(gitignore).toContain(".agent/dependencies/*\n.claude/\n.omp/");
 
     const sm = loadSyncManifest({ root: dir });
-    expect(sm.entries).toHaveLength(18); // 12 generated + 3 symlinks + 3 gitignore-lines
+    expect(sm.entries).toHaveLength(22); // 16 generated (incl. 4 command shims) + 3 symlinks + 3 gitignore-lines
     expect(sm.generated_at_sha).toMatch(/^[0-9a-f]{40}$/);
     const paths = sm.entries.map((e) => e.path);
     expect(paths).toEqual([...paths].sort());

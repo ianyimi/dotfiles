@@ -40,15 +40,36 @@ const SETTINGS_GOLDEN = `{
 `;
 
 describe("claudeAdapter.plan", () => {
-  test("symlink, goldens, gitignore", () => {
+  test("symlink, goldens, command shims, gitignore", () => {
     const dir = mkTmpProject({ fixture: "initialized" });
     const { ctx } = loadProjectContext({ root: dir });
     const plan = claudeAdapter.plan({ ctx });
+    const file = (p: string) => plan.files.find((f) => f.path === p)?.content;
     expect(plan.symlinks).toEqual([{ linkPath: ".claude/skills", targetPath: ".agent/skills" }]);
-    expect(plan.files.map((f) => f.path)).toEqual([".claude/CLAUDE.md", ".claude/settings.json"]);
-    expect(plan.files[0]?.content).toBe(CLAUDE_MD_GOLDEN);
-    expect(plan.files[1]?.content).toBe(SETTINGS_GOLDEN);
+    expect(plan.files.map((f) => f.path)).toEqual([
+      ".claude/CLAUDE.md",
+      ".claude/commands/dev-spec.md",
+      ".claude/commands/implement.md",
+      ".claude/settings.json",
+    ]);
+    expect(file(".claude/CLAUDE.md")).toBe(CLAUDE_MD_GOLDEN);
+    expect(file(".claude/settings.json")).toBe(SETTINGS_GOLDEN);
+    expect(file(".claude/commands/dev-spec.md")).toContain("Invoke the `dev-spec` skill");
+    expect(file(".claude/commands/dev-spec.md")).toContain("$ARGUMENTS");
     expect(plan.gitignoreLines).toEqual([".claude/"]);
+    rmProject({ dir });
+  });
+
+  test("init skill ships as /harness-init (builtin /init collision)", () => {
+    const dir = mkTmpProject({ fixture: "initialized" });
+    const { ctx } = loadProjectContext({ root: dir });
+    const ctx2 = {
+      ...ctx,
+      skills: [...ctx.skills, { name: "init", dir: ".agent/skills/init", frontmatter: { name: "init", description: "Init the harness." } }],
+    };
+    const paths = claudeAdapter.plan({ ctx: ctx2 }).files.map((f) => f.path);
+    expect(paths).toContain(".claude/commands/harness-init.md");
+    expect(paths).not.toContain(".claude/commands/init.md");
     rmProject({ dir });
   });
 });
