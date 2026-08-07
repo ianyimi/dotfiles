@@ -14,6 +14,7 @@ NC='\033[0m'
 # Configuration
 GITHUB_USERNAME="ianyimi"
 REPO_URL="https://github.com/${GITHUB_USERNAME}/dotfiles"
+BRANCH="${DOTFILES_BRANCH:-feat/arch}"  # Change default to "master" for production; override: DOTFILES_BRANCH=x bash bootstrap.sh
 
 echo -e "${CYAN}${BOLD}═══════════════════════════════════════${NC}"
 echo -e "${CYAN}${BOLD}   Universal Dotfiles Bootstrap${NC}"
@@ -23,6 +24,14 @@ echo ""
 # Detect OS
 OS="$(uname -s)"
 ARCH="$(uname -m)"
+
+# Detect Arch-based distro (CachyOS, Arch, etc.)
+IS_ARCH=false
+if [[ "$OS" == "Linux" ]]; then
+    if [[ -f /etc/arch-release ]] || grep -qi 'arch\|cachyos' /etc/os-release 2>/dev/null; then
+        IS_ARCH=true
+    fi
+fi
 
 # Setup PATH for tools that might already be installed
 # This ensures command -v checks work even when running via curl | bash
@@ -113,8 +122,11 @@ install_chezmoi() {
             fi
             ;;
         Linux*)
-            # Linux
-            if command -v snap &>/dev/null; then
+            # Linux (check pacman first — CachyOS/Arch have no snap)
+            if command -v pacman &>/dev/null; then
+                # Arch/CachyOS
+                sudo pacman -S --needed --noconfirm chezmoi
+            elif command -v snap &>/dev/null; then
                 sudo snap install chezmoi --classic
             elif command -v apt-get &>/dev/null; then
                 # Debian/Ubuntu
@@ -123,9 +135,6 @@ install_chezmoi() {
             elif command -v dnf &>/dev/null; then
                 # Fedora
                 sudo dnf install -y chezmoi
-            elif command -v pacman &>/dev/null; then
-                # Arch
-                sudo pacman -S --noconfirm chezmoi
             else
                 # Fallback to official installer
                 sh -c "$(curl -fsLS get.chezmoi.io)"
@@ -148,45 +157,149 @@ install_chezmoi() {
     echo -e "${GREEN}✓${NC} chezmoi installed successfully"
 }
 
-# Function to setup Tailscale (must connect before Bitwarden for self-hosted access)
-setup_tailscale() {
+# Function to install Linux prerequisites (Arch/CachyOS)
+install_prerequisites_linux() {
+    if $IS_ARCH; then
+        echo -e "${YELLOW}→${NC} Installing prerequisites (git, base-devel, curl, ansible)..."
+        sudo pacman -S --needed --noconfirm git base-devel curl ansible
+        echo -e "${GREEN}✓${NC} Prerequisites installed"
+    else
+        # Non-Arch Linux: just ensure git exists
+        if ! command -v git &>/dev/null; then
+            echo -e "${RED}✗${NC} git not found. Install git with your package manager and re-run."
+            exit 1
+        fi
+        echo -e "${GREEN}✓${NC} git available"
+    fi
+}
+
+# Function to setup Tailscale on Linux (systemd)
+setup_tailscale_linux() {
     echo ""
     echo -e "${BLUE}Setting up Tailscale...${NC}"
 
-    # Install Tailscale CLI if not present
+    # Install Tailscale if not present
     if ! command -v tailscale &>/dev/null; then
         echo -e "${YELLOW}→${NC} Installing Tailscale..."
-        brew install tailscale
+        if $IS_ARCH; then
+            sudo pacman -S --needed --noconfirm tailscale
+        else
+            curl -fsSL https://tailscale.com/install.sh | sh
+        fi
         echo -e "${GREEN}✓${NC} Tailscale installed"
     else
         echo -e "${GREEN}✓${NC} Tailscale already installed"
     fi
 
-    # Check if already connected - tailscale status returns 0 when connected
+    # Enable + start the daemon
+    if ! systemctl is-active --quiet tailscaled; then
+        echo -e "${YELLOW}→${NC} Enabling tailscaled service..."
+        sudo systemctl enable --now tailscaled
+        sleep 2
+    else
+        echo -e "${GREEN}✓${NC} tailscaled already running"
+    fi
+
+    # Check if already connected
     if tailscale status &>/dev/null; then
         echo -e "${GREEN}✓${NC} Tailscale already connected"
         return 0
     fi
 
-    # Not connected - need to start service and authenticate
-    # Only start service if not already running (check without sudo to avoid password prompt)
-    if ! pgrep -f "io.tailscale" &>/dev/null && ! pgrep -f "tailscaled" &>/dev/null; then
-        echo -e "${YELLOW}→${NC} Starting Tailscale service..."
-        sudo brew services start tailscale
-        sleep 2
-    else
-        echo -e "${GREEN}✓${NC} Tailscale service already running"
-    fi
-
-    # Authenticate with Tailscale
+    # Authenticate
     echo ""
     echo -e "${YELLOW}→${NC} Tailscale authentication required"
     echo "  A login URL will be displayed below."
     echo "  Open it in your browser and authenticate to continue."
     echo ""
+    sudo tailscale up --accept-routes
 
-    # tailscale login prints URL and waits for authentication to complete
-    sudo tailscale login --accept-routes
+    echo -e "${GREEN}✓${NC} Tailscale connected"
+}
+
+# Function to setup Tailscale (must connect before Bitwarden for self-hosted access)
+setup_tailscale() {
+    echo ""
+    echo -e "${BLUE}Setting up Tailscale...${NC}"
+
+    case "$OS" in
+        Darwin*)
+            # macOS - use Homebrew
+            if ! command -v tailscale &>/dev/null; then
+                echo -e "${YELLOW}→${NC} Installing Tailscale..."
+                brew install tailscale
+                echo -e "${GREEN}✓${NC} Tailscale installed"
+            else
+                echo -e "${GREEN}✓${NC} Tailscale already installed"
+            fi
+
+            # Check if already connected - tailscale status returns 0 when connected
+            if tailscale status &>/dev/null; then
+                echo -e "${GREEN}✓${NC} Tailscale already connected"
+                return 0
+            fi
+
+            # Not connected - need to start service and authenticate
+            # Only start service if not already running (check without sudo to avoid password prompt)
+            if ! pgrep -f "io.tailscale" &>/dev/null && ! pgrep -f "tailscaled" &>/dev/null; then
+                echo -e "${YELLOW}→${NC} Starting Tailscale service..."
+                sudo brew services start tailscale
+                sleep 2
+            else
+                echo -e "${GREEN}✓${NC} Tailscale service already running"
+            fi
+
+            # Authenticate with Tailscale
+            echo ""
+            echo -e "${YELLOW}→${NC} Tailscale authentication required"
+            echo "  A login URL will be displayed below."
+            echo "  Open it in your browser and authenticate to continue."
+            echo ""
+
+            # tailscale login prints URL and waits for authentication to complete
+            sudo tailscale login --accept-routes
+            ;;
+
+        Linux*)
+            # Linux - use official installer
+            if ! command -v tailscale &>/dev/null; then
+                echo -e "${YELLOW}→${NC} Installing Tailscale..."
+                # Use curl if available, otherwise wget
+                if command -v curl &>/dev/null; then
+                    curl -fsSL https://tailscale.com/install.sh | sh
+                else
+                    wget -qO- https://tailscale.com/install.sh | sh
+                fi
+                echo -e "${GREEN}✓${NC} Tailscale installed"
+            else
+                echo -e "${GREEN}✓${NC} Tailscale already installed"
+            fi
+
+            # Check if already connected
+            if tailscale status &>/dev/null; then
+                echo -e "${GREEN}✓${NC} Tailscale already connected"
+                return 0
+            fi
+
+            # Start service if not running
+            if ! systemctl is-active --quiet tailscaled; then
+                echo -e "${YELLOW}→${NC} Starting Tailscale service..."
+                sudo systemctl enable --now tailscaled
+                sleep 2
+            else
+                echo -e "${GREEN}✓${NC} Tailscale service already running"
+            fi
+
+            # Authenticate with Tailscale
+            echo ""
+            echo -e "${YELLOW}→${NC} Tailscale authentication required"
+            echo "  A login URL will be displayed below."
+            echo "  Open it in your browser and authenticate to continue."
+            echo ""
+
+            sudo tailscale up --accept-routes
+            ;;
+    esac
 
     echo -e "${GREEN}✓${NC} Tailscale connected"
 }
@@ -202,7 +315,16 @@ setup_bitwarden() {
     # Install Bitwarden CLI if not present
     if ! command -v bw &>/dev/null; then
         echo -e "${YELLOW}→${NC} Installing Bitwarden CLI..."
-        brew install bitwarden-cli
+        if [[ "$OS" == "Darwin"* ]]; then
+            brew install bitwarden-cli
+        elif $IS_ARCH; then
+            sudo pacman -S --needed --noconfirm bitwarden-cli
+        elif command -v npm &>/dev/null; then
+            npm install -g @bitwarden/cli
+        else
+            echo -e "${RED}✗${NC} Cannot install Bitwarden CLI (no pacman/npm). Install manually and re-run."
+            exit 1
+        fi
         echo -e "${GREEN}✓${NC} Bitwarden CLI installed"
     else
         echo -e "${GREEN}✓${NC} Bitwarden CLI already installed"
@@ -342,15 +464,16 @@ init_chezmoi() {
     export GITHUB_USERNAME="$GITHUB_USER"
 
     # Initialize and apply dotfiles
-    if chezmoi init --apply "$REPO_URL"; then
+    if chezmoi init --apply --branch "$BRANCH" "$REPO_URL"; then
         echo -e "${GREEN}✓${NC} Dotfiles initialized and applied"
     else
         echo -e "${RED}✗${NC} Failed to initialize dotfiles"
-        echo "You can try manually with: chezmoi init --apply $REPO_URL"
+        echo "You can try manually with: chezmoi init --apply --branch $BRANCH $REPO_URL"
         exit 1
     fi
 }
 
+# Function to run Linux setup
 # Function to run OS-specific setup
 run_os_setup() {
     echo ""
@@ -371,14 +494,24 @@ run_os_setup() {
                 fi
             else
                 echo -e "${YELLOW}⚠${NC}  apConfig not found at $APCONFIG_PATH"
-                echo "    Reload your shell and run 'apConfig' to complete setup."
+                echo "    Run: bash ~/.local/bin/apConfig   (works from any shell)"
             fi
             ;;
         Linux*)
-            # Linux
+            # Linux (CachyOS/Arch)
             echo "Running Linux setup..."
-            echo -e "${YELLOW}⚠${NC}  Linux-specific setup not yet implemented"
-            echo "Please check your dotfiles for Linux-specific run_once scripts"
+
+            APCONFIG_PATH="$HOME/.local/bin/apConfig"
+            if [ -x "$APCONFIG_PATH" ]; then
+                echo -e "${YELLOW}→${NC} Found apConfig script"
+                read -p "Do you want to run the full system configuration now? (y/n): " RUN_CONFIG </dev/tty
+                if [[ ! "$RUN_CONFIG" =~ ^[Nn]$ ]]; then
+                    "$APCONFIG_PATH"
+                fi
+            else
+                echo -e "${YELLOW}⚠${NC}  apConfig not found at $APCONFIG_PATH"
+                echo "    Run: bash ~/.local/bin/apConfig   (works from any shell, including fish)"
+            fi
             ;;
         *)
             echo -e "${YELLOW}⚠${NC}  No OS-specific setup available for $OS"
@@ -424,17 +557,49 @@ main() {
         echo ""
         echo -e "${CYAN}${BOLD}[6/6] Running OS-specific setup...${NC}"
         run_os_setup
-    else
-        echo -e "${CYAN}${BOLD}[1/3] Installing chezmoi...${NC}"
+    elif [[ "$OS" == "Linux"* ]]; then
+        echo -e "${CYAN}${BOLD}[1/5] Installing prerequisites...${NC}"
+        install_prerequisites_linux
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[2/5] Installing chezmoi...${NC}"
         install_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[2/3] Initializing dotfiles...${NC}"
+        echo -e "${CYAN}${BOLD}[3/5] Setting up Tailscale...${NC}"
+        setup_tailscale_linux
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[4/5] Initializing dotfiles...${NC}"
         init_chezmoi
 
         echo ""
-        echo -e "${CYAN}${BOLD}[3/3] Running OS-specific setup...${NC}"
+        echo -e "${CYAN}${BOLD}[5/5] Running OS-specific setup...${NC}"
         run_os_setup
+    else
+        # Linux
+        echo -e "${CYAN}${BOLD}[1/5] Installing chezmoi...${NC}"
+        install_chezmoi
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[2/5] Setting up Tailscale...${NC}"
+        setup_tailscale
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[3/5] Initializing dotfiles...${NC}"
+        init_chezmoi
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[4/5] Running OS-specific setup...${NC}"
+        run_os_setup
+
+        echo ""
+        echo -e "${CYAN}${BOLD}[5/5] Starting Hyprland session (optional)...${NC}"
+        if command -v Hyprland &>/dev/null; then
+            echo -e "${GREEN}✓${NC} Hyprland is installed"
+            echo "  To start Hyprland, log out and select Hyprland from your display manager"
+            echo "  Or run 'Hyprland' from a TTY"
+        fi
     fi
 
     echo ""
@@ -443,12 +608,20 @@ main() {
     echo -e "${GREEN}${BOLD}═══════════════════════════════════════${NC}"
     echo ""
     echo -e "${BLUE}Next steps:${NC}"
-    echo "  1. Restart your terminal or run: source ~/.zshrc (or ~/.bashrc)"
-    echo "  2. If apConfig didn't run automatically, run: apConfig"
-    echo "  3. Your secrets will be populated from Bitwarden"
+    if [[ "$OS" == "Linux"* ]]; then
+        echo "  1. Log out and log back in — your login shell switches to zsh and"
+        echo "     Hyprland picks up the new config cleanly"
+        echo "  2. If apConfig didn't run automatically: bash ~/.local/bin/apConfig"
+        echo "  3. Your secrets will be populated from Bitwarden"
+        echo "  4. Steam: enable Proton in Steam > Settings > Compatibility"
+    else
+        echo "  1. Restart your terminal or run: source ~/.zshrc"
+        echo "  2. If apConfig didn't run automatically, run: apConfig"
+        echo "  3. Your secrets will be populated from Bitwarden"
+    fi
     echo ""
-    echo -e "${YELLOW}Tip:${NC} You can re-run this script anytime with:"
-    echo "  curl -fsSL https://raw.githubusercontent.com/$GITHUB_USERNAME/dotfiles/master/bootstrap.sh | bash"
+    echo -e "${YELLOW}Tip:${NC} You can re-run this script anytime with (any shell):"
+    echo "  curl -fsSL https://raw.githubusercontent.com/$GITHUB_USERNAME/dotfiles/$BRANCH/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh"
     echo ""
 }
 

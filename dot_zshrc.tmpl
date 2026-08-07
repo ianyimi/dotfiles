@@ -14,7 +14,11 @@ alias .......="cd ../../../../../../../"
 
 alias claude="echo 'Use specific commands: claude-maprios or claude-zaye'"
 alias claude-maprios="unset ANTHROPIC_API_KEY && CLAUDE_CONFIG_DIR=~/.claude-maprios ~/.claude-maprios/local/claude"
+{{ if eq .chezmoi.os "darwin" -}}
 alias claude-zaye="unset ANTHROPIC_API_KEY && CLAUDE_CONFIG_DIR=~/.claude-zaye /opt/homebrew/bin/claude"
+{{ else -}}
+alias claude-zaye="unset ANTHROPIC_API_KEY && CLAUDE_CONFIG_DIR=~/.claude-zaye claude"
+{{ end -}}
 
 alias aocp="~/agent-os/scripts/create-profile.sh && chezmoi add ~/agent-os && echo 'Added new profile to dotfiles'"
 alias aopi="~/agent-os/scripts/project-install.sh"
@@ -57,9 +61,14 @@ alias nrd="npm run dev"
 alias nrb="npm run build"
 alias nrs="npm run start"
 alias nrt="npm run test"
+{{ if eq .chezmoi.os "darwin" -}}
 alias ocu="brew update && brew upgrade opencode"
 
 alias skr="brew services restart sketchybar"
+{{ else -}}
+# Linux (CachyOS/Arch) system update
+alias up="paru -Syu"
+{{ end -}}
 
 alias spotify="source spotdl/bin/activate"
 alias spotifydl="spotify_dl -o ~/Downloads/ -s y -l"
@@ -67,7 +76,11 @@ alias spotifydl="spotify_dl -o ~/Downloads/ -s y -l"
 alias tmks="tmux kill-session"
 alias tmkS="tmux kill-server"
 
+{{ if eq .chezmoi.os "darwin" -}}
 alias apConfig="ansible-playbook ~/.bootstrap/macos.yml --ask-become-pass"
+{{ else -}}
+alias apConfig="ansible-playbook ~/.bootstrap/cachyos.yml --ask-become-pass"
+{{ end -}}
 
 alias cdConfig="cd ~/.config"
 alias cdDesktop="cd ~/Desktop"
@@ -96,6 +109,7 @@ alias lgPortfolio="lazygit -p ~/Desktop/Portfolio24"
 alias cdHome="cd ~/"
 alias nvZsh="nvim ~/.zshrc"
 
+{{ if eq .chezmoi.os "darwin" -}}
 alias nvAero="nvim ~/.aerospace.toml"
 
 # AeroSpace Monitor Daemon aliases
@@ -104,6 +118,11 @@ alias aeromonStop='pkill -f aerospace-monitor-daemon && echo "✅ Daemon stopped
 alias aeromonRestart='pkill -f aerospace-monitor-daemon; sleep 1; chezmoi apply ~/.config/aerospace-monitor/main.swift && cd ~/.config/aerospace-monitor && ./build.sh && ./aerospace-monitor-daemon > daemon.log 2>&1 & echo "✅ Daemon restarted"'
 alias aeromonStatus='pgrep -fl aerospace-monitor-daemon || echo "❌ Daemon not running"'
 alias aeromonLogs='tail -f ~/.config/aerospace-monitor/daemon.log'
+{{ else -}}
+# Hyprland aliases
+alias nvHypr="nvim ~/.config/hypr"
+alias hyprReload="hyprctl reload"
+{{ end -}}
 
 # alias cm update -v="chezmoi git pull -- --autostash --rebase && chezmoi diff"
 # alias cm update --view="chezmoi git pull -- --autostash --rebase && chezmoi diff"
@@ -123,7 +142,11 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # pnpm
+{{ if eq .chezmoi.os "darwin" -}}
 export PNPM_HOME="/Users/zaye/Library/pnpm"
+{{ else -}}
+export PNPM_HOME="$HOME/.local/share/pnpm"
+{{ end -}}
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;
@@ -132,6 +155,7 @@ esac
 PATH=~/.console-ninja/.bin:$PATH
 
 # autocomplete & syntax highlighting
+{{ if eq .chezmoi.os "darwin" -}}
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh
 # fnm
@@ -141,15 +165,27 @@ if [ -d "$FNM_PATH" ]; then
   export PATH="/Users/zay/Library/Application Support/fnm:$PATH"
   eval "`fnm env`"
 fi
+{{ else -}}
+# user-level npm global prefix (set by cachyos.yml ansible playbook)
+export PATH="$HOME/.local/share/npm/bin:$PATH"
+[ -f /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ] && source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+[ -f /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ] && source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+# fnm
+if command -v fnm &>/dev/null; then
+  eval "$(fnm env --use-on-cd --shell zsh)"
+fi
+{{ end -}}
 
 # node-rdkafka openssl var exports
 # export CPPFLAGS="-I/usr/local/opt/openssl/include"
 # export LDFLAGS="-L/usr/local/opt/openssl/lib"
 # export LIBRDKAFKA_ROOT="/usr/local/opt/librdkafka"
 
+{{ if eq .chezmoi.os "darwin" -}}
 export CPPFLAGS="-I/opt/homebrew/opt/openssl@3/include -I/opt/homebrew/include"
 export LDFLAGS="-L/opt/homebrew/opt/openssl@3/lib -L/opt/homebrew/lib"
 export LIBRDKAFKA_ROOT="/opt/homebrew/opt/librdkafka"
+{{ end -}}
 
 export CKJS_LINKING="dynamic"
 export BUILD_LIBRDKAFKA="0"
@@ -159,7 +195,9 @@ bindkey -v
 # Added by Basic Memory installer
 export PATH="$HOME/.local/bin:$PATH"
 
+{{ if eq .chezmoi.os "darwin" -}}
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/zaye/.lmstudio/bin"
 # End of LM Studio CLI section
+{{ end -}}
 

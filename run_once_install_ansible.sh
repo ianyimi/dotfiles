@@ -5,6 +5,10 @@ if command -v ansible >/dev/null 2>&1; then
     exit 0
 fi
 
+install_on_arch() {
+    sudo pacman -S --needed --noconfirm ansible
+}
+
 install_on_fedora() {
     sudo dnf install -y ansible
 }
@@ -21,7 +25,9 @@ install_on_mac() {
 OS="$(uname -s)"
 case "${OS}" in
     Linux*)
-        if [ -f /etc/fedora-release ]; then
+        if [ -f /etc/arch-release ] || grep -qi 'arch\|cachyos' /etc/os-release 2>/dev/null; then
+            install_on_arch
+        elif [ -f /etc/fedora-release ]; then
             install_on_fedora
         elif [ -f /etc/lsb-release ]; then
             install_on_ubuntu

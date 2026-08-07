@@ -35,3 +35,19 @@ BITWARDEN_AUTH_EXPLAINED.md
 CLAWDBOT_FILES_EXPLAINED.md
 INSTALLATION_REVIEW.md
 SETUP_COMPLETE.md
+
+# ── Platform gating ──────────────────────────────────────────
+{{ if ne .chezmoi.os "darwin" }}
+# macOS-only files (never deploy on Linux)
+.aerospace.toml
+.config/sketchybar
+.config/aerospace-monitor
+.glzr
+.bootstrap/macos.yml
+{{ end }}
+{{ if ne .chezmoi.os "linux" }}
+# Linux-only files (never deploy on macOS)
+.config/hypr
+.config/noctalia
+.bootstrap/cachyos.yml
+{{ end }}

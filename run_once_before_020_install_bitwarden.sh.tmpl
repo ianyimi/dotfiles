@@ -1,10 +1,10 @@
-{{- if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 
 # Bitwarden setup is now handled by bootstrap.sh before chezmoi init
 # This script just verifies the setup is complete
 
-echo "=== Verifying Bitwarden CLI ==="
+{{ if eq .chezmoi.os "darwin" }}
+echo "=== Verifying Bitwarden CLI (macOS) ==="
 
 if command -v bw &>/dev/null && bw login --check &>/dev/null; then
     echo "✓ Bitwarden CLI is configured and logged in"
@@ -15,5 +15,24 @@ else
     echo "  bw login <your-email>"
 fi
 
+{{ else if eq .chezmoi.os "linux" }}
+echo "=== Verifying Bitwarden CLI (Linux) ==="
+
+# Bitwarden CLI install is handled by bootstrap.sh (pacman). Idempotent safety net:
+if ! command -v bw &>/dev/null && command -v pacman &>/dev/null; then
+    echo "Installing Bitwarden CLI (pacman)..."
+    sudo pacman -S --needed --noconfirm bitwarden-cli || true
+fi
+
+if command -v bw &>/dev/null && bw login --check &>/dev/null; then
+    echo "✓ Bitwarden CLI is configured and logged in"
+else
+    echo "⚠ Bitwarden CLI not fully configured"
+    echo "  Run the bootstrap script or manually configure with:"
+    echo "  bw config server <your-server-url>"
+    echo "  bw login <your-email>"
+fi
+
+{{ end }}
+
 echo "=== Bitwarden CLI check complete ==="
-{{ end -}}

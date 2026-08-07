@@ -4,11 +4,16 @@ Complete system configuration using chezmoi + Bitwarden for secure secret manage
 
 ## 🚀 Quick Start
 
-On a **brand new Mac** with nothing installed, run this single command:
+On a **brand new Mac or CachyOS (Arch Linux) machine** with nothing installed, run this single command (works from bash, zsh, AND fish):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+curl -fsSL https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh
 ```
+
+> **Note:** the script itself is bash — always run it via `bash /tmp/bootstrap.sh`.
+> Never `source` it or paste its contents into a fish prompt.
+> To install from a branch: replace `master` in the URL (the script's `DOTFILES_BRANCH`
+> default controls which branch chezmoi clones).
 
 Or use chezmoi directly:
 
@@ -24,15 +29,31 @@ sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply https://github.com/ianyimi/
 **Everything else is automatic!**
 
 The bootstrap script will:
-- ✓ Install Homebrew, Xcode Command Line Tools, git
+- ✓ Install Homebrew, Xcode Command Line Tools, git (macOS) / pacman prerequisites (CachyOS)
 - ✓ Install and connect Tailscale (required for Bitwarden access)
 - ✓ Install and configure Bitwarden CLI
 - ✓ Apply all dotfiles with secrets populated from Bitwarden
+- ✓ Run the OS-specific ansible playbook via `apConfig` (`macos.yml` / `cachyos.yml`)
 - ✓ Set up agent-os for AI-powered development workflows
+
+### CachyOS / Linux notes
+
+- Flow: pacman prerequisites → chezmoi → Tailscale (`systemctl enable --now tailscaled` + `tailscale up`) → Bitwarden → `chezmoi init --apply` → `apConfig` (ansible `~/.bootstrap/cachyos.yml`)
+- Hyprland is managed by chezmoi at `~/.config/hypr` (Lua config, Hyprland ≥0.55): aerospace-style keybinds on `ALT` coexist with CachyOS/noctalia system binds on `SUPER`
+- Noctalia is the status bar/launcher/lock/notifications (config at `~/.config/noctalia/config.toml`)
+- **After the script completes: log out and back in once** (login shell → zsh, Hyprland reload, uwsm env). Enable Proton in Steam → Settings → Compatibility manually.
+- Verify window rule classes with `hyprctl clients -j | jq '.[].class'` and fix any `# VERIFY` markers in `cachyos.yml` / hypr configs
+- Requires Vaultwarden ≥ 1.35 on the server (newer Bitwarden CLI login flow)
 
 ---
 
 ## 📋 What Gets Installed
+
+### Applications (CachyOS Linux)
+- GUI: Helium browser, Spotify, Discord, Obsidian, Ghostty
+- Gaming: Steam + gamescope + Proton GE
+- Desktop: Hyprland, noctalia, uwsm, hyprpicker, Nerd Fonts
+- CLI: same core stack as macOS (nvim, tmux, starship, lazygit, gh, fnm, pnpm, pi + extensions)
 
 ### Applications (macOS)
 - Browsers: Arc, Spotify
@@ -360,7 +381,7 @@ Original setup forked from [Logan Donley's dotfiles](https://github.com/logandon
 Use this command to bypass GitHub's CDN cache when testing changes:
 
 ```bash
-curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh && bash /tmp/bootstrap.sh && rm /tmp/bootstrap.sh
+bash -c 'curl -H "Cache-Control: no-cache" -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/bootstrap.sh?$(date +%s)" -o /tmp/bootstrap.sh' && bash /tmp/bootstrap.sh
 ```
 
 ### Reset script
@@ -369,7 +390,7 @@ Interactive reset script with menu or flags.
 
 **Interactive menu (recommended):**
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh
 ```
 
 **Available flags:**
@@ -389,27 +410,27 @@ curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$
 
 `--dotfiles` - Quick reset, removes only dotfiles and chezmoi config. Resets shell to bash.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --dotfiles
 ```
 
 `--apps` - Remove all installed applications (Ghostty, Discord, Spotify, Arc, etc.) and CLI tools.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --apps && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --apps
 ```
 
 `--wm` - Remove window manager tools (Aerospace, SketchyBar, JankyBorders). Restores default macOS menu bar and dock.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --wm && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --wm
 ```
 
 `--all` - Full factory reset. Removes everything including apps, Homebrew, and Xcode CLT.
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --all && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --all
 ```
 
 Multiple flags - Reset everything except Tailscale, Bitwarden, Homebrew, and Xcode CLT (useful for re-testing bootstrap).
 ```bash
-curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh && bash /tmp/reset.sh --dotfiles --apps --wm && rm /tmp/reset.sh
+bash -c 'curl -fsSL "https://raw.githubusercontent.com/ianyimi/dotfiles/master/reset.sh?$(date +%s)" -o /tmp/reset.sh' && bash /tmp/reset.sh --dotfiles --apps --wm
 ```
 
 ---
