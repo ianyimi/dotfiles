@@ -1,0 +1,43 @@
+# Init Inference — What to Detect Before Asking
+
+Read these sources per phase; present inferences for confirmation instead of asking.
+
+## Manifest files (Phase 1, 4, 6)
+
+- `package.json` — name, scripts, dependencies, workspaces; `pnpm-workspace.yaml`, `turbo.json`
+- `Cargo.toml`, `go.mod`, `pyproject.toml`, `Makefile`, `Justfile`
+- Lockfiles reveal the package manager (bun.lock / pnpm-lock.yaml / package-lock.json)
+
+## Language + ecosystem (Phase 1)
+
+Majority file extension under src-like dirs; tsconfig.json → TypeScript; .python-version → Python.
+Repo type: a `.git` FILE (not dir) or `worktrees/` layout suggests bare-git-worktrees.
+
+## Domain proposals (Phase 3)
+
+- react/next/astro/vue in deps → `frontend`
+- server frameworks, DB clients, convex/prisma/drizzle → `backend`
+- vitest/jest/pytest/playwright in devDeps → `testing`
+- playwright/stagehand/puppeteer as a PRIMARY dep → `automation`
+- openai/anthropic/ai SDKs → `ai`
+- terraform/docker-compose/k8s manifests → `infrastructure`
+- shell scripts as the main artifact → `shell`, `tooling`
+
+Never propose a domain with no evidence. An empty standards folder is worse than none.
+
+## Dev processes (Phase 5)
+
+- scripts from package.json/Makefile → command table
+- `.env.example` → env var names (ask for descriptions + which are required)
+- tmuxinator configs / Procfile → session layout
+
+## Dependencies worth cloning (Phase 6)
+
+Recommend cloning when the project deeply extends the library (adapters, plugins, custom
+fields) — not for commodity deps. Open-source only; find the repo URL from the package's
+`repository` field.
+
+## Naming conventions (Phase 8)
+
+Scan existing code before interviewing: component file casing, hook prefixes, test file
+suffixes, folder casing. Only ask about patterns with no examples in the codebase.

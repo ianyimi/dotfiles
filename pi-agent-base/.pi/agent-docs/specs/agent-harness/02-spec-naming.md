@@ -425,6 +425,8 @@ initialized/
 │   │   ├── dev-processes.md
 │   │   ├── mission.md
 │   │   └── tech-stack.md
+│   ├── specs/
+│   │   └── .gitkeep
 │   ├── standards/
 │   │   ├── backend/
 │   │   │   └── api.md
@@ -433,8 +435,6 @@ initialized/
 │   │   ├── index.yml
 │   │   ├── naming-conventions.md
 │   │   └── preferences.md
-│   ├── specs/
-│   │   └── .gitkeep
 │   └── tasks.md
 ├── skills/
 │   └── dev-spec/
