@@ -15,8 +15,27 @@ describe("embedded skill templates", () => {
     .filter((e) => e.isDirectory())
     .map((e) => e.name);
 
-  test("at least the init, dev-spec, and sync-spec skills exist", () => {
-    for (const name of ["init", "dev-spec", "sync-spec"]) expect(skillDirs).toContain(name);
+  test("all embedded skills exist", () => {
+    for (const name of ["init", "dev-spec", "sync-spec", "commit", "debug", "document", "research", "learn"]) {
+      expect(skillDirs).toContain(name);
+    }
+  });
+
+  for (const [name, budget] of [["document", 60], ["research", 60], ["learn", 60]] as const) {
+    test(`router skill ${name} stays within ${budget} non-empty lines`, () => {
+      const text = readFileSync(join(SKILLS_DIR, name, "SKILL.md"), "utf8");
+      expect(text.split("\n").filter((l) => l.trim() !== "").length).toBeLessThanOrEqual(budget);
+      expect(text).toContain("## Preflight");
+    });
+  }
+
+  test("03 references ship with their content anchors", () => {
+    expect(readFileSync(join(SKILLS_DIR, "commit/references/session-log-format.md"), "utf8")).toContain(
+      "**Commit:** (pending)",
+    );
+    expect(readFileSync(join(SKILLS_DIR, "debug/references/debug-hierarchy.md"), "utf8")).toContain(
+      "most-fragile-first",
+    );
   });
 
   for (const skill of readdirSync(SKILLS_DIR, { withFileTypes: true }).filter((e) => e.isDirectory())) {

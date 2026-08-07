@@ -3,7 +3,7 @@ import { writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { gitInit, mkTmpProject, rmProject } from "../../test/helpers.ts";
-import { changedFilesSince, commitsTouching, headCommitDate, headSha, isRepo, recentChangedFiles } from "./git.ts";
+import { changedFilesSince, commitsTouching, headCommitDate, headCommitIso, headSha, isRepo, recentChangedFiles, uncommittedFiles } from "./git.ts";
 
 describe("git wrappers", () => {
   test("safe defaults outside a repo", () => {
@@ -14,6 +14,24 @@ describe("git wrappers", () => {
     expect(commitsTouching({ root: dir, paths: ["src"], sinceDays: 7 })).toBe(0);
     expect(headCommitDate({ root: dir })).toBe("");
     expect(recentChangedFiles({ root: dir, commits: 10 })).toEqual([]);
+    expect(headCommitIso({ root: dir })).toBe("");
+    expect(uncommittedFiles({ root: dir })).toEqual([]);
+    rmProject({ dir });
+  });
+
+  test("headCommitIso returns an ISO timestamp", () => {
+    const dir = mkTmpProject({ fixture: "empty-project" });
+    gitInit({ dir });
+    expect(headCommitIso({ root: dir })).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/);
+    rmProject({ dir });
+  });
+
+  test("uncommittedFiles: new + modified tracked, sorted", () => {
+    const dir = mkTmpProject({ fixture: "empty-project" });
+    gitInit({ dir });
+    writeFileSync(join(dir, "src/index.ts"), "export const hi = 2;\n"); // modify tracked
+    writeFileSync(join(dir, "brand-new.ts"), "export const n = 1;\n"); // untracked
+    expect(uncommittedFiles({ root: dir })).toEqual(["brand-new.ts", "src/index.ts"]);
     rmProject({ dir });
   });
 

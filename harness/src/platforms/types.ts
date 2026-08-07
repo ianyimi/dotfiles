@@ -28,6 +28,8 @@ export interface ProjectContext {
   standardsFiles: string[];
   /** Parsed context rules, or null when context-rules.yaml is absent. */
   contextRules: ContextRule[] | null;
+  /** Opt-in TTSR regexes from anti-patterns.md `pattern:` continuation lines (04). */
+  antiPatternRegexes: string[];
 }
 
 export interface BridgePlan {

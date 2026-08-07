@@ -68,6 +68,45 @@ export function recentChangedFiles(props: { root: string; commits: number }): st
 }
 
 /**
+ * ISO-8601 committer date of HEAD (`git log -1 --format=%cI`).
+ *
+ * @param props.root - Repo directory.
+ * @returns e.g. "2026-08-02T14:23:11+02:00", or "" when not a repo / no commits.
+ */
+export function headCommitIso(props: { root: string }): string {
+  return tryGit(props.root, ["log", "-1", "--format=%cI"]) ?? "";
+}
+
+/**
+ * Paths with uncommitted changes (staged + unstaged + untracked) via `git status --porcelain`.
+ * Renames report the NEW path.
+ *
+ * @param props.root - Repo directory.
+ * @returns Root-relative POSIX paths, sorted, deduped; [] when not a repo / on git error.
+ */
+export function uncommittedFiles(props: { root: string }): string[] {
+  // Raw output — tryGit's trim() would eat the first line's leading status space
+  // (" M path" → "M path") and corrupt its path on slice(3).
+  let out: string;
+  try {
+    out = execFileSync("git", ["status", "--porcelain"], {
+      cwd: props.root,
+      stdio: ["ignore", "pipe", "pipe"],
+    }).toString();
+  } catch {
+    return [];
+  }
+  if (out === "") return [];
+  const paths = out.split("\n").filter((l) => l.length > 3).map((line) => {
+    let p = line.slice(3);
+    const arrow = p.indexOf(" -> ");
+    if (arrow !== -1) p = p.slice(arrow + 4);
+    return p.replace(/^"|"$/g, "");
+  });
+  return [...new Set(paths)].sort();
+}
+
+/**
  * Counts commits touching any of the given paths in the last N days.
  *
  * @param props.root - Repo directory.

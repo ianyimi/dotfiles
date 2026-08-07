@@ -40,7 +40,9 @@ initialized/
 │   │   └── preferences.md
 │   └── tasks.md
 ├── skills/
-│   └── dev-spec/
+│   ├── dev-spec/
+│   │   └── SKILL.md
+│   └── implement/
 │       └── SKILL.md
 ├── AGENTS.md
 └── manifest.json

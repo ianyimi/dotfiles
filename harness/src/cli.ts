@@ -2,14 +2,19 @@ import { readFileSync } from "node:fs";
 import { CHECKS } from "./checks/index.ts";
 import { contextCommand } from "./commands/context.ts";
 import { runDoctor } from "./commands/doctor.ts";
+import { envCheck } from "./commands/env.ts";
+import { logAppend, logBackfillSha, logCommitMsg, logSessionEnd } from "./commands/log.ts";
 import { indexRebuild } from "./commands/index.ts";
 import { initFinish, initScaffold, initStatus, initWritePhase } from "./commands/init.ts";
+import { runPlatform } from "./commands/platform.ts";
 import { prefCompact, prefRemove } from "./commands/pref.ts";
 import { specList, specNew } from "./commands/spec.ts";
+import { runSync } from "./commands/sync.ts";
 import { stateCommand } from "./commands/state.ts";
 import { structCommand } from "./commands/struct.ts";
 import { parseArgs } from "./lib/args.ts";
 import { EXIT, HarnessError } from "./lib/errors.ts";
+import { loadManifest } from "./lib/manifest.ts";
 import { Reporter } from "./lib/output.ts";
 import { resolveProjectRoot } from "./lib/paths.ts";
 
@@ -154,6 +159,78 @@ const COMMANDS: Record<string, Command> = {
       const root = resolveProjectRoot({ cwd: props.cwd });
       const reporter = new Reporter({ json: false, write: props.stderr });
       const code = contextCommand({ root, task, files: parsed.options["files"], stdout: props.stdout, reporter });
+      reporter.flush();
+      return code;
+    },
+  },
+  sync: {
+    help: "sync [--json] — regenerate platform bridges from .agent/ (symlinks + glue)",
+    run: (props) => {
+      const parsed = parseArgs({ argv: props.args, spec: { flags: ["json"] } });
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      const reporter = new Reporter({ json: parsed.flags["json"] === true, write: props.stdout });
+      const code = runSync({ root, reporter });
+      reporter.flush();
+      return code;
+    },
+  },
+  platform: {
+    help: "platform add <id> | platform list — manage bridge platforms",
+    run: (props) => {
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      const reporter = new Reporter({ json: false, write: props.stdout });
+      const code = runPlatform({ args: props.args, root, reporter });
+      reporter.flush();
+      return code;
+    },
+  },
+  log: {
+    help: "log append [--slug s] | session-end | backfill-sha --sha <sha> | commit-msg (all: [--date d])",
+    run: (props) => {
+      const [sub, ...rest] = props.args;
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      const { manifest } = loadManifest({ root });
+      if (!manifest.modules.session_log) {
+        throw new HarnessError("module-disabled", "session_log module is disabled in manifest.json", {
+          hint: "enable modules.session_log",
+        });
+      }
+      switch (sub) {
+        case "append": {
+          const parsed = parseArgs({ argv: rest, spec: { options: ["slug", "date"] } });
+          logAppend({ root, slug: parsed.options["slug"], dateOpt: parsed.options["date"], stdout: props.stdout });
+          return EXIT.OK;
+        }
+        case "session-end": {
+          const parsed = parseArgs({ argv: rest, spec: { options: ["date"] } });
+          logSessionEnd({ root, dateOpt: parsed.options["date"], stdout: props.stdout });
+          return EXIT.OK;
+        }
+        case "backfill-sha": {
+          const parsed = parseArgs({ argv: rest, spec: { options: ["sha", "date"] } });
+          const sha = parsed.options["sha"];
+          if (sha === undefined) throw new HarnessError("usage", "backfill-sha requires --sha <sha>");
+          logBackfillSha({ root, sha, dateOpt: parsed.options["date"], stdout: props.stdout });
+          return EXIT.OK;
+        }
+        case "commit-msg": {
+          const parsed = parseArgs({ argv: rest, spec: { options: ["date"] } });
+          return logCommitMsg({ root, dateOpt: parsed.options["date"], stdout: props.stdout });
+        }
+        default:
+          throw new HarnessError("usage", `log: unknown subcommand ${JSON.stringify(sub)} — expected append | session-end | backfill-sha | commit-msg`);
+      }
+    },
+  },
+  env: {
+    help: "env check — verify documented env vars are set (names only, never values)",
+    run: (props) => {
+      const [sub, ...rest] = props.args;
+      if (sub !== "check") throw new HarnessError("usage", "env: expected `env check`");
+      parseArgs({ argv: rest, spec: {} });
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      const reporter = new Reporter({ json: false, write: props.stdout });
+      const code = envCheck({ root, env: process.env as Record<string, string | undefined>, reporter });
       reporter.flush();
       return code;
     },

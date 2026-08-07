@@ -1,8 +1,11 @@
 import type { DoctorCheck } from "../commands/doctor.ts";
 import agentsMdDirectivesOverBudget from "./agentsMdDirectivesOverBudget.ts";
 import antiPatternsOverBudget from "./antiPatternsOverBudget.ts";
+import contextRulesStale from "./contextRulesStale.ts";
 import decisionsInconsistent from "./decisionsInconsistent.ts";
+import envVarsUndocumented from "./envVarsUndocumented.ts";
 import indexStale from "./indexStale.ts";
+import shimsStale from "./shimsStale.ts";
 import namingViolations from "./namingViolations.ts";
 import openSpecsStale from "./openSpecsStale.ts";
 import preferencesOverBudget from "./preferencesOverBudget.ts";
@@ -27,4 +30,7 @@ export const CHECKS: DoctorCheck[] = [
   namingViolations,
   structureStale,
   indexStale,
+  envVarsUndocumented,
+  shimsStale,
+  contextRulesStale,
 ];
