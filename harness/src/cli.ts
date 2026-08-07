@@ -67,12 +67,25 @@ function readDataArg(raw: string): Record<string, unknown> {
 
 /** The single command registration point (master §8). Later specs append rows. */
 const COMMANDS: Record<string, Command> = {
+  install: {
+    help: "install [--template <name>] — install the .agent/ harness skeleton + skills here",
+    run: (props) => {
+      const parsed = parseArgs({ argv: props.args, spec: { options: ["template"] } });
+      // install must work on a brand-new directory: fall back to cwd when neither
+      // .agent/ nor .git/ exists yet (the install creates the .agent marker).
+      let root: string;
+      try {
+        root = resolveProjectRoot({ cwd: props.cwd });
+      } catch {
+        root = props.cwd;
+      }
+      return initScaffold({ root, template: parsed.options["template"], stdout: props.stdout });
+    },
+  },
   init: {
-    help: "init scaffold | init write-phase <n> --data <path|-> | init status | init finish",
+    help: "init write-phase <n> --data <path|-> | init status | init finish (skill plumbing)",
     run: (props) => {
       const [sub, ...rest] = props.args;
-      // init must work on a brand-new directory: fall back to cwd when neither
-      // .agent/ nor .git/ exists yet (the scaffold creates the .agent marker).
       let root: string;
       try {
         root = resolveProjectRoot({ cwd: props.cwd });
@@ -80,10 +93,6 @@ const COMMANDS: Record<string, Command> = {
         root = props.cwd;
       }
       switch (sub) {
-        case "scaffold": {
-          const parsed = parseArgs({ argv: rest, spec: { options: ["template"] } });
-          return initScaffold({ root, template: parsed.options["template"], stdout: props.stdout });
-        }
         case "write-phase": {
           const parsed = parseArgs({ argv: rest, spec: { positionals: ["phase"], options: ["data"] } });
           const dataRaw = parsed.options["data"];
@@ -100,7 +109,7 @@ const COMMANDS: Record<string, Command> = {
         case "finish":
           return initFinish({ root, stdout: props.stdout });
         default:
-          throw new HarnessError("usage", `init: unknown subcommand ${JSON.stringify(sub)} — expected scaffold | write-phase | status | finish`);
+          throw new HarnessError("usage", `init: unknown subcommand ${JSON.stringify(sub)} — expected write-phase | status | finish (project setup starts with \`harness install\`)`);
       }
     },
   },

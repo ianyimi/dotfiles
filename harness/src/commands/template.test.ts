@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe("harness template", () => {
-  test("round-trip: save from initialized → init scaffold --template on empty project", async () => {
+  test("round-trip: save from initialized → install --template on empty project", async () => {
     const src = mkTmpProject({ fixture: "initialized" }); // + git, one dep pin, skill customizations
     const m = JSON.parse(readFileSync(join(src, ".agent/manifest.json"), "utf8"));
     m.dependencies = [{ package: "convex", version: "1.17.0", repo: "github.com/get-convex/convex-backend" }];
@@ -42,7 +42,7 @@ describe("harness template", () => {
     expect(existsSync(join(home, "templates/round-trip/standards_seed/naming-conventions.md"))).toBe(true);
 
     const dst = mkTmpProject({ fixture: "empty-project" }); // fresh project: scaffold from template
-    const scaf = await runCli({ argv: ["init", "scaffold", "--template", "round-trip"], cwd: dst });
+    const scaf = await runCli({ argv: ["install", "--template", "round-trip"], cwd: dst });
     expect(scaf.code).toBe(0);
     const progress = readFileSync(join(dst, ".agent/.setup-progress.md"), "utf8");
     for (const n of ["3", "6", "7"]) expect(progress).toContain(`### Phase ${n}`);

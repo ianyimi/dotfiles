@@ -36,8 +36,8 @@ function readProgress(root: string): string {
   try {
     return readFileSync(progressPath(root), "utf8");
   } catch {
-    throw new HarnessError("init-incomplete", "No .agent/.setup-progress.md — scaffold first", {
-      hint: "harness init scaffold",
+    throw new HarnessError("init-incomplete", "No .agent/.setup-progress.md — install the harness first", {
+      hint: "harness install",
     });
   }
 }
@@ -80,7 +80,7 @@ function withVerifiedAt(content: string, sha: string): string {
 }
 
 /**
- * `harness init scaffold [--template <name>]` — idempotent .agent/ skeleton creation (D5).
+ * `harness install [--template <name>]` (CLI name; internally the init scaffold) — idempotent .agent/ skeleton creation (D5).
  * Fills gaps only. With a template: seeds win over embedded defaults (D-07-4) and structural
  * phase data is STAGED into the progress file with checkboxes unticked (D-07-1) — only
  * write-phase, validating as always, commits it.

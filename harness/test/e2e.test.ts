@@ -40,7 +40,7 @@ describe("e2e: cold start to session cycle", () => {
     const day = headCommitDate({ root: dir });
 
     // 1–3. init: scaffold, phases 1–9, finish.
-    expect((await runCli({ argv: ["init", "scaffold"], cwd: dir })).code).toBe(0);
+    expect((await runCli({ argv: ["install"], cwd: dir })).code).toBe(0);
     for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
       const dataPath = join(dir, `.p${n}.json`);
       writeFileSync(dataPath, JSON.stringify(PHASES[n]));

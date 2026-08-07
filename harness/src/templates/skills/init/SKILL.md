@@ -11,7 +11,7 @@ description: Initialize or update the agent harness for a project. Triggers on "
 
 1. If `.agent/manifest.json` EXISTS: ask the developer — re-init (full rebuild) or update
    specific sections? For update mode, jump only to the phases they name.
-2. Run `harness init scaffold` (idempotent — creates `.agent/` skeleton + this skill set).
+2. Run `harness install` (idempotent — creates `.agent/` skeleton + this skill set).
 3. Run `harness init status`. If phases are already complete, announce "Resuming setup from
    Phase N" and skip completed phases.
 
@@ -19,7 +19,7 @@ description: Initialize or update the agent harness for a project. Triggers on "
 
 If the developer named a template ("use the <name> template", `--template <name>`):
 1. `harness template list` — if the name is missing, show the list and stop.
-2. Run `harness init scaffold --template <name>` instead of plain scaffold.
+2. Run `harness install --template <name>` instead of plain scaffold.
 3. `harness init status`: phases marked `prefilled (confirm or edit)` carry staged data from
    the template. Skip codebase inference for those phases — present the staged block as the
    draft, confirm or edit, then `harness init write-phase <n> --data -` as usual.

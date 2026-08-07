@@ -18,7 +18,7 @@ bun run /Users/zaye/.local/share/chezmoi/harness/src/cli.ts <command>
 
 | Command | Does |
 |---|---|
-| `harness init scaffold` | Idempotent `.agent/` skeleton + embedded skills (init, dev-spec, sync-spec). Falls back to cwd on brand-new dirs; never resurrects the progress file post-init. |
+| `harness install` (né `init scaffold`) | Idempotent `.agent/` skeleton + embedded skills (init, dev-spec, sync-spec). Falls back to cwd on brand-new dirs; never resurrects the progress file post-init. |
 | `harness init write-phase <n> --data <path\|->` | Deterministic phase writers 1–9; phase 7 assembles + validates `manifest.json`; progress + collected data survive compaction in `.agent/.setup-progress.md`. |
 | `harness init status` / `finish` | Resume checklist; finish validates 1–9, swaps in the post-init AGENTS.md, deletes progress. |
 | `harness doctor [--json]` | 11 checks (8 from spec 01 + 3 from spec 02), memoized file access, crash-isolated per check, `doctor.checks` manifest filter. Exit 1 only on error-severity. |
@@ -214,7 +214,7 @@ Doctor gained `stale-dependencies` (info, 14 checks total): version drift → `h
 |---|---|
 | `harness template save <name> [--force]` | Snapshots an initialized project's STRUCTURAL answers into `~/.harness/templates/<name>/` (`HARNESS_HOME` honored): domains, dep names+repos (**versions stripped** — they re-resolve per project), workflow/modules/platforms, `naming-conventions.md` as a standards seed, and every skill that differs from the embedded defaults (sha256 dir diff) as a skills seed. Project name/description/mission/env values are never templated. |
 | `harness template list / inspect / delete` | Store management; `inspect` prints the exact 5-line summary; `delete` refuses to rm anything without a template.json. |
-| `harness init scaffold --template <name>` | Seeds win over embedded defaults; structural phase data is **staged** into `.setup-progress.md` with checkboxes unticked — `init status` marks those phases `prefilled (confirm or edit)`, and `write-phase` validates exactly as always. The template name lands in `manifest.harness.template` at phase 7. |
+| `harness install --template <name>` | Seeds win over embedded defaults; structural phase data is **staged** into `.setup-progress.md` with checkboxes unticked — `init status` marks those phases `prefilled (confirm or edit)`, and `write-phase` validates exactly as always. The template name lands in `manifest.harness.template` at phase 7. |
 | `harness tasks add <title> [--to]` / `tasks move <substr> --to <section>` | The only sanctioned way skills touch `docs/tasks.md`. Stable section ids (`in-progress`/`inbox`/`done`), tolerant parser (unknown user sections preserved, never targeted), idempotent moves, ambiguity errors listing matches. |
 | `harness worktree <feature> [--path]` | For `repo.type: bare-git-worktrees`: creates a sibling worktree + branch, records it in `manifest.repo.worktrees`, opens a tmux window only when `$TMUX` is set (injected runner — tests never touch tmux). Clear errors for branch-exists / path-exists / wrong repo type. |
 
@@ -285,7 +285,7 @@ uncovered dir; guide survives re-finish with hand edits intact.
 ## How to stand this up in a project (the step-11 you'll run yourself)
 
 1. `cd <project>` → open your agent → `/harness-init` (Claude Code) or `/init` (OMP)
-   (first time in a fresh project: `harness init scaffold` makes the skills available to invoke).
+   (first time in a fresh project: `harness install` makes the skills available to invoke).
 2. Answer the interview — drafts come from your existing `.pi`/`.claude` docs + the codebase.
 3. Read `docs/setup-report.md`; question/correct/request changes.
 4. When satisfied, delete the old harness trees (08's runbook lists what is safe per project).

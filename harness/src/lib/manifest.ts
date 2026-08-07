@@ -178,7 +178,7 @@ export function loadManifest(props: { root: string }): { manifest: HarnessManife
     text = readFileSync(join(props.root, P.manifest), "utf8");
   } catch {
     throw new HarnessError("not-initialized", "No .agent/manifest.json — the harness is not initialized", {
-      hint: "harness init",
+      hint: "harness install, then run the init skill (/harness-init)",
     });
   }
   let value: unknown;

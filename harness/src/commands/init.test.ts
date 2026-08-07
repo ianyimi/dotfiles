@@ -43,7 +43,7 @@ describe("init scaffold", () => {
   test("creates the full skeleton on empty-project and is idempotent", async () => {
     const dir = mkTmpProject({ fixture: "empty-project" });
     gitInit({ dir });
-    const first = await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    const first = await runCli({ argv: ["install"], cwd: dir });
     expect(first.code).toBe(0);
     for (const p of [
       ".agent/AGENTS.md",
@@ -58,12 +58,12 @@ describe("init scaffold", () => {
     }
     expect(readFileSync(join(dir, ".agent/AGENTS.md"), "utf8")).toContain("Harness Not Initialized");
 
-    const second = await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    const second = await runCli({ argv: ["install"], cwd: dir });
     expect(second.stdout).toBe("nothing to create — scaffold already complete");
 
     // Deleting one file and re-running restores only it.
     rmSync(join(dir, ".agent/docs/tasks.md"));
-    const third = await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    const third = await runCli({ argv: ["install"], cwd: dir });
     expect(third.stdout).toBe("created: .agent/docs/tasks.md");
     rmProject({ dir });
   });
@@ -73,7 +73,7 @@ describe("init write-phase", () => {
   test("phase 4 writes tech-stack.md with verified_at frontmatter", async () => {
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
     gitInit({ dir });
-    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await runCli({ argv: ["install"], cwd: dir });
     const r = await writePhase(dir, 4, SAMPLE[4]);
     expect(r.code).toBe(0);
     const text = readFileSync(join(dir, ".agent/docs/product/tech-stack.md"), "utf8");
@@ -83,7 +83,7 @@ describe("init write-phase", () => {
 
   test("phase 7 before phase 1 → init-incomplete", async () => {
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
-    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await runCli({ argv: ["install"], cwd: dir });
     const r = await writePhase(dir, 7, SAMPLE[7]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("requires phase 1");
@@ -92,7 +92,7 @@ describe("init write-phase", () => {
 
   test("invalid data shape → usage error naming the key", async () => {
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
-    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await runCli({ argv: ["install"], cwd: dir });
     const r = await writePhase(dir, 1, { project: "x" });
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("`description`");
@@ -102,7 +102,7 @@ describe("init write-phase", () => {
   test("full 1→9 + finish yields a loadable manifest and post-init AGENTS.md", async () => {
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
     gitInit({ dir });
-    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await runCli({ argv: ["install"], cwd: dir });
     for (const n of [1, 2, 3, 4, 5, 6, 7, 8, 9] as const) {
       const r = await writePhase(dir, n, SAMPLE[n]);
       expect(r.code).toBe(0);
@@ -165,7 +165,7 @@ describe("init write-phase", () => {
 
   test("finish before completing phases lists the missing ones", async () => {
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
-    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await runCli({ argv: ["install"], cwd: dir });
     await writePhase(dir, 1, SAMPLE[1]);
     const r = await runCli({ argv: ["init", "finish"], cwd: dir });
     expect(r.code).toBe(2);
@@ -175,7 +175,7 @@ describe("init write-phase", () => {
 
   test("status marks phases with recorded data", async () => {
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
-    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await runCli({ argv: ["install"], cwd: dir });
     await writePhase(dir, 1, SAMPLE[1]);
     const r = await runCli({ argv: ["init", "status"], cwd: dir });
     expect(r.stdout).toContain("- [x] Phase 1 — Project Identity");
@@ -189,7 +189,7 @@ describe("init scaffold --template (07)", () => {
     const home = mkHarnessHome();
     const dir = mkTmpProject({ fixture: "empty-project" });
     gitInit({ dir });
-    const r = await runCli({ argv: ["init", "scaffold", "--template", "nope"], cwd: dir });
+    const r = await runCli({ argv: ["install", "--template", "nope"], cwd: dir });
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("not found");
     expect(existsSync(join(dir, ".agent"))).toBe(false);
@@ -215,10 +215,10 @@ describe("init scaffold --template (07)", () => {
       }),
     );
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
-    await runCli({ argv: ["init", "scaffold"], cwd: dir });
+    await runCli({ argv: ["install"], cwd: dir });
     await writePhase(dir, 3, { domains: ["hand-entered"] });
     const before = readFileSync(join(dir, ".agent/.setup-progress.md"), "utf8");
-    await runCli({ argv: ["init", "scaffold", "--template", "stager"], cwd: dir });
+    await runCli({ argv: ["install", "--template", "stager"], cwd: dir });
     const after = readFileSync(join(dir, ".agent/.setup-progress.md"), "utf8");
     expect(after).toContain('"hand-entered"');
     expect(after).not.toContain('"from-template"');
@@ -250,7 +250,7 @@ describe("init scaffold --template (07)", () => {
     );
     const dir = mkTmpProject({ fixture: "ts-monorepo" });
     gitInit({ dir });
-    await runCli({ argv: ["init", "scaffold", "--template", "round-trip"], cwd: dir });
+    await runCli({ argv: ["install", "--template", "round-trip"], cwd: dir });
     await writePhase(dir, 1, SAMPLE[1]);
     // The staged phase-6 block has no versions — the skill re-resolves before submitting.
     await writePhase(dir, 6, { dependencies: [{ package: "yaml", repo: "github.com/eemeli/yaml", version: "9.9.9" }] });
