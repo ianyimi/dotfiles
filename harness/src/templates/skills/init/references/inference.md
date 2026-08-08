@@ -2,10 +2,21 @@
 
 Read these sources per phase; present inferences for confirmation instead of asking.
 
-## Existing agent setups (mine FIRST — highest signal)
+## Existing agent setups (mine FIRST — but NEVER adopt as fact)
 
 An existing `.pi/`, `.claude/`, `CLAUDE.md`, `AGENTS.md`, or `.cursorrules` records how this
-project already wants to be worked on. Per phase:
+project once wanted to be worked on — **the code is usually newer than these docs**. The
+default is verify-then-adopt, never copy-then-trust:
+
+1. Read the developer's **trusted documents** first (gathered in the opening question) — they
+   are the accuracy baseline.
+2. For every claim in a mined doc, check it against the actual codebase before it enters the
+   harness: commands exist in package.json/Makefile? packages still in the manifest? paths
+   still real? patterns still used in current code? decisions still reflected?
+3. Classify each claim **verified / corrected (say what changed) / dropped (stale)** and
+   present the drift report with the draft — the developer confirms the corrected version.
+
+Per-phase sources (drafts only, post-verification):
 
 - `.pi/agent-docs/product/tech-stack.md` → phase 4 draft
 - `.pi/agent-docs/product/dev-processes.md` → phase 5 draft (+ env vars)
@@ -13,8 +24,7 @@ project already wants to be worked on. Per phase:
 - `.pi/agent-docs/standards/*` → discovery-pass content (preferences/anti-patterns/debug refs)
 - `.claude/commands/*.md`, `CLAUDE.md` → workflow expectations (phase 7) + discovery content
 
-Present mined drafts as "found in your existing setup — confirm or correct". Never delete the
-old trees — the developer removes them after verifying the new harness.
+Never delete the old trees — the developer removes them after verifying the new harness.
 
 ## Manifest files (Phase 1, 4, 6)
 

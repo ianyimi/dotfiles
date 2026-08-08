@@ -14,7 +14,7 @@ import { initFinish, initScaffold, initStatus, initWritePhase } from "./commands
 import { runPlatform } from "./commands/platform.ts";
 import { prefCompact, prefRemove } from "./commands/pref.ts";
 import { specList, specNew } from "./commands/spec.ts";
-import { runSync } from "./commands/sync.ts";
+import { bootstrapBridges, runSync } from "./commands/sync.ts";
 import { runTasks } from "./commands/tasks.ts";
 import { runTemplate } from "./commands/template.ts";
 import { worktreeAdd } from "./commands/worktree.ts";
@@ -79,7 +79,11 @@ const COMMANDS: Record<string, Command> = {
       } catch {
         root = props.cwd;
       }
-      return initScaffold({ root, template: parsed.options["template"], stdout: props.stdout });
+      const code = initScaffold({ root, template: parsed.options["template"], stdout: props.stdout });
+      // Pre-init bridge: make /init (OMP) and /harness-init (Claude Code) visible immediately
+      // — the full bridge arrives with `harness sync` after the interview finishes.
+      bootstrapBridges({ root, stdout: props.stdout });
+      return code;
     },
   },
   init: {

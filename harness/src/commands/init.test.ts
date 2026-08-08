@@ -58,6 +58,17 @@ describe("init scaffold", () => {
     }
     expect(readFileSync(join(dir, ".agent/AGENTS.md"), "utf8")).toContain("Harness Not Initialized");
 
+    // Pre-init bootstrap bridge: /init visible in OMP, /harness-init in Claude Code, guard on.
+    expect(readFileSync(join(dir, ".omp/prompts/init.md"), "utf8")).toContain("Invoke the `init` skill");
+    expect(readFileSync(join(dir, ".claude/commands/harness-init.md"), "utf8")).toContain("Invoke the `init` skill");
+    expect(readFileSync(join(dir, ".omp/config.yml"), "utf8")).toContain("disabledProviders");
+    expect(readFileSync(join(dir, ".claude/CLAUDE.md"), "utf8").startsWith("@.agent/AGENTS.md")).toBe(true);
+    const { readlinkSync } = await import("node:fs");
+    expect(readlinkSync(join(dir, ".omp/skills"))).toBe("../.agent/skills");
+    expect(readlinkSync(join(dir, ".claude/skills"))).toBe("../.agent/skills");
+    expect(readFileSync(join(dir, ".gitignore"), "utf8")).toContain(".omp/");
+    expect(JSON.parse(readFileSync(join(dir, ".agent/.sync-manifest.json"), "utf8")).entries.length).toBeGreaterThan(0);
+
     const second = await runCli({ argv: ["install"], cwd: dir });
     expect(second.stdout).toBe("nothing to create — scaffold already complete");
 

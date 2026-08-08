@@ -9,8 +9,8 @@ import { parseNamingRules } from "../lib/namingRules.ts";
 import type { Reporter } from "../lib/output.ts";
 import { AGENT_DIR, P } from "../lib/paths.ts";
 import { loadSyncManifest, saveSyncManifest, type SyncEntry } from "../lib/syncManifest.ts";
-import { claudeAdapter, CLAUDE_SETTINGS_FRAGMENT } from "../platforms/claude.ts";
-import { ompAdapter } from "../platforms/omp.ts";
+import { claudeAdapter, CLAUDE_MD, CLAUDE_SETTINGS_FRAGMENT, commandShim } from "../platforms/claude.ts";
+import { OMP_CONFIG_FILE, ompAdapter, promptShim } from "../platforms/omp.ts";
 import type { ContextRule, PlatformAdapter, PlatformId, ProjectContext, SkillInfo } from "../platforms/types.ts";
 
 /** Adapter registry — the single place platform.ts and sync share. */
@@ -221,6 +221,70 @@ export function updateGitignoreBlock(props: { existingText: string | null; lines
   const after = text.slice(Math.min(blockEnd, text.length));
   const next = block === null ? `${before}${after}` : `${before}${block}${after}`;
   return next === text ? null : next;
+}
+
+/**
+ * Pre-init bridge bootstrap, run by `harness install` (09 live-test fix): a fresh project has
+ * no manifest yet, so `harness sync` cannot run — but the platforms must still see the init
+ * skill (`/init` on OMP, `/harness-init` on Claude Code) or the developer cannot start the
+ * interview from their agent. Writes the minimal bridge (skills symlinks, init shims, the
+ * OMP double-load guard, CLAUDE.md, gitignore block) with sync-manifest entries so the first
+ * full sync adopts everything hash-clean and prunes whatever the chosen platforms drop.
+ *
+ * @param props.root - Project root (post-scaffold: .agent/skills/init must exist).
+ * @param props.stdout - Line sink; prints only what it actually created (quiet when complete).
+ * @returns Nothing.
+ */
+export function bootstrapBridges(props: { root: string; stdout: (s: string) => void }): void {
+  const initSkillPath = join(props.root, P.skills, "init", "SKILL.md");
+  if (!existsSync(initSkillPath)) return; // nothing to shim — scaffold failed upstream
+  const description = parseFrontmatter({ text: readFileSync(initSkillPath, "utf8") }).data["description"];
+  if (typeof description !== "string" || description === "") return;
+
+  const prev = loadSyncManifest({ root: props.root });
+  const entries = new Map(prev.entries.map((e) => [e.path, e]));
+
+  const files: Array<{ path: string; content: string; platform: PlatformId }> = [
+    { path: ".omp/prompts/init.md", content: promptShim({ name: "init", description }), platform: "omp" },
+    { path: ".omp/config.yml", content: OMP_CONFIG_FILE, platform: "omp" },
+    { path: ".claude/commands/harness-init.md", content: commandShim({ name: "init", description }), platform: "claude" },
+    { path: ".claude/CLAUDE.md", content: CLAUDE_MD, platform: "claude" },
+  ];
+  for (const f of files) {
+    const abs = join(props.root, f.path);
+    if (!existsSync(abs)) {
+      writeFileAtomic({ path: abs, content: f.content });
+      props.stdout(`bridge: created ${f.path}`);
+    } // existing-but-different files are left alone — the first full sync reconciles/reports
+    entries.set(f.path, { path: f.path, kind: "generated", target_or_hash: sha256({ text: f.content }), platform: f.platform });
+  }
+
+  const symlinks: Array<{ linkPath: string; targetPath: string; platform: PlatformId }> = [
+    { linkPath: ".omp/skills", targetPath: ".agent/skills", platform: "omp" },
+    { linkPath: ".omp/AGENTS.md", targetPath: ".agent/AGENTS.md", platform: "omp" },
+    { linkPath: ".claude/skills", targetPath: ".agent/skills", platform: "claude" },
+  ];
+  for (const s of symlinks) {
+    const result = ensureSymlink({ linkPath: join(props.root, s.linkPath), targetPath: join(props.root, s.targetPath) });
+    if (result === "created" || result === "replaced") props.stdout(`bridge: linked ${s.linkPath} → ${s.targetPath}`);
+    if (result !== "conflict") {
+      entries.set(s.linkPath, { path: s.linkPath, kind: "symlink", target_or_hash: s.targetPath, platform: s.platform });
+    }
+  }
+
+  const lines = [".agent/dependencies/*", ".claude/", ".omp/"];
+  const gitignoreAbs = join(props.root, ".gitignore");
+  const next = updateGitignoreBlock({ existingText: existsSync(gitignoreAbs) ? readFileSync(gitignoreAbs, "utf8") : null, lines });
+  if (next !== null) writeFileAtomic({ path: gitignoreAbs, content: next });
+  for (const line of lines) {
+    const platform: PlatformId | "core" = line === ".claude/" ? "claude" : line === ".omp/" ? "omp" : "core";
+    entries.set(`.gitignore#${line}`, { path: `.gitignore#${line}`, kind: "gitignore-line", target_or_hash: line, platform });
+  }
+
+  saveSyncManifest({
+    root: props.root,
+    syncManifest: { version: 1, generated_at_sha: headSha({ root: props.root }), entries: [...entries.values()] },
+  });
 }
 
 /**

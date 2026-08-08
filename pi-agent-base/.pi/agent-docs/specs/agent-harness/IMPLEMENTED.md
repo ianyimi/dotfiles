@@ -282,6 +282,25 @@ global `harness doctor`/`sync` from a scratch project; shims present in both bri
 correct frontmatter; `context-coverage` clean on covered fixtures and firing on a seeded
 uncovered dir; guide survives re-finish with hand edits intact.
 
+## Post-live-test fixes (from the first real init on maprios, 2026-08-07)
+
+1. **`harness install` now bootstraps a minimal bridge** — previously a fresh project showed NO
+   `/init` in OMP because shims only came from `harness sync`, which needs a manifest that
+   doesn't exist until init finishes. Install now writes the skills symlinks, `/init` (OMP) +
+   `/harness-init` (Claude) shims, `CLAUDE.md`, the OMP double-load guard, and the gitignore
+   block — all sync-manifest-recorded so the first full sync adopts them hash-clean and prunes
+   inactive platforms' pieces (validated by the e2e).
+2. **Verify-then-adopt is the mining default** — existing `.pi`/`.claude` docs are drafts whose
+   every claim is checked against the actual code (verified/corrected/dropped + drift report);
+   the code is usually newer than the docs.
+3. **Trusted-context opening question** — init's first question asks which documents the
+   developer KNOWS are current/authoritative (and what to distrust); they anchor all
+   verification and the discovery pass.
+4. **Subagent fan-out is the discovery default** — one subagent per standards domain wherever
+   the platform supports it; the main agent reconciles and writes. Deferred areas become
+   `harness tasks add … --to inbox` follow-ups — the harness keeps investigating after init.
+5. **CLI rename**: `harness install` (was `init scaffold`) is the terminal entry point.
+
 ## How to stand this up in a project (the step-11 you'll run yourself)
 
 1. `cd <project>` → open your agent → `/harness-init` (Claude Code) or `/init` (OMP)

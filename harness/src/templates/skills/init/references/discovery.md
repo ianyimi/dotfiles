@@ -4,18 +4,28 @@ Runs after phase 9 (and the commit-gate step), before `harness init finish`. Thi
 future agents follow existing practice: sweep the ENTIRE project, record what you observe, and
 wire every record into the code map.
 
-## Mine existing agent setups FIRST
+## Mine existing agent setups FIRST — verify, never trust
 
-Before reading source code, harvest any previous harness/agent configuration — it is the
-highest-signal record of how this project wants to be worked on:
+Harvest any previous harness/agent configuration, then **verify every claim against the actual
+code before adopting it** (the code is usually newer than the docs — see inference.md's
+verify-then-adopt protocol; the developer's trusted documents are the baseline):
 
 - `.pi/agent-docs/**` (product docs, standards, developer-preferences, debug-hierarchy)
 - `.claude/commands/*.md`, `CLAUDE.md`, root `AGENTS.md`, `.cursorrules`, similar
-- Present a mapping: old file → where its content lands in `.agent/` (or "superseded by skill X").
-  Migrate content with the developer's confirmation; never delete the old files yourself — the
-  developer removes them after verifying the new harness.
+- Present a mapping: old file → verified/corrected/dropped → where it lands in `.agent/` (or
+  "superseded by skill X"). Migrate only confirmed content; never delete the old files yourself.
 
-## Then, per domain in `standards_domains`
+## Fan out subagents (default when the platform supports them)
+
+Run the domain sweeps in parallel: **one subagent per domain in `standards_domains`** (plus one
+for naming patterns when the module is on). Claude Code: the Task/agent tool; OMP: subagents.
+Each subagent gets: its domain, the trusted documents, the verified mining notes for that area,
+and instructions 1–4 below; it returns proposed `docs/standards/<domain>/*.md` contents with
+evidence (file:line references). The MAIN agent reconciles overlaps, writes the files, and runs
+the mechanical close — subagents never write to `.agent/` directly. No subagent capability →
+run the same sweeps serially.
+
+## Per domain in `standards_domains` (each subagent's brief)
 
 1. **Sample deeply, not exhaustively** — the 5–10 most representative files per area (entry
    points, the largest module, the newest module, one test) plus lint/format configs.

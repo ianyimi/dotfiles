@@ -15,6 +15,14 @@ description: Initialize or update the agent harness for a project. Triggers on "
 3. Run `harness init status`. If phases are already complete, announce "Resuming setup from
    Phase N" and skip completed phases.
 
+## Opening question — trusted context (before any inference)
+
+Ask the developer FIRST: "Which documents or files do you KNOW are current and authoritative
+(goals, roadmaps, architecture notes, critical context)? Anything I should distrust as stale?"
+Read every trusted document before inferring anything — they are the accuracy baseline for the
+whole setup, and existing agent docs are verified AGAINST them and against the code
+(see references/inference.md — mined docs are drafts to verify, never facts to migrate).
+
 ## Using a Template
 
 If the developer named a template ("use the <name> template", `--template <name>`):
@@ -54,9 +62,12 @@ Write the result back to that file.
 ## Discovery pass (after the commit gate, before finish)
 
 Read `references/discovery.md`. Mine any EXISTING agent setup first (`.pi/agent-docs/**`,
-`.claude/commands/`, `CLAUDE.md`/`AGENTS.md` files), then sweep the ENTIRE codebase domain by
-domain and write observed practices into `docs/standards/` with `applies_to` globs. Present a
-summary of every file created or extended before moving on.
+`.claude/commands/`, `CLAUDE.md`/`AGENTS.md`) — **verify every claim against the code before
+adopting; report drift**. Then sweep the ENTIRE codebase: fan out one subagent per standards
+domain (default wherever the platform supports subagents; serial otherwise) and reconcile
+their proposals. Present a summary of every file created or extended before moving on. The
+harness stays living after init: add `harness tasks add "…" --to inbox` follow-ups for any
+area you deferred — future sessions continue the investigation via sync-spec.
 
 ## Finish (phase 10)
 

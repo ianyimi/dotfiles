@@ -41,6 +41,24 @@ Three developer-experience gaps closed:
 7. **Distribution-lite.** `src/cli.ts` gets a `#!/usr/bin/env bun` shebang and the package is
    globally linkable (`bun link` → a `harness` command on PATH, running from this source tree);
    `harness/README.md` documents install + the command surface. Compiled binaries stay deferred.
+8. **CLI rename** (developer request): the terminal entry point is `harness install
+   [--template]` (formerly `init scaffold`); `harness init` keeps only the skill-plumbing subs
+   (write-phase / status / finish).
+9. **Live-test fixes from the first real init (maprios, 2026-08-07):**
+   a. **Verify-then-adopt is the mining default** — existing agent docs are drafts to verify
+      against the actual code (claims classified verified/corrected/dropped, drift reported),
+      never facts to migrate. The code is usually newer than the docs.
+   b. **Trusted-context opening question** — before any inference, init asks which documents
+      the developer KNOWS are current/authoritative (and what to distrust); those anchor all
+      verification.
+   c. **Subagent fan-out is the discovery default** — one subagent per standards domain where
+      the platform supports it (Claude Task tool / OMP subagents), main agent reconciles and
+      writes; serial fallback otherwise. Post-init follow-ups land in tasks inbox.
+   d. **`harness install` bootstraps a minimal bridge** — a fresh project has no manifest, so
+      sync can't run, so OMP/Claude saw no `/init` at all. Install now writes the skills
+      symlinks, the `/init`+`/harness-init` shims, `CLAUDE.md`, the OMP double-load guard, and
+      the gitignore block, all recorded in the sync-manifest so the first full sync adopts
+      them hash-clean (and prunes inactive platforms' pieces).
 
 ## Design Decisions
 
