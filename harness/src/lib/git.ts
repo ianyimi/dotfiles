@@ -128,6 +128,7 @@ export function lsRemoteTags(props: { repoUrl: string }): string[] {
     const out = execFileSync("git", ["ls-remote", "--tags", "--refs", asGitUrl(props.repoUrl)], {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: 64 * 1024 * 1024,
     });
     return out
       .split("\n")
