@@ -18,6 +18,7 @@
 | `context-rules.yaml`, `.sync-manifest.json`, bridges (`.omp/`, `.claude/`) | GENERATED | `harness sync` |
 | `docs/state.md` | GENERATED | `harness state` |
 | `docs/session-log/**` | append-only diary | `harness log append` |
+| `docs/harness-changelog.md` | LEARNED — append-only audit of harness changes (advisor-maintained) | — |
 
 Never hand-edit a GENERATED file — run its command instead.
 
@@ -33,6 +34,7 @@ Never hand-edit a GENERATED file — run its command instead.
 | A dependency insight | `docs/research/` (research/learn skills) |
 | A required env var | `env.manifest.md` |
 | What happened this session | `harness log append` |
+| A harness change made from developer feedback | `docs/harness-changelog.md` (one line: date, file, change, trigger quote) + relay to the developer |
 
 ## The code map
 

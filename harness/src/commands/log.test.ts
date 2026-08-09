@@ -141,7 +141,7 @@ describe("log session-end", () => {
     for (const q of ["1. What was built", "2. Any decisions", "3. Any problems", "4. Where does the session"]) {
       expect(r.stdout).toContain(q);
     }
-    expect(r.stdout).toContain(`Write the answers into: ${REL}`);
+    expect(r.stdout).toContain(`do not ask the developer. Write the answers into: ${REL}`);
     rmProject({ dir });
   });
 
@@ -208,6 +208,31 @@ describe("log commit-msg", () => {
     expect(r.code).toBe(0);
     expect(readFileSync(join(dir, ".agent/docs/session-log/2026/08/2026-08-02.commit.md"), "utf8")).toBe(GOLDEN_COMMIT_MD);
     expect(r.stdout).toContain("feat(core): filter panel wiring");
+
+    // Day ledger (MM-DD-YYYY): message in a fenced section; log entry links the commit point.
+    const ledgerPath = join(dir, ".agent/docs/commits/08-02-2026.md");
+    const ledger = readFileSync(ledgerPath, "utf8");
+    expect(ledger).toContain("# Commits — 2026-08-02");
+    expect(ledger).toContain("## 00:00");
+    expect(ledger).toContain(`\`\`\`\n${GOLDEN_COMMIT_MD.trimEnd()}\n\`\`\``);
+    expect(r.stdout).toContain("Ledger: .agent/docs/commits/08-02-2026.md");
+    const logText = readFileSync(join(dir, REL), "utf8");
+    expect(logText).toContain("_Committed → [.agent/docs/commits/08-02-2026.md](../../../commits/08-02-2026.md) at 00:00._");
+
+    // Identical rerun: no duplicate ledger section, no duplicate log link.
+    await runCli({ argv: ["log", "commit-msg", "--date", "2026-08-02"], cwd: dir });
+    expect(readFileSync(ledgerPath, "utf8")).toBe(ledger);
+    expect(readFileSync(join(dir, REL), "utf8")).toBe(logText);
+
+    // Second work block later the same day → second section stacks in the SAME day file.
+    await runCli({ argv: ["log", "append", "--slug", "evening hotfix", "--date", "2026-08-02T18:40"], cwd: dir });
+    const r2 = await runCli({ argv: ["log", "commit-msg", "--date", "2026-08-02T18:40"], cwd: dir });
+    expect(r2.code).toBe(0);
+    const ledger2 = readFileSync(ledgerPath, "utf8");
+    expect(ledger2.startsWith(ledger)).toBe(true);
+    expect(ledger2).toContain("## 18:40");
+    expect(ledger2).toContain("evening hotfix");
+    expect(readFileSync(join(dir, REL), "utf8")).toContain("at 18:40._");
     rmProject({ dir });
   });
 

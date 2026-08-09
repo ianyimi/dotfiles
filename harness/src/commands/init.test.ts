@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gitInit, mkHarnessHome, mkTmpProject, rmHarnessHome, rmProject, runCli } from "../../test/helpers.ts";
 import { loadManifest } from "../lib/manifest.ts";
@@ -59,7 +59,7 @@ describe("init scaffold", () => {
     expect(readFileSync(join(dir, ".agent/AGENTS.md"), "utf8")).toContain("Harness Not Initialized");
 
     // Pre-init bootstrap bridge: /init visible in OMP, /harness-init in Claude Code, guard on.
-    expect(readFileSync(join(dir, ".omp/prompts/init.md"), "utf8")).toContain("Invoke the `init` skill");
+    expect(readFileSync(join(dir, ".omp/prompts/harness-init.md"), "utf8")).toContain("Invoke the `init` skill");
     expect(readFileSync(join(dir, ".claude/commands/harness-init.md"), "utf8")).toContain("Invoke the `init` skill");
     expect(readFileSync(join(dir, ".omp/config.yml"), "utf8")).toContain("disabledProviders");
     expect(readFileSync(join(dir, ".claude/CLAUDE.md"), "utf8").startsWith("@.agent/AGENTS.md")).toBe(true);
@@ -76,6 +76,61 @@ describe("init scaffold", () => {
     rmSync(join(dir, ".agent/docs/tasks.md"));
     const third = await runCli({ argv: ["install"], cwd: dir });
     expect(third.stdout).toBe("created: .agent/docs/tasks.md");
+    rmProject({ dir });
+  });
+
+  test("--refresh-skills re-copies default skills, drops stale files, keeps project-authored skills", async () => {
+    const dir = mkTmpProject({ fixture: "empty-project" });
+    gitInit({ dir });
+    await runCli({ argv: ["install"], cwd: dir });
+
+    const commitSkill = join(dir, ".agent/skills/commit/SKILL.md");
+    const original = readFileSync(commitSkill, "utf8");
+    writeFileSync(commitSkill, "# locally edited\n");
+    writeFileSync(join(dir, ".agent/skills/commit/stale-ref.md"), "gone from template\n");
+    mkdirSync(join(dir, ".agent/skills/my-own-skill"), { recursive: true });
+    writeFileSync(join(dir, ".agent/skills/my-own-skill/SKILL.md"), "# mine\n");
+
+    // Plain install never touches an existing copy…
+    await runCli({ argv: ["install"], cwd: dir });
+    expect(readFileSync(commitSkill, "utf8")).toBe("# locally edited\n");
+
+    // …--refresh-skills restores it wholesale and removes files gone from the template.
+    const r = await runCli({ argv: ["install", "--refresh-skills"], cwd: dir });
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("refreshed: .agent/skills/commit/");
+    expect(readFileSync(commitSkill, "utf8")).toBe(original);
+    expect(existsSync(join(dir, ".agent/skills/commit/stale-ref.md"))).toBe(false);
+    expect(readFileSync(join(dir, ".agent/skills/my-own-skill/SKILL.md"), "utf8")).toBe("# mine\n");
+    rmProject({ dir });
+  });
+
+  test("--refresh-skill <name> refreshes only that skill; unknown names and flag combos error", async () => {
+    const dir = mkTmpProject({ fixture: "empty-project" });
+    gitInit({ dir });
+    await runCli({ argv: ["install"], cwd: dir });
+
+    const commitSkill = join(dir, ".agent/skills/commit/SKILL.md");
+    const debugSkill = join(dir, ".agent/skills/debug/SKILL.md");
+    const original = readFileSync(commitSkill, "utf8");
+    writeFileSync(commitSkill, "# edited commit\n");
+    writeFileSync(debugSkill, "# project-customized debug\n");
+
+    const r = await runCli({ argv: ["install", "--refresh-skill", "commit"], cwd: dir });
+    expect(r.code).toBe(0);
+    expect(r.stdout).toContain("refreshed: .agent/skills/commit/");
+    expect(r.stdout).not.toContain("skills/debug");
+    expect(readFileSync(commitSkill, "utf8")).toBe(original);
+    expect(readFileSync(debugSkill, "utf8")).toBe("# project-customized debug\n"); // untouched
+
+    const bad = await runCli({ argv: ["install", "--refresh-skill", "nope"], cwd: dir });
+    expect(bad.code).not.toBe(0);
+    expect(bad.stderr).toContain("not a harness default skill");
+    expect(bad.stderr).toContain("commit"); // lists what IS available
+
+    const both = await runCli({ argv: ["install", "--refresh-skills", "--refresh-skill", "commit"], cwd: dir });
+    expect(both.code).not.toBe(0);
+    expect(both.stderr).toContain("not both");
     rmProject({ dir });
   });
 });

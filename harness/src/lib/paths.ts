@@ -17,6 +17,7 @@ export const P = {
   specs: join(AGENT_DIR, "docs", "specs"),
   decisions: join(AGENT_DIR, "docs", "decisions"),
   sessionLog: join(AGENT_DIR, "docs", "session-log"),
+  commits: join(AGENT_DIR, "docs", "commits"),
   tasks: join(AGENT_DIR, "docs", "tasks.md"),
   state: join(AGENT_DIR, "docs", "state.md"),
   skills: join(AGENT_DIR, "skills"),

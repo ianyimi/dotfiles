@@ -25,7 +25,8 @@ export const ENTRY_TEMPLATE = `## {date} — {time} — {slug}
 export const SESSION_END_MARKER =
   "_Session end — fill in: current state · next step · watch-outs._";
 
-/** Questions session-end prints for the commit skill to ask the developer. */
+/** Questions session-end prints for the commit skill — the AGENT answers them from the diff
+ * and its own session context; they are never relayed to the developer. */
 export const SESSION_END_QUESTIONS = [
   "1. What was built this session?",
   "2. Any decisions that deviated from the spec — and why?",
@@ -136,7 +137,7 @@ export function appendLogLine(props: { root: string; line: string; dateOpt?: str
 /**
  * Ensures today's entry exists, then appends the SESSION_END_MARKER prompt-block at EOF —
  * landing inside the latest entry's "### Where I left off" section (always the file's last
- * section). Prints the questions the invoking skill must ask, then the answer path.
+ * section). Prints the questions the invoking agent must answer itself, then the answer path.
  *
  * @param props.root - Project root.
  * @param props.dateOpt - Raw --date.
@@ -163,7 +164,7 @@ export function logSessionEnd(props: {
   }
   props.stdout("Ask the developer:");
   for (const q of SESSION_END_QUESTIONS) props.stdout(`  ${q}`);
-  props.stdout(`Write the answers into: ${rel}`);
+  props.stdout(`Answer these yourself from git status/diff and the session context — do not ask the developer. Write the answers into: ${rel}`);
   return rel;
 }
 
@@ -316,8 +317,21 @@ export function buildCommitMessage(props: {
 }
 
 /**
+ * Root-relative commits-ledger path for a date — the developer-facing copy source.
+ *
+ * @param props.date - "YYYY-MM-DD".
+ * @returns e.g. ".agent/docs/commits/08-08-2026.md" (MM-DD-YYYY per developer preference).
+ */
+export function commitsLedgerPathFor(props: { date: string }): string {
+  return join(P.commits, `${props.date.slice(5, 7)}-${props.date.slice(8, 10)}-${props.date.slice(0, 4)}.md`);
+}
+
+/**
  * `harness log commit-msg` — derives the conventional message from today's latest entry,
- * writes <date>.commit.md, prints the message then the written path.
+ * writes <date>.commit.md (the `git commit -F` source), appends the message to the day's
+ * commits ledger (`.agent/docs/commits/MM-DD-YYYY.md` — multiple runs per day stack as
+ * sections; an unchanged rerun appends nothing), links the ledger from today's log entry,
+ * and prints the message then both paths.
  *
  * @param props.root - Project root.
  * @param props.dateOpt - Raw --date.
@@ -365,7 +379,27 @@ export function logCommitMsg(props: {
   });
   const commitRel = logRel.replace(/\.log\.md$/, ".commit.md");
   writeFileAtomic({ path: join(props.root, commitRel), content: msg });
+
+  // Day ledger: the copy-friendly file the developer returns to. Appends a fenced section
+  // per generated message; a rerun with an identical message is a no-op (no dup sections,
+  // no dup log links). The fence keeps the message byte-exact for copying.
+  const ledgerRel = commitsLedgerPathFor({ date: d.date });
+  const ledgerAbs = join(props.root, ledgerRel);
+  const block = `## ${d.time}\n\n\`\`\`\n${msg.trimEnd()}\n\`\`\`\n`;
+  const ledgerText = existsSync(ledgerAbs) ? readFileSync(ledgerAbs, "utf8") : "";
+  if (!ledgerText.includes(block)) {
+    if (ledgerText === "") {
+      writeFileAtomic({ path: ledgerAbs, content: `# Commits — ${d.date}\n\n${block}` });
+    } else {
+      appendFileSync(ledgerAbs, `${ledgerText.endsWith("\n") ? "" : "\n"}\n${block}`);
+    }
+    // Mark the commit point in today's log entry with a link back to the ledger.
+    const linkLine = `_Committed → [${ledgerRel}](../../../commits/${ledgerRel.split("/").pop() as string}) at ${d.time}._`;
+    appendFileSync(abs, `${text.endsWith("\n") ? "" : "\n"}\n${linkLine}\n`);
+  }
+
   props.stdout(msg.trimEnd());
   props.stdout(`Written: ${commitRel}`);
+  props.stdout(`Ledger: ${ledgerRel}`);
   return 0;
 }

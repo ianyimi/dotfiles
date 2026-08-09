@@ -1,0 +1,426 @@
+{
+  "version": 1,
+  "generated_at_sha": "58a24086c9e6d80c8ccdebd7294002557da5d894",
+  "entries": [
+    {
+      "path": ".agent/context-rules.yaml",
+      "kind": "generated",
+      "target_or_hash": "3137063e0fb645c3cab1033df36f4dbd72a86332d29674661e27d643503048d0",
+      "platform": "core"
+    },
+    {
+      "path": ".claude/CLAUDE.md",
+      "kind": "generated",
+      "target_or_hash": "33eb6e909502563f52ad5f03ff78bfed316f83931d4d59ebd6677f556475fa33",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/commit.md",
+      "kind": "generated",
+      "target_or_hash": "187d5a6022579239c8918fbd7296d777c2109eb1006a19b2dce7be635f8ff58b",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/debug.md",
+      "kind": "generated",
+      "target_or_hash": "78d08345ce7c14e309b3d0b8829a6d50d40f8f707ed9489da402f7279415d6ac",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/dev-spec.md",
+      "kind": "generated",
+      "target_or_hash": "6c5c79b7e2d29ef9a77a7f2b756e9a5d3120464d759077aea7cb0ec3ce40ec59",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/document.md",
+      "kind": "generated",
+      "target_or_hash": "96fb6a5dff16b57526c072b332084c33f5bd0e634b32bd5215782efffae092ed",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-advisor.md",
+      "kind": "generated",
+      "target_or_hash": "b694eaa02108fd39237cd3a720c009983e1e9b3468632e9a7a7cd4cf5396e845",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-config.md",
+      "kind": "generated",
+      "target_or_hash": "70187c5d75172f6db7a9647e60e53ccb834ee489b353649162f3569d8fed1428",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-init.md",
+      "kind": "generated",
+      "target_or_hash": "079f8639b4b38f226c7ef08063591d293e8b138c4e86d7d2e23dac187e2d2bca",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/implement.md",
+      "kind": "generated",
+      "target_or_hash": "5d4a17f9524d4d203cd252a49013a2e1e677eacfbed7040cd6a34ce4bd90341a",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/learn.md",
+      "kind": "generated",
+      "target_or_hash": "25cdc27d10ec081e2299e99649d09b07022fc294f21a6bd215fd1240dc06551d",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/polish.md",
+      "kind": "generated",
+      "target_or_hash": "d80fc327460ba800840f2660ba71f78bc913c96a7af87537120b081f6ecea8b5",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/research.md",
+      "kind": "generated",
+      "target_or_hash": "0c3db0936ab6101da39e16fbcb46ddae1ffda833ba97127dcdba83b5837471d8",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/summary-prompt.md",
+      "kind": "generated",
+      "target_or_hash": "b8fd812eb917ad6c9fca6eb078786db97f23ac21054306e5956c6660d6d55c64",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/sync-spec.md",
+      "kind": "generated",
+      "target_or_hash": "fa777558d715008acc45c505ffc6ef35ef219b12902128bd94f1210c049ac0bb",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/settings.json",
+      "kind": "generated",
+      "target_or_hash": "5658ee03aeddd930e1cd4bcdd243aaaa087aad29e44b5aa0a21bacaee5cd96e3",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/skills",
+      "kind": "symlink",
+      "target_or_hash": ".agent/skills",
+      "platform": "claude"
+    },
+    {
+      "path": ".gitignore#.agent/dependencies/*",
+      "kind": "gitignore-line",
+      "target_or_hash": ".agent/dependencies/*",
+      "platform": "core"
+    },
+    {
+      "path": ".gitignore#.claude/",
+      "kind": "gitignore-line",
+      "target_or_hash": ".claude/",
+      "platform": "claude"
+    },
+    {
+      "path": ".gitignore#.omp/",
+      "kind": "gitignore-line",
+      "target_or_hash": ".omp/",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/AGENTS.md",
+      "kind": "symlink",
+      "target_or_hash": ".agent/AGENTS.md",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/WATCHDOG.yml",
+      "kind": "generated",
+      "target_or_hash": "beb4dc0e1c1b39d70f636c83ab52f7562af33f3e636800fdb6c60ea374d2e6c6",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/commit.md",
+      "kind": "generated",
+      "target_or_hash": "0cb2dd6c415e623f6aa83752628913568b10c88de51836777553b8463271a082",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/debug.md",
+      "kind": "generated",
+      "target_or_hash": "f6452dd9841155599fe45b16d91dda50b5531feb5451f0d003e52286f7dd1c24",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/dev-spec.md",
+      "kind": "generated",
+      "target_or_hash": "c78e9fda246fa83ed5483859eae66795a0b4b929561523b358cf66771f21ae7d",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/document.md",
+      "kind": "generated",
+      "target_or_hash": "ce671f8ab640f5458d0e31237e944435a778eb1bc9c9b7207038c4a7f2e58125",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/harness-config.md",
+      "kind": "generated",
+      "target_or_hash": "ef027aa4c6c090f11c1ee2e528cd3f35d46ac7570d8762af0e4f34e3ea7b2181",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/implement.md",
+      "kind": "generated",
+      "target_or_hash": "79df2feb3be67205cf400fc7ee00f809e9d9ffefffdc5de8b5840f30a6309ca5",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/polish.md",
+      "kind": "generated",
+      "target_or_hash": "123abae1bdfc76c9b29f3694e19ac969ce1dc25475ca85c0dd806eaf84f65a58",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/summary-prompt.md",
+      "kind": "generated",
+      "target_or_hash": "bca46f31d5f64e04a129063b0fed2f70f8913bbfbce0ea4b4063c2d5d4548074",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/sync-spec.md",
+      "kind": "generated",
+      "target_or_hash": "36470c0ca8a88f6f97882e184c4a51d0b8edb6677e0e0f3ec449f4ec5987ffd9",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/config.yml",
+      "kind": "generated",
+      "target_or_hash": "8bb4dd868d7a20b52cebda373b7dd566610c150e813a899271d3b997563aef19",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/hooks/session-doctor.ts",
+      "kind": "generated",
+      "target_or_hash": "46c2dc2de1560576188fd8eea83dd0b0430e13105d4468f088286b746e2f59b9",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-infrastructure-0.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "1ca11cda7345b5775c7efc0e788c8c884587f121173504a526781a5f42393735",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-infrastructure-1.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "fb8ba32a6cb3cfa386bfb33c734591ea40c992264c4cc9d9ca0d5a8279f18f52",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-infrastructure-2.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "2b975f52a50c35f3750503e5af58f175dae2d88b259b2580f8923fbae7b4a2c0",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-infrastructure-3.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "a1704ef2c60832cecc908f13cdcfec96e904e5c43706de36d0425176ce6e0cd7",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-infrastructure-4.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "b91b67ad4e93dbdc2f386ec3e02c04e071a82e77c5b3e0f8c996fb6b244a172c",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-0.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "e013bb91483cbddfb5065e4bd83fdbe7f65f33e7022b637308f4209db5e385e5",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-1.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "5d67552929997b7ba79ab50b4ed8239686f1fe15415d71c6b9100743b47dfcc2",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-10.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "2f48a01658e9608f36fafb8c74d899f959d36b589fd3ea67a25954a9c45a7875",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-11.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "26d85ee5f672db7249383354976f7f3be0bd7225ba324335fc773894f708832f",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-2.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "a641dc08d9076f6e3b70d5cb402160bca32cefd9cab68d29395bbc792d76d51a",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-3.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "8c6b303a346b933378ae33e4fff61aad35784ef5d0eafdd69ba1d109ef0f88b7",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-4.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "78871e69e266e569819b0c8efa194a304bce12c6471a884c97ff1d6f1e8a5fed",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-5.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "aaa43cee95338f7aac147d5e0563d8bb5395dfc1ce4c4596f45c7b55721aaa6e",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-6.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "c306045b34a3930ec1c0e3e1206c31ad76b22f9e9514e61d861cae78505523f0",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-7.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "8daf4352dff4e6fad56ab85a87359c5151e639dfd01fd704c6d3b994a3952ca6",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-8.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "d89f39fc4f2de6b9601e22aec3a113e0b01f7c5e57fefa2c289fca60a406c77f",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-shell-9.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "ce0f47577d8265d4476e23ab82e5cfcb0b8913fba91000a5f0e5d2f5e94fc1d5",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-tooling-0.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "d080bb7823aa638c87294cb33313d969b6253c6a808d266e9e6f2039cf5fc565",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-tooling-1.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "9cecdb12eae12d110400000161a6542ba648b943c38fdb7ed11d40c6e360ed51",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-tooling-2.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "c31c11341b012342f5a3e965b34c107c470dcecfb29b12e0f27b478a716e9602",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-tooling-3.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "d636c52d1784d028281f4fee0e7cc774a9a871098755a7bf7698dae65c8c9043",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-tooling-4.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "4bb5b2c97315f60560b2caa8245890dfb4955054dac98e2821e926f3eaff86e6",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-tooling-5.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "2219c1edc28f45c036ba9e9a2a855c39f3270f3733a3fe1359e18c4232a64500",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-tooling-6.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "80f5a4661850de6504f0adbd2f73c1edb8ebe9c6492bc454a76f216d9002058b",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/commit.md",
+      "kind": "generated",
+      "target_or_hash": "8fef23302631d28140402eabbc1315c39dc6c5c403ca8d3fb50b775f9e961f08",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/debug.md",
+      "kind": "generated",
+      "target_or_hash": "1c0025373be6ff61e1545220701c726db908664e0d72df9a65facbd723ebd92b",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/dev-spec.md",
+      "kind": "generated",
+      "target_or_hash": "d446982c9ef3b4598733241e25f362eecae441fde78007d7532d8b8714a0e163",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/document.md",
+      "kind": "generated",
+      "target_or_hash": "a992be48cf6ee3df0f4b5ea15b27e69768a218c61d6af7dc2bf0ed89bf10b3cb",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/harness-config.md",
+      "kind": "generated",
+      "target_or_hash": "4af84748adca76de43d5bed3694b021f58c53dade27799d284c6d441ae1dffee",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/harness-init.md",
+      "kind": "generated",
+      "target_or_hash": "f7f77cd1246074c03c080c5c717443a4b1a8b6f9a647888da6984fc17a908f07",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/implement.md",
+      "kind": "generated",
+      "target_or_hash": "f25c6e5ecfa7130a969d753afb28721dbc87067d6aaeeaaed8529bf59d9203d3",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/learn.md",
+      "kind": "generated",
+      "target_or_hash": "49aae11f388063dcb3ab4b80fe9494086cdbbaa5a4b8f14cdeb3a16935b7d525",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/polish.md",
+      "kind": "generated",
+      "target_or_hash": "af86ece79e8703f71f7785c504ecc907903b0b021e257e6bbb719a14657a0c39",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/research.md",
+      "kind": "generated",
+      "target_or_hash": "cd05c3f06e0e54e9b475d0ce8c72a1748229ae6b17508b8d9297f91fec765551",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/summary-prompt.md",
+      "kind": "generated",
+      "target_or_hash": "5fac8c623c6c9186dd8450b8bf4261f9c0eb8f5108f50bfa0b8d63f29492b037",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/sync-spec.md",
+      "kind": "generated",
+      "target_or_hash": "ef9ccc5a2921b3a4a753fc54d563bc1b280b938ae8181526ee046b6c656d2662",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/skills",
+      "kind": "symlink",
+      "target_or_hash": ".agent/skills",
+      "platform": "omp"
+    }
+  ]
+}

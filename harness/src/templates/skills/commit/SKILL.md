@@ -9,6 +9,12 @@ harness_model_role: smol
 
 # Commit
 
+**Fully autonomous — ask the developer NOTHING.** The whole point of this command is that the
+developer runs it, walks away, and comes back to a finished commit message file. Every answer
+you need is in `git status`/`git diff`, the session log, and your own conversation context.
+Never use a question tool here; if something is genuinely unknowable (e.g. why an unrelated
+file is dirty), note it in the final summary instead of blocking on it.
+
 ## Preflight
 1. If `.agent/manifest.json` is missing → stop; tell the user to run `harness init`.
 2. Run `harness doctor`. Fix 🔴 errors before proceeding.
@@ -19,30 +25,37 @@ harness_model_role: smol
 1. **Read the mode.** `workflow.commit_mode` in `.agent/manifest.json`: `"message-only"`
    (default) or `"agent-commits"`.
 2. **Ensure today's log entry.** Run `harness log session-end`. It creates today's entry if
-   missing and prints four questions. If the entry's sections are empty, ask the developer
-   those questions (structured question tool if available — `ask_user_question` /
-   `AskUserQuestion` — else a plain numbered list) and write the answers into the printed path.
-   Append into today's entry only — never rewrite earlier entries. Load
-   `references/session-log-format.md` for the entry format.
+   missing and prints four questions. Answer them YOURSELF: run `git status --porcelain` and
+   `git diff` (staged + unstaged), combine with what you did this session, and write the
+   answers into the printed path. Only sections you truly cannot reconstruct get a one-line
+   `(not captured this session)`. Append into today's entry only — never rewrite earlier
+   entries. Load `references/session-log-format.md` for the entry format.
 3. **High-care projects:** if `workflow.default_tier` is "high-care" and code changed since the
-   last sync-spec run, suggest running the sync-spec skill first (it extracts patterns and
-   updates standards). Continue if the developer declines.
-4. **Generate the message.** Run `harness log commit-msg`. Review against the rules in
-   `references/session-log-format.md`; if type/scope/title reads wrong, edit
-   `.agent/docs/session-log/YYYY/MM/YYYY-MM-DD.commit.md` directly (title ≤ 72 chars, body says
-   why — never a file list).
+   last sync-spec run, add a "consider running sync-spec" line to the final summary. Do not
+   pause to ask — continue immediately.
+4. **Generate the message.** Run `harness log commit-msg`. It writes TWO files: the raw
+   `.commit.md` (machine source for `git commit -F`) and the day's ledger
+   `.agent/docs/commits/MM-DD-YYYY.md` — the developer's copy source, one fenced section per
+   commit of the day — and links the ledger from today's log entry. Review against the rules
+   in `references/session-log-format.md`; if type/scope/title reads wrong, edit BOTH the
+   `.commit.md` and the ledger's latest section to match (title ≤ 72 chars, body says why —
+   never a file list).
 5. **The gate.** Load `references/commit-checklist.md` (customized for this project at init).
    Run every "Must pass" item — report each ✅/🔴 — and PERFORM every "Must be current" update.
-   Any failure → present the failures and STOP: do not present the commit message unless the
-   developer explicitly waives the failing items (record a waiver line in today's session-log
-   entry via `harness log append` machinery). Nothing is silently changed; collect every update
-   for the step-7 summary.
+   Failures do NOT stop the run or trigger questions: fix what is mechanically fixable, finish
+   the commit message file regardless, and lead the step-7 summary with the remaining 🔴 items
+   so the developer decides whether to fix or commit anyway. (In agent-commits mode a 🔴 DOES
+   block the actual `git commit` — record any waiver the developer gives in today's entry.)
+   Nothing is silently changed; collect every update for the step-7 summary.
 6. **Commit — by mode.**
-   - `message-only`: present the message ready to copy. The developer stages + commits via
-     lazygit and pastes it. Do NOT run `git commit`.
-   - `agent-commits`: show `git status --porcelain`; confirm the exact file list with the
-     developer (structured question tool). On confirmation:
+   - `message-only`: the message is in the day's ledger (and `.commit.md`) — done. Do NOT run
+     `git commit`.
+   - `agent-commits` (the ONE permitted question in this skill — it runs git): show
+     `git status --porcelain`; confirm the exact file list with the developer (structured
+     question tool). On confirmation:
      `git add <files> && git commit -F .agent/docs/session-log/YYYY/MM/YYYY-MM-DD.commit.md`,
      then `harness log backfill-sha --sha "$(git rev-parse HEAD)"`.
-7. **Summary.** "Updated: [files]. Needs your attention: [list]." Include the commit message
-   (message-only) or the new commit SHA (agent-commits).
+7. **Summary.** FIRST line, message-only mode: the ledger path —
+   `.agent/docs/commits/MM-DD-YYYY.md` — so the developer returning to the session sees
+   immediately where to copy from; then the full message itself. Agent-commits: the new SHA.
+   Then "Updated: [files]. Needs your attention: [list]."

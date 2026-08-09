@@ -1,5 +1,6 @@
 import { existsSync, lstatSync, readFileSync, readdirSync, rmSync, rmdirSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { EXIT, HarnessError } from "../lib/errors.ts";
 import { parseFrontmatter } from "../lib/frontmatter.ts";
 import { ensureSymlink, sha256, walk, writeFileAtomic } from "../lib/fsx.ts";
@@ -10,14 +11,71 @@ import type { Reporter } from "../lib/output.ts";
 import { AGENT_DIR, P } from "../lib/paths.ts";
 import { loadSyncManifest, saveSyncManifest, type SyncEntry } from "../lib/syncManifest.ts";
 import { claudeAdapter, CLAUDE_MD, CLAUDE_SETTINGS_FRAGMENT, commandShim } from "../platforms/claude.ts";
-import { OMP_CONFIG_FILE, ompAdapter, promptShim } from "../platforms/omp.ts";
+import { OMP_CONFIG_FILE, OMP_DISABLED_PROVIDERS, ompAdapter, ompConfigFile, promptShim } from "../platforms/omp.ts";
 import type { ContextRule, PlatformAdapter, PlatformId, ProjectContext, SkillInfo } from "../platforms/types.ts";
 
 /** Adapter registry — the single place platform.ts and sync share. */
 export const ADAPTERS: Record<PlatformId, PlatformAdapter> = { omp: ompAdapter, claude: claudeAdapter };
 
-/** Paths applied via mergeManagedJson instead of whole-file D10 hashing. */
-export const MERGE_PATHS = new Set([".claude/settings.json"]);
+/** Paths applied via key-level merge instead of whole-file D10 hashing.
+ * `.omp/config.yml` is CO-OWNED: OMP itself persists project-level `modelRoles` there,
+ * so whole-file management would flag its writes as user-modified conflicts forever. */
+export const MERGE_PATHS = new Set([".claude/settings.json", ".omp/config.yml"]);
+
+/**
+ * Merges the harness-managed keys into .omp/config.yml, preserving everything OMP or the
+ * developer wrote. Managed keys: `disabledProviders` (whole array), `advisor.enabled`,
+ * and the five tier-mapped entries under `modelRoles` (slow/task/smol/tiny/advisor —
+ * skipped for "@role" tier refs). Other modelRoles/advisor keys are preserved.
+ *
+ * @param props.existingText - Current file text, or null when the file does not exist.
+ * @param props.advisor - manifest.models.advisor.
+ * @param props.tiers - manifest.models.tiers.
+ * @returns merged: new full text (canonical template when creating; comment-free YAML when
+ *   merging), or null when byte-identical already; conflict: set when the file is not valid
+ *   YAML — caller reports, never writes.
+ */
+export function mergeManagedOmpConfig(props: {
+  existingText: string | null;
+  advisor: boolean;
+  tiers: { frontier: string; standard: string; cheap: string };
+}): { merged: string | null; conflict?: string } {
+  // Creation goes through the same normalize-and-merge path as updates so the very next
+  // sync is byte-identical (the commented bootstrap template normalizes once, harmlessly).
+  let doc: Record<string, unknown>;
+  try {
+    const parsed = props.existingText === null ? {} : (parseYaml(props.existingText) as unknown);
+    if (parsed !== null && (typeof parsed !== "object" || Array.isArray(parsed))) throw new Error("not a mapping");
+    doc = (parsed ?? {}) as Record<string, unknown>;
+  } catch {
+    return { merged: null, conflict: "not valid YAML — fix or delete it, then re-run harness sync" };
+  }
+
+  doc["disabledProviders"] = [...OMP_DISABLED_PROVIDERS];
+  const advisorBlock = (typeof doc["advisor"] === "object" && doc["advisor"] !== null && !Array.isArray(doc["advisor"])
+    ? doc["advisor"]
+    : {}) as Record<string, unknown>;
+  advisorBlock["enabled"] = props.advisor;
+  doc["advisor"] = advisorBlock;
+
+  const roles = (typeof doc["modelRoles"] === "object" && doc["modelRoles"] !== null && !Array.isArray(doc["modelRoles"])
+    ? doc["modelRoles"]
+    : {}) as Record<string, unknown>;
+  const managed: Array<[string, string]> = [
+    ["slow", props.tiers.frontier],
+    ["task", props.tiers.standard],
+    ["smol", props.tiers.cheap],
+    ["tiny", props.tiers.cheap],
+    ["advisor", props.tiers.cheap],
+  ];
+  for (const [role, model] of managed) {
+    if (!model.startsWith("@")) roles[role] = model;
+  }
+  if (Object.keys(roles).length > 0) doc["modelRoles"] = roles;
+
+  const merged = `# MANAGED by harness sync — harness enforces disabledProviders, advisor.enabled,\n# and the tier-mapped modelRoles; every other key here is preserved.\n${stringifyYaml(doc)}`;
+  return { merged: merged === props.existingText ? null : merged };
+}
 
 const GITIGNORE_OPEN = "# >>> harness (managed by `harness sync`) >>>";
 const GITIGNORE_CLOSE = "# <<< harness <<<";
@@ -245,7 +303,7 @@ export function bootstrapBridges(props: { root: string; stdout: (s: string) => v
   const entries = new Map(prev.entries.map((e) => [e.path, e]));
 
   const files: Array<{ path: string; content: string; platform: PlatformId }> = [
-    { path: ".omp/prompts/init.md", content: promptShim({ name: "init", description }), platform: "omp" },
+    { path: ".omp/prompts/harness-init.md", content: promptShim({ name: "init", description }), platform: "omp" },
     { path: ".omp/config.yml", content: OMP_CONFIG_FILE, platform: "omp" },
     { path: ".claude/commands/harness-init.md", content: commandShim({ name: "init", description }), platform: "claude" },
     { path: ".claude/CLAUDE.md", content: CLAUDE_MD, platform: "claude" },
@@ -355,7 +413,10 @@ export function runSync(props: { root: string; reporter: Reporter }): number {
     const prevEntry = prevByPath.get(f.path);
 
     if (MERGE_PATHS.has(f.path)) {
-      const result = mergeManagedJson({ existingText: diskText, fragment: CLAUDE_SETTINGS_FRAGMENT });
+      const result =
+        f.path === ".omp/config.yml"
+          ? mergeManagedOmpConfig({ existingText: diskText, advisor: ctx.manifest.models.advisor, tiers: ctx.manifest.models.tiers })
+          : mergeManagedJson({ existingText: diskText, fragment: CLAUDE_SETTINGS_FRAGMENT });
       if (result.conflict !== undefined) {
         conflict(f.path, result.conflict);
         if (prevEntry !== undefined) nextEntries.push(prevEntry);

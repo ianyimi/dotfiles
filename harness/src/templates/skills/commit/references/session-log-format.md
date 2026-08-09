@@ -37,3 +37,11 @@ permitted in-place edit is `harness log backfill-sha` filling `**Commit:** (pend
   Scope = workspace package dir (omitted outside a workspace).
 - Body: the "What was built" bullets, then `Why:` + the "Decisions made" bullets.
 - Explain why, never list files — the diff already lists files.
+
+## Where the message lands
+- `.agent/docs/session-log/YYYY/MM/YYYY-MM-DD.commit.md` — raw latest message; what
+  agent-commits mode feeds to `git commit -F`.
+- `.agent/docs/commits/MM-DD-YYYY.md` — the day's ledger, one `## HH:MM` fenced section per
+  commit; the developer copies from here. Multiple commits in a day stack in the same file.
+- Today's log entry gains a `_Committed → [ledger link] at HH:MM._` line marking the point in
+  the session where changes went up.

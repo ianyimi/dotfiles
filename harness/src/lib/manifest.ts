@@ -41,6 +41,16 @@ export interface HarnessManifest {
     naming_conventions: boolean;
   };
   standards_domains: string[];
+  /** Model economy (09 live-test additions): how agents pick model tiers. */
+  models: {
+    /** "dynamic": the spec author assigns the cheapest adequate tier per subagent task;
+     *  "uniform": every subagent inherits the session model. */
+    subagent_selection: "dynamic" | "uniform";
+    /** Enable the harness-keeper advisor (OMP-native WATCHDOG; cheap watcher model). */
+    advisor: boolean;
+    /** Tier hints agents cite when requesting models. OMP: role selectors; else labels. */
+    tiers: { frontier: string; standard: string; cheap: string };
+  };
   dependencies: DependencyPin[];
   doctor: {
     checks?: string[];
@@ -69,6 +79,20 @@ export const DEFAULT_BUDGETS = {
   anti_patterns_lines: 40,
   skill_lines: 150,
   agents_md_directives_lines: 20,
+} as const;
+
+export const DEFAULT_MODELS = {
+  subagent_selection: "dynamic",
+  advisor: true,
+  // Concrete catalog ids (Anthropic-first defaults) — sync maps them onto OMP's model roles
+  // so subagents/advisor genuinely run cheaper models. "@role" values skip the mapping and
+  // leave that role to the platform's own configuration. Uncredentialed models fall back to
+  // the parent model inside OMP, so a wrong id degrades gracefully, never breaks.
+  tiers: {
+    frontier: "anthropic/claude-fable-5",
+    standard: "anthropic/claude-sonnet-5",
+    cheap: "anthropic/claude-haiku-4-5",
+  },
 } as const;
 
 const REQUIRED_KEYS = [
@@ -157,7 +181,26 @@ export function validateManifest(props: { value: unknown }): {
   doctor["budgets"] = { ...DEFAULT_BUDGETS, ...budgets };
   if (typeof doctor["stale_spec_days"] !== "number") doctor["stale_spec_days"] = 14;
 
-  const knownKeys = new Set<string>([...REQUIRED_KEYS, "repo"]);
+  // models is optional pre-09 — fill every missing piece from the defaults.
+  const models = (obj["models"] ?? {}) as Record<string, unknown>;
+  if (typeof models !== "object" || models === null || Array.isArray(models)) invalid("models", "models must be an object");
+  if (models["subagent_selection"] === undefined) models["subagent_selection"] = DEFAULT_MODELS.subagent_selection;
+  if (models["subagent_selection"] !== "dynamic" && models["subagent_selection"] !== "uniform") {
+    invalid("models.subagent_selection", `models.subagent_selection must be "dynamic" or "uniform"`);
+  }
+  if (typeof models["advisor"] !== "boolean") models["advisor"] = DEFAULT_MODELS.advisor;
+  const tiers = { ...DEFAULT_MODELS.tiers, ...((models["tiers"] ?? {}) as Record<string, unknown>) } as Record<string, string>;
+  // Migrate the pre-2026-08-08 role-ref defaults: they were never a deliberate choice, and
+  // "@role" values suppress the modelRoles emission → subagents/advisor silently run the
+  // session model. Deliberate @-refs to OTHER roles are left alone.
+  const LEGACY_TIER_DEFAULTS: Record<string, string> = { frontier: "@slow", standard: "@default", cheap: "@smol" };
+  for (const key of Object.keys(LEGACY_TIER_DEFAULTS)) {
+    if (tiers[key] === LEGACY_TIER_DEFAULTS[key]) tiers[key] = DEFAULT_MODELS.tiers[key as keyof typeof DEFAULT_MODELS.tiers];
+  }
+  models["tiers"] = tiers;
+  obj["models"] = models;
+
+  const knownKeys = new Set<string>([...REQUIRED_KEYS, "repo", "models"]);
   const warnings = Object.keys(obj)
     .filter((k) => !knownKeys.has(k))
     .map((k) => `manifest.json: unknown key \`${k}\` — kept`);

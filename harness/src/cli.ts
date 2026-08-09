@@ -2,6 +2,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { CHECKS } from "./checks/index.ts";
+import { runConfig } from "./commands/config.ts";
 import { contextCommand } from "./commands/context.ts";
 import { runDeps } from "./commands/deps.ts";
 import { runDoctor } from "./commands/doctor.ts";
@@ -68,9 +69,14 @@ function readDataArg(raw: string): Record<string, unknown> {
 /** The single command registration point (master §8). Later specs append rows. */
 const COMMANDS: Record<string, Command> = {
   install: {
-    help: "install [--template <name>] — install the .agent/ harness skeleton + skills here",
+    help: "install [--template <name>] [--refresh-skills | --refresh-skill <name>[,<name>…]] — install the .agent/ harness skeleton + skills here (refresh re-copies harness default skills from the current templates, discarding local edits to them; prefer --refresh-skill for just the one you need)",
     run: (props) => {
-      const parsed = parseArgs({ argv: props.args, spec: { options: ["template"] } });
+      const parsed = parseArgs({ argv: props.args, spec: { options: ["template", "refresh-skill"], flags: ["refresh-skills"] } });
+      const refreshOne = parsed.options["refresh-skill"];
+      if (parsed.flags["refresh-skills"] === true && refreshOne !== undefined) {
+        throw new HarnessError("usage", "pass either --refresh-skills (all) or --refresh-skill <name>, not both");
+      }
+      const refreshSkills = refreshOne !== undefined ? refreshOne.split(",").map((s) => s.trim()).filter((s) => s !== "") : parsed.flags["refresh-skills"];
       // install must work on a brand-new directory: fall back to cwd when neither
       // .agent/ nor .git/ exists yet (the install creates the .agent marker).
       let root: string;
@@ -79,7 +85,12 @@ const COMMANDS: Record<string, Command> = {
       } catch {
         root = props.cwd;
       }
-      const code = initScaffold({ root, template: parsed.options["template"], stdout: props.stdout });
+      const code = initScaffold({
+        root,
+        template: parsed.options["template"],
+        refreshSkills,
+        stdout: props.stdout,
+      });
       // Pre-init bridge: make /init (OMP) and /harness-init (Claude Code) visible immediately
       // — the full bridge arrives with `harness sync` after the interview finishes.
       bootstrapBridges({ root, stdout: props.stdout });
@@ -182,6 +193,16 @@ const COMMANDS: Record<string, Command> = {
       const root = resolveProjectRoot({ cwd: props.cwd });
       const reporter = new Reporter({ json: false, write: props.stderr });
       const code = contextCommand({ root, task, files: parsed.options["files"], stdout: props.stdout, reporter });
+      reporter.flush();
+      return code;
+    },
+  },
+  config: {
+    help: "config [list] | get <key> | set <key> <value> — toggles (models.*, workflow.*)",
+    run: (props) => {
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      const reporter = new Reporter({ json: false, write: props.stdout });
+      const code = runConfig({ args: props.args, root, reporter });
       reporter.flush();
       return code;
     },

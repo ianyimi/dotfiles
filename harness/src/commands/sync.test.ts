@@ -104,6 +104,7 @@ describe("updateGitignoreBlock", () => {
 });
 
 const OMP_FILES = [
+  ".omp/WATCHDOG.yml",
   ".omp/agents/dev-spec.md",
   ".omp/agents/implement.md",
   ".omp/config.yml",
@@ -149,7 +150,7 @@ describe("runSync engine", () => {
     expect(gitignore).toContain(".agent/dependencies/*\n.claude/\n.omp/");
 
     const sm = loadSyncManifest({ root: dir });
-    expect(sm.entries).toHaveLength(22); // 16 generated (incl. 4 command shims) + 3 symlinks + 3 gitignore-lines
+    expect(sm.entries).toHaveLength(23); // 17 generated (incl. 4 shims + WATCHDOG.yml) + 3 symlinks + 3 gitignore-lines
     expect(sm.generated_at_sha).toMatch(/^[0-9a-f]{40}$/);
     const paths = sm.entries.map((e) => e.path);
     expect(paths).toEqual([...paths].sort());
@@ -183,13 +184,38 @@ describe("runSync engine", () => {
   test("D10b: user-modified managed file → conflict, left in place, entry kept", async () => {
     const dir = syncedFixture();
     await runCli({ argv: ["sync"], cwd: dir });
-    const oldHash = loadSyncManifest({ root: dir }).entries.find((e) => e.path === ".omp/config.yml")?.target_or_hash;
-    appendFileSync(join(dir, ".omp/config.yml"), "# mine\n");
+    const target = ".omp/hooks/session-doctor.ts";
+    const oldHash = loadSyncManifest({ root: dir }).entries.find((e) => e.path === target)?.target_or_hash;
+    appendFileSync(join(dir, target), "// mine\n");
     const r = await runCli({ argv: ["sync"], cwd: dir });
     expect(r.code).toBe(1);
-    expect(r.stdout).toContain(".omp/config.yml: user-modified managed file");
-    expect(readFileSync(join(dir, ".omp/config.yml"), "utf8")).toEndWith("# mine\n");
-    expect(loadSyncManifest({ root: dir }).entries.find((e) => e.path === ".omp/config.yml")?.target_or_hash).toBe(oldHash);
+    expect(r.stdout).toContain(`${target}: user-modified managed file`);
+    expect(readFileSync(join(dir, target), "utf8")).toEndWith("// mine\n");
+    expect(loadSyncManifest({ root: dir }).entries.find((e) => e.path === target)?.target_or_hash).toBe(oldHash);
+    rmProject({ dir });
+  });
+
+  test("omp config merge: OMP-written keys preserved, harness keys enforced, idempotent", async () => {
+    const dir = syncedFixture();
+    await runCli({ argv: ["sync"], cwd: dir });
+    // Simulate OMP persisting its own project-level modelRoles entry + a custom advisor key —
+    // exactly the co-ownership that used to dead-end as a permanent conflict.
+    const configPath = join(dir, ".omp/config.yml");
+    writeFileSync(
+      configPath,
+      ["modelRoles:", '  designer: "x-ai/grok-code-fast"', '  advisor: "anthropic/claude-opus-4-5"', "advisor:", "  syncBacklog: 5", ""].join("\n"),
+    );
+    const r = await runCli({ argv: ["sync"], cwd: dir });
+    expect(r.code).toBe(0); // merge path — never a conflict
+    const merged = readFileSync(configPath, "utf8");
+    expect(merged).toContain("designer: x-ai/grok-code-fast"); // OMP's key preserved
+    expect(merged).toContain("syncBacklog: 5"); // OMP's advisor sub-key preserved
+    expect(merged).toContain("advisor: anthropic/claude-haiku-4-5"); // harness tier ENFORCED over the opus drift
+    expect(merged).toContain("enabled: true");
+    expect(merged).toContain("- agents"); // disabledProviders enforced
+    const again = await runCli({ argv: ["sync"], cwd: dir });
+    expect(again.stdout).toContain("0 created, 0 updated");
+    expect(readFileSync(configPath, "utf8")).toBe(merged);
     rmProject({ dir });
   });
 

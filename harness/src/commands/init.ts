@@ -87,11 +87,22 @@ function withVerifiedAt(content: string, sha: string): string {
  *
  * @param props.root - Project root.
  * @param props.template - Optional init-template name (loaded FIRST — not-found aborts early).
+ * @param props.refreshSkills - Overwrite existing copies of harness-shipped default skills with
+ *   the current templates: `true` refreshes ALL of them, a string[] refreshes only those names
+ *   (project-authored skills are never in the template set → untouched either way). Local
+ *   edits to a refreshed skill are lost — the harness package is its source of truth, so
+ *   prefer naming just the skill you need when others carry init-time customizations.
  * @param props.stdout - Line sink; created paths are printed.
  * @returns EXIT.OK.
- * @throws {HarnessError} "template-not-found" / "template-invalid" before any write.
+ * @throws {HarnessError} "template-not-found" / "template-invalid" before any write; "usage"
+ *   when refreshSkills names a skill the template set doesn't ship.
  */
-export function initScaffold(props: { root: string; template?: string; stdout: (s: string) => void }): number {
+export function initScaffold(props: {
+  root: string;
+  template?: string;
+  refreshSkills?: boolean | string[];
+  stdout: (s: string) => void;
+}): number {
   const tpl = props.template !== undefined ? loadTemplate({ name: props.template }) : null;
   const skillsAbs = join(props.root, P.skills);
   const preExistingSkills = new Set(
@@ -128,14 +139,33 @@ export function initScaffold(props: { root: string; template?: string; stdout: (
   ensureFile(join(P.dependencies, ".gitignore"), DEPS_GITIGNORE);
   ensureFile(P.depsRegistry, REGISTRY_HEADER);
 
-  // Copy embedded default skills, skipping any skill dir that already exists.
+  // Copy embedded default skills, skipping any skill dir that already exists —
+  // unless it's selected for refresh, which re-copies it wholesale (rm first so
+  // files deleted from the template don't linger in the project copy).
   const skillsSrc = join(TEMPLATES, "skills");
-  for (const entry of readdirSync(skillsSrc, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const dest = join(props.root, P.skills, entry.name);
+  const shippedSkills = readdirSync(skillsSrc, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name);
+  if (Array.isArray(props.refreshSkills)) {
+    for (const name of props.refreshSkills) {
+      if (!shippedSkills.includes(name)) {
+        throw new HarnessError("usage", `--refresh-skill ${name}: not a harness default skill (available: ${shippedSkills.join(", ")})`);
+      }
+    }
+  }
+  const refreshes = (name: string): boolean =>
+    props.refreshSkills === true || (Array.isArray(props.refreshSkills) && props.refreshSkills.includes(name));
+  let refreshed = 0;
+  for (const name of shippedSkills) {
+    const dest = join(props.root, P.skills, name);
     if (!existsSync(dest)) {
-      cpSync(join(skillsSrc, entry.name), dest, { recursive: true });
-      created.push(`${P.skills}/${entry.name}/`);
+      cpSync(join(skillsSrc, name), dest, { recursive: true });
+      created.push(`${P.skills}/${name}/`);
+    } else if (refreshes(name)) {
+      rmSync(dest, { recursive: true });
+      cpSync(join(skillsSrc, name), dest, { recursive: true });
+      props.stdout(`refreshed: ${P.skills}/${name}/`);
+      refreshed++;
     }
   }
 
@@ -174,7 +204,13 @@ export function initScaffold(props: { root: string; template?: string; stdout: (
     }
   }
 
-  props.stdout(created.length > 0 ? created.map((c) => `created: ${c}`).join("\n") : "nothing to create — scaffold already complete");
+  if (created.length > 0) {
+    props.stdout(created.map((c) => `created: ${c}`).join("\n"));
+  } else if (refreshed > 0) {
+    props.stdout(`scaffold complete — ${refreshed} skill${refreshed === 1 ? "" : "s"} refreshed`);
+  } else {
+    props.stdout("nothing to create — scaffold already complete");
+  }
   return 0;
 }
 
@@ -414,8 +450,10 @@ export function initFinish(props: { root: string; stdout: (s: string) => void })
       "## How agents will use this harness",
       "",
       "- Every session starts with `harness doctor` (auto via the platform hooks) and `harness state`.",
-      "- Workflows are skills in `.agent/skills/` — invocable as slash commands (`/harness-init` on",
-      "  Claude Code, `/init` on OMP; `/dev-spec`, `/sync-spec`, `/commit`, …) or by natural language.",
+      "- Workflows are skills in `.agent/skills/` — invocable as slash commands (`/harness-init`,",
+      "  `/dev-spec`, `/sync-spec`, `/commit`, `/summary-prompt`, …) or by natural language.",
+      `- The harness-keeper advisor is ${manifest.models.advisor ? "ON (OMP)" : "OFF"}: a cheap watcher that turns your feedback`,
+      "  into harness updates, logged in `docs/harness-changelog.md` and relayed back to you.",
       "- Before touching code, agents query the code map (`harness context --for \"<task>\"`) to load",
       "  exactly the standards that govern the files they will change.",
       "- Learnings flow back into the harness (see `docs/harness-guide.md`, \"Where knowledge goes\"),",

@@ -17,11 +17,15 @@ description: Initialize or update the agent harness for a project. Triggers on "
 
 ## Opening question — trusted context (before any inference)
 
-Ask the developer FIRST: "Which documents or files do you KNOW are current and authoritative
-(goals, roadmaps, architecture notes, critical context)? Anything I should distrust as stale?"
-Read every trusted document before inferring anything — they are the accuracy baseline for the
-whole setup, and existing agent docs are verified AGAINST them and against the code
-(see references/inference.md — mined docs are drafts to verify, never facts to migrate).
+Ask the developer FIRST, as an OPEN question: "Which documents or files do you KNOW are
+current and authoritative (goals, roadmaps, architecture notes, critical context)? Anything I
+should distrust as stale?" Let them name the docs — if you suggest candidates, suggest only
+PROJECT documents (root README, docs/, product notes). **Never offer harness artifacts as
+candidates**: anything under `.agent/`, the harness CLI's own files (e.g. `harness/README.md`),
+and generated bridges are this process's machinery — trusted by construction, authoritative
+only once THIS setup fills them. Old agent docs (`.pi/`, `.claude/`) are mining INPUTS to be
+verified, never "trusted" candidates. Read every named document before inferring anything —
+they are the accuracy baseline (see references/inference.md).
 
 ## Using a Template
 
@@ -77,3 +81,10 @@ area you deferred — future sessions continue the investigation via sync-spec.
 3. Append your discovery summary to `docs/setup-report.md` (its final section), then present
    the report path to the developer: it explains everything configured and how agents will use
    the harness — invite questions, corrections, and change requests.
+4. **Optional cleanup (requires an explicit answer — never skip the question, never assume).**
+   Ask: "Delete the outdated agent files now that their content is migrated?" Present the
+   EXACT list from your mining map (only files whose content was migrated or superseded —
+   e.g. old `.pi/` trees, covered `.claude/commands/*.md`; NEVER trusted docs or
+   keep-candidates). On yes: delete them, note the deletions in the setup report, re-run
+   `harness sync` + `harness doctor` (the unmanaged-file conflicts disappear). On no: run
+   `harness tasks add "Clean up outdated agent files" --to inbox` and move on.

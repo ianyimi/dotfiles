@@ -56,9 +56,33 @@ Three developer-experience gaps closed:
       writes; serial fallback otherwise. Post-init follow-ups land in tasks inbox.
    d. **`harness install` bootstraps a minimal bridge** — a fresh project has no manifest, so
       sync can't run, so OMP/Claude saw no `/init` at all. Install now writes the skills
-      symlinks, the `/init`+`/harness-init` shims, `CLAUDE.md`, the OMP double-load guard, and
-      the gitignore block, all recorded in the sync-manifest so the first full sync adopts
-      them hash-clean (and prunes inactive platforms' pieces).
+      symlinks, the init shims, `CLAUDE.md`, the OMP double-load guard, and the gitignore
+      block, all recorded in the sync-manifest so the first full sync adopts them hash-clean
+      (and prunes inactive platforms' pieces).
+10. **Second live-test batch (2026-08-08):**
+   a. **`/harness-init` on ALL platforms** — OMP also ships its own `/init`, so the harness
+      init shim is `harness-init` everywhere (adapter + bootstrap renamed).
+   b. **`manifest.json#models`** — `{ subagent_selection: "dynamic"|"uniform" (default
+      dynamic), advisor: boolean (default true), tiers: { frontier "@slow", standard
+      "@default", cheap "@smol" } }`, defaults filled by validation. dev-spec's subagent loop
+      and discovery's fan-out request the cheapest adequate tier under `dynamic`; `uniform`
+      inherits the session model. AGENTS directive added.
+   c. **The harness-keeper advisor** — OMP-native via generated `.omp/WATCHDOG.yml` (name
+      harness-keeper, tools read/grep/glob/bash, no `model:` → resolves the cheap `advisor`
+      role) + `advisor.enabled` in the generated config, gated on `models.advisor`. Content
+      lives in the `harness-advisor` skill (`references/advisor-protocol.md`): watch for
+      absolute-language/correction/repetition signals, map to harness files via the guide's
+      routing table, interject ONE cascade-format change-set, **append every applied change to
+      `docs/harness-changelog.md` and relay the digest to the developer**, and advise
+      subagent model tiers. Non-OMP platforms invoke `/harness-advisor` for retrospective
+      sweeps. Main-agent directive: with the advisor on, focus on the problem and act on its
+      change-sets.
+   d. **`/summary-prompt` skill** — compresses the session into a portable handoff prompt
+      (addressed to the receiving agent, imperative, file-path-grounded), saved beside the
+      session log as `<date>.handoff.md` and printed as one fenced block.
+   e. **Init optional cleanup step** — after the setup report, ask explicitly whether to
+      delete the outdated agent files from the mining map (exact list, yes/no required);
+      yes → delete + re-sync + note in report; no → tasks-inbox follow-up.
 
 ## Design Decisions
 

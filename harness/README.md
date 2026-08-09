@@ -20,7 +20,7 @@ harness help
 
 ```bash
 cd ~/Documents/Projects/some-project
-harness install        # or, better: open your agent and run /harness-init (Claude) or /init (OMP)
+harness install        # or, better: open your agent and run /harness-init
 # … the init skill interviews you, mines any existing .pi/.claude setup, sweeps the codebase,
 #   and finishes by writing .agent/docs/setup-report.md — read that.
 harness sync                 # generate the platform bridges

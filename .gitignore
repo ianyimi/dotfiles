@@ -19,3 +19,9 @@ private_dot_clawdbot/logs/
 .vscode/
 .idea/
 harness/node_modules/*
+
+# >>> harness (managed by `harness sync`) >>>
+.agent/dependencies/*
+.claude/
+.omp/
+# <<< harness <<<

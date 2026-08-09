@@ -37,10 +37,17 @@ disabledProviders:
   - agents
   - claude
 
-# Model role overrides — uncomment and edit to customize (roles: default, smol,
-# slow, vision, plan, designer, commit, tiny, task, advisor).
-# modelRoles:
-#   task: "<provider/model>"
+# Harness advisor (WATCHDOG.yml defines it; models.advisor in manifest.json toggles it).
+advisor:
+  enabled: true
+
+# Model roles from manifest.json#models.tiers — edit the manifest, then \`harness sync\`.
+modelRoles:
+  slow: "anthropic/claude-fable-5"
+  task: "anthropic/claude-sonnet-5"
+  smol: "anthropic/claude-haiku-4-5"
+  tiny: "anthropic/claude-haiku-4-5"
+  advisor: "anthropic/claude-haiku-4-5"
 `;
 
 // V7/V8 verified: handler is (event, ctx); HookAPI imports from the package root.
@@ -74,6 +81,7 @@ describe("ompAdapter.plan", () => {
     ]);
     expect(plan.gitignoreLines).toEqual([".omp/"]);
     expect(plan.files.map((f) => f.path)).toEqual([
+      ".omp/WATCHDOG.yml",
       ".omp/agents/dev-spec.md",
       ".omp/agents/implement.md",
       ".omp/config.yml",
@@ -88,17 +96,36 @@ describe("ompAdapter.plan", () => {
     ]);
   });
 
-  test("prompt shims: one per described skill, /init keeps its name on OMP", () => {
+  test("prompt shims: one per described skill; init → /harness-init (OMP ships its own /init)", () => {
     const shim = file(".omp/prompts/dev-spec.md") as string;
     expect(shim).toContain("description: Write a scoped implementation spec.");
     expect(shim).toContain("Invoke the `dev-spec` skill");
     expect(shim).toContain("$ARGUMENTS");
     const ctx2 = {
       ...ctx,
-      skills: [...ctx.skills, { name: "init", dir: ".agent/skills/init", frontmatter: { name: "init", description: "Init the harness." } }],
+      skills: [
+        ...ctx.skills,
+        { name: "init", dir: ".agent/skills/init", frontmatter: { name: "init", description: "Init the harness." } },
+        { name: "harness-advisor", dir: ".agent/skills/harness-advisor", frontmatter: { name: "harness-advisor", description: "The keeper." } },
+      ],
     };
     const paths = ompAdapter.plan({ ctx: ctx2 }).files.map((f) => f.path);
-    expect(paths).toContain(".omp/prompts/init.md");
+    expect(paths).toContain(".omp/prompts/harness-init.md");
+    expect(paths).not.toContain(".omp/prompts/init.md");
+    // WATCHDOG covers the advisor on OMP — no prompt shim colliding with the builtin /advisor.
+    expect(paths).not.toContain(".omp/prompts/harness-advisor.md");
+  });
+
+  test("advisor: WATCHDOG.yml points at the harness-advisor protocol; models.advisor=false drops it", () => {
+    const watchdog = file(".omp/WATCHDOG.yml") as string;
+    expect(watchdog).toContain("name: harness-keeper");
+    expect(watchdog).toContain("harness-advisor/references/advisor-protocol.md");
+    expect(watchdog).toContain("harness-changelog.md");
+    expect(watchdog).toContain('model: "anthropic/claude-haiku-4-5"'); // explicit — role resolution proved unreliable live
+    const ctx2 = { ...ctx, manifest: { ...ctx.manifest, models: { ...ctx.manifest.models, advisor: false } } };
+    const plan2 = ompAdapter.plan({ ctx: ctx2 });
+    expect(plan2.files.some((f) => f.path === ".omp/WATCHDOG.yml")).toBe(false);
+    expect(plan2.files.find((f) => f.path === ".omp/config.yml")?.content).toContain("enabled: false");
   });
 
   test("goldens: agent / instructions / config / hook", () => {

@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "project": "dotfiles",
+  "description": "Cross-platform dotfiles (macOS + CachyOS) managed by chezmoi with Bitwarden secret injection, Ansible provisioning, and agent tooling",
+  "harness": {
+    "base_version": "0.1.0"
+  },
+  "platforms": {
+    "active": [
+      "omp",
+      "claude"
+    ]
+  },
+  "workflow": {
+    "default_tier": "low-care",
+    "importance": "medium",
+    "developer_implements": false,
+    "post_implement_polish": false,
+    "commit_mode": "message-only"
+  },
+  "modules": {
+    "specs": true,
+    "tasks": true,
+    "session_log": true,
+    "roadmap": true,
+    "design": false,
+    "decisions": true,
+    "research": true,
+    "env_manifest": true,
+    "naming_conventions": false
+  },
+  "standards_domains": [
+    "shell",
+    "infrastructure",
+    "tooling"
+  ],
+  "dependencies": [
+    {
+      "package": "chezmoi",
+      "version": "v2.64.0",
+      "repo": "github.com/twpayne/chezmoi"
+    },
+    {
+      "package": "pure-bash-bible",
+      "version": "master",
+      "repo": "github.com/dylanaraps/pure-bash-bible"
+    },
+    {
+      "package": "google-shell-styleguide",
+      "version": "gh-pages",
+      "repo": "github.com/google/styleguide"
+    },
+    {
+      "package": "zsh",
+      "version": "zsh-5.9",
+      "repo": "github.com/zsh-users/zsh"
+    },
+    {
+      "package": "ansible",
+      "version": "v2.18.8",
+      "repo": "github.com/ansible/ansible"
+    },
+    {
+      "package": "bitwarden-clients",
+      "version": "cli-v2025.12.1",
+      "repo": "github.com/bitwarden/clients"
+    },
+    {
+      "package": "cachyos-settings",
+      "version": "master",
+      "repo": "github.com/CachyOS/CachyOS-Settings"
+    },
+    {
+      "package": "pacman",
+      "version": "master",
+      "repo": "gitlab.archlinux.org/pacman/pacman"
+    }
+  ],
+  "doctor": {
+    "budgets": {
+      "preferences_lines": 80,
+      "anti_patterns_lines": 40,
+      "skill_lines": 150,
+      "agents_md_directives_lines": 20
+    },
+    "stale_spec_days": 14
+  },
+  "models": {
+    "subagent_selection": "dynamic",
+    "advisor": true,
+    "tiers": {
+      "frontier": "anthropic/claude-fable-5",
+      "standard": "anthropic/claude-sonnet-5",
+      "cheap": "anthropic/claude-haiku-4-5"
+    }
+  }
+}

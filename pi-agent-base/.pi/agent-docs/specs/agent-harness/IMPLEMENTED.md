@@ -301,6 +301,51 @@ uncovered dir; guide survives re-finish with hand edits intact.
    `harness tasks add … --to inbox` follow-ups — the harness keeps investigating after init.
 5. **CLI rename**: `harness install` (was `init scaffold`) is the terminal entry point.
 
+## Second live-test batch (2026-08-08) — model economy, advisor, handoff, cleanup
+
+- **`manifest.json#models`**: `subagent_selection` (`dynamic` default / `uniform`), `advisor`
+  (default true), `tiers` (frontier/standard/cheap hints, default OMP roles `@slow`/`@default`/
+  `@smol`). dev-spec keeps the AUTHOR on the frontier tier but spawns each spec-section
+  subagent at the cheapest adequate tier; discovery sweeps request the cheap tier; `uniform`
+  turns all of that off. Fully defaulted for pre-existing manifests.
+- **The harness-keeper advisor**: sync generates `.omp/WATCHDOG.yml` (OMP's native advisor
+  system — cheap `advisor`-role model, read/grep/glob/bash) + `advisor.enabled` in config.yml,
+  toggled by `models.advisor`. Protocol in `.agent/skills/harness-advisor/references/`:
+  watches the developer's words (absolutes like "always"/"never", corrections, repetition),
+  maps signals to harness files via the guide's routing table, interjects ONE cascade-format
+  change-set, **logs every applied change to `docs/harness-changelog.md` and relays the digest
+  to the developer**, and advises subagent tiers. `/harness-advisor` = manual retrospective
+  sweep on non-OMP platforms. Assign a cheap model to OMP's `advisor` role to cap its cost.
+- **`/summary-prompt`**: new skill — portable session handoff prompt (imperative, addressed to
+  the receiving agent, grounded in file paths + `harness state`), saved as
+  `session-log/YYYY/MM/<date>.handoff.md` and printed as one copy-paste block.
+- **Init cleanup step**: finish now ends with an explicit yes/no question to delete the
+  outdated agent files from the mining map (exact list shown; yes → delete + re-sync +
+  report note; no → tasks-inbox follow-up). No more manual old-tree removal.
+- **`/harness-init` everywhere**: OMP ships its own `/init`, so the OMP shim was renamed —
+  the harness init prompt is `/harness-init` on every platform.
+- Tests: **318 pass**; existing projects pick everything up with one `harness sync`
+  (verified: `1 created, 1 updated, 18 unchanged, 0 conflicts`).
+
+## Third live-test batch (2026-08-08) — real model routing + config toggles
+
+- **Found live: subagents/advisor were silently on the session model.** OMP falls back to the
+  parent model for unmapped roles (#985) and the advisor role without a model never runs
+  (`no_model`) — or falls to a big role-default (user saw Opus). Fix: `models.tiers` defaults
+  are now CONCRETE catalog ids (`anthropic/claude-fable-5` / `claude-sonnet-5` /
+  `claude-haiku-4-5`) and sync writes a real `modelRoles` block (slow/task/smol/tiny/advisor).
+- **`.omp/config.yml` is now merge-managed, not whole-file-managed** — OMP itself persists
+  project-level `modelRoles` there, which made the old whole-file approach flag OMP's own
+  writes as a permanent "user-modified" conflict (user saw "no files changed"). Sync now
+  enforces only its keys (disabledProviders, advisor.enabled, tier-mapped roles) and preserves
+  everything else, byte-idempotent.
+- **`harness config` CLI + `/harness-config` skill** — list/get/set over the toggles
+  (`models.subagent_selection`, `models.advisor`, `models.tiers.*`, `workflow.commit_mode`,
+  `workflow.importance`); bridge-affecting sets auto-run sync. The skill shim makes it a slash
+  command in every agent IDE.
+- Tests: **322 pass**. Rollout to an existing project: `harness install && harness sync`
+  (install adds new skill copies, sync merges the config even over OMP's writes).
+
 ## How to stand this up in a project (the step-11 you'll run yourself)
 
 1. `cd <project>` → open your agent → `/harness-init` (Claude Code) or `/init` (OMP)

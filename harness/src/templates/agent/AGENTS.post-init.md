@@ -14,6 +14,9 @@ set for approval before applying any of it.
 **Write knowledge to the graph.** Corrections → anti-patterns.md. Patterns →
 preferences.md. Naming → naming-conventions.md. Decisions → decisions/.
 Sessions → session-log/.
+**Advisor active?** (OMP harness-keeper) Focus on the developer's problem; act on the
+advisor's harness change-sets instead of self-tracking requirement shifts mid-task.
+**Subagents:** honor `manifest.json#models` — dynamic selection = cheapest adequate tier.
 
 ## Pointers
 

@@ -37,7 +37,7 @@ describe("validateManifest", () => {
     });
   }
 
-  test("fills defaults: budgets, stale_spec_days, commit_mode", () => {
+  test("fills defaults: budgets, stale_spec_days, commit_mode, models", () => {
     const value = fixtureManifest();
     delete (value["doctor"] as Record<string, unknown>)["budgets"];
     delete (value["doctor"] as Record<string, unknown>)["stale_spec_days"];
@@ -47,6 +47,29 @@ describe("validateManifest", () => {
     expect(manifest.doctor.budgets.anti_patterns_lines).toBe(40);
     expect(manifest.doctor.stale_spec_days).toBe(14);
     expect(manifest.workflow.commit_mode).toBe("message-only");
+    // models is optional pre-09 — fully defaulted, partial overrides merged.
+    expect(manifest.models).toEqual({
+      subagent_selection: "dynamic",
+      advisor: true,
+      tiers: {
+        frontier: "anthropic/claude-fable-5",
+        standard: "anthropic/claude-sonnet-5",
+        cheap: "anthropic/claude-haiku-4-5",
+      },
+    });
+    const withPartial = fixtureManifest();
+    withPartial["models"] = { advisor: false, tiers: { cheap: "haiku" } };
+    const merged = validateManifest({ value: withPartial }).manifest.models;
+    expect(merged.advisor).toBe(false);
+    expect(merged.subagent_selection).toBe("dynamic");
+    expect(merged.tiers).toEqual({
+      frontier: "anthropic/claude-fable-5",
+      standard: "anthropic/claude-sonnet-5",
+      cheap: "haiku",
+    });
+    const bad = fixtureManifest();
+    bad["models"] = { subagent_selection: "sometimes" };
+    expect(() => validateManifest({ value: bad })).toThrow(/subagent_selection/);
   });
 
   test("unknown top-level key warns and survives round-trip", () => {
