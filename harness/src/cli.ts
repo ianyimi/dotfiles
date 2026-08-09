@@ -21,6 +21,7 @@ import { runTemplate } from "./commands/template.ts";
 import { worktreeAdd } from "./commands/worktree.ts";
 import { stateCommand } from "./commands/state.ts";
 import { structCommand } from "./commands/struct.ts";
+import { runFetch } from "./commands/fetch.ts";
 import { parseArgs } from "./lib/args.ts";
 import { EXIT, HarnessError } from "./lib/errors.ts";
 import { loadManifest } from "./lib/manifest.ts";
@@ -376,6 +377,20 @@ const COMMANDS: Record<string, Command> = {
       }
       reporter.flush();
       return code;
+    },
+  },
+  fetch: {
+    help: "fetch [<skill>] [--json] — report what the upstream harness WOULD change vs this project (read-only; nothing is written), like `git fetch`. Run by the `harness-pull` skill from the agent IDE — humans shouldn't invoke it directly. Omit <skill> for a summary of skills with incoming changes.",
+    run: (props) => {
+      const parsed = parseArgs({ argv: props.args, spec: { positionals: ["...rest"], flags: ["json"] } });
+      const name = parsed.rest.find((a) => !a.startsWith("-"));
+      const root = resolveProjectRoot({ cwd: props.cwd });
+      return runFetch({
+        root,
+        name,
+        json: parsed.flags["json"] === true,
+        stdout: props.stdout,
+      });
     },
   },
 };
