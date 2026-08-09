@@ -33,13 +33,16 @@ file is dirty), note it in the final summary instead of blocking on it.
 3. **High-care projects:** if `workflow.default_tier` is "high-care" and code changed since the
    last sync-spec run, add a "consider running sync-spec" line to the final summary. Do not
    pause to ask — continue immediately.
-4. **Generate the message.** Run `harness log commit-msg`. It writes TWO files: the raw
-   `.commit.md` (machine source for `git commit -F`) and the day's ledger
-   `.agent/docs/commits/MM-DD-YYYY.md` — the developer's copy source, one fenced section per
-   commit of the day — and links the ledger from today's log entry. Review against the rules
-   in `references/session-log-format.md`; if type/scope/title reads wrong, edit BOTH the
-   `.commit.md` and the ledger's latest section to match (title ≤ 72 chars, body says why —
-   never a file list).
+4. **Generate + format the message.** Run `harness log commit-msg`. It writes two files: the
+   raw `.commit.md` (machine source for `git commit -F`) and the day's ledger
+   `.agent/docs/commits/MM-DD-YYYY.md`. Its output is a terse first draft — ALWAYS rewrite
+   both files to match `references/commit-format.md` (correct `type(scope)` title, rich prose
+   body naming symbols/why, a `!`/`BREAKING CHANGE:` indicator if any, and the always-present `Spec:`/`Log:`
+   footer). **Write the ledger as plain Markdown — strip the ``` code fence** `harness log
+   commit-msg` adds; the message is not a code block. Then make sure today's session-log entry
+   already contains the session's decisions (add them if missing) and, AFTER those decisions,
+   leave a single link to the ledger as the "committed up to here" marker — never paste the
+   full message into the log.
 5. **The gate.** Load `references/commit-checklist.md` (customized for this project at init).
    Run every "Must pass" item — report each ✅/🔴 — and PERFORM every "Must be current" update.
    Failures do NOT stop the run or trigger questions: fix what is mechanically fixable, finish

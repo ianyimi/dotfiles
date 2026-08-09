@@ -32,16 +32,13 @@ permitted in-place edit is `harness log backfill-sha` filling `**Commit:** (pend
 - Bullets state *why*, not just what. Problems record the resolution, not only the pain.
 - "Where I left off" is for a cold-start reader: current state, next step, watch-outs.
 
-## Commit message rules (`harness log commit-msg` output)
-- Title `type(scope): description`, ≤ 72 chars. Types: feat, fix, docs, refactor, test.
-  Scope = workspace package dir (omitted outside a workspace).
-- Body: the "What was built" bullets, then `Why:` + the "Decisions made" bullets.
-- Explain why, never list files — the diff already lists files.
+## Commit message + where it lands
 
-## Where the message lands
-- `.agent/docs/session-log/YYYY/MM/YYYY-MM-DD.commit.md` — raw latest message; what
-  agent-commits mode feeds to `git commit -F`.
-- `.agent/docs/commits/MM-DD-YYYY.md` — the day's ledger, one `## HH:MM` fenced section per
-  commit; the developer copies from here. Multiple commits in a day stack in the same file.
-- Today's log entry gains a `_Committed → [ledger link] at HH:MM._` line marking the point in
-  the session where changes went up.
+The full commit-message format (title types, body shapes, footer, storage) lives in
+`references/commit-format.md` — follow it. In short:
+
+- The FULL message goes in the day's ledger `.agent/docs/commits/MM-DD-YYYY.md` as plain
+  Markdown (no ``` code fence), plus the raw `.commit.md` for `git commit -F`.
+- The session-log entry is NOT a copy of the message. It holds the session's decisions; after
+  them, leave one link to the ledger as the "committed up to here" marker:
+  `_Committed → [<commit title>](../../commits/MM-DD-YYYY.md)_`.
