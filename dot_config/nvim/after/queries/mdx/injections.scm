@@ -1,3 +1,4 @@
+;; extends
 ;; MDX fenced code block injections for JS/TS
 
 ;; JavaScript
@@ -12,14 +13,14 @@
 ((fenced_code_block
   (info_string) @_lang
   (code_fence_content) @injection.content)
-  (#match? @_lang "^\%(ts\|typescript\)$")
+ (#match? @_lang "^\%(ts\|typescript\|tsx\|typescript\.jsx\)$")
  (#set! injection.language "typescript")
  (#set! injection.priority 110))
 
-;; TSX (TypeScript with JSX)
+;; TSX (TypeScript JSX)
 ((fenced_code_block
   (info_string) @_lang
   (code_fence_content) @injection.content)
-  (#match? @_lang "^tsx$")
+ (#match? @_lang "^tsx$")
  (#set! injection.language "tsx")
- (#set! injection.priority 120))
+ (#set! injection.priority 110))

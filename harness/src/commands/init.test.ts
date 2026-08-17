@@ -79,6 +79,21 @@ describe("init scaffold", () => {
     rmProject({ dir });
   });
 
+  test("bootstraps a nested project inside an already-initialized outer project", async () => {
+    const outer = mkTmpProject({ fixture: "empty-project" });
+    gitInit({ dir: outer });
+    await runCli({ argv: ["install"], cwd: outer });
+
+    // install anchors to cwd — it must NOT resolve up to the outer .agent/ and no-op.
+    const nested = join(outer, "sub", "project");
+    mkdirSync(nested, { recursive: true });
+    const r = await runCli({ argv: ["install"], cwd: nested });
+    expect(r.code).toBe(0);
+    expect(existsSync(join(nested, ".agent/.setup-progress.md"))).toBe(true);
+    expect(r.stdout).not.toContain("nothing to create");
+    rmProject({ dir: outer });
+  });
+
   test("--refresh-skills re-copies default skills, drops stale files, keeps project-authored skills", async () => {
     const dir = mkTmpProject({ fixture: "empty-project" });
     gitInit({ dir });

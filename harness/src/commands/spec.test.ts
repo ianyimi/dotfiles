@@ -33,20 +33,25 @@ describe("spec new", () => {
     rmProject({ dir });
   });
 
-  test("no --date in a non-repo → no-date, exit 2", async () => {
+  test("no --date uses the system wall clock (today)", async () => {
     const dir = mkTmpProject({ fixture: "initialized" });
     const r = await runCli({ argv: ["spec", "new", "no-date-spec"], cwd: dir });
-    expect(r.code).toBe(2);
-    expect(r.stderr).toMatch(/no-date|--date/);
+    expect(r.code).toBe(0);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    expect(existsSync(join(dir, `.agent/docs/specs/${today}-no-date-spec/spec.md`))).toBe(true);
     rmProject({ dir });
   });
 
-  test("date falls back to the HEAD commit date", async () => {
+  test("no --date ignores the HEAD commit date, uses the wall clock", async () => {
     const dir = mkTmpProject({ fixture: "initialized" });
     gitInit({ dir, date: "2026-01-15T12:00:00Z" });
     const r = await runCli({ argv: ["spec", "new", "git-dated"], cwd: dir });
     expect(r.code).toBe(0);
-    expect(existsSync(join(dir, ".agent/docs/specs/2026-01-15-git-dated"))).toBe(true);
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    expect(existsSync(join(dir, `.agent/docs/specs/${today}-git-dated`))).toBe(true);
+    expect(existsSync(join(dir, ".agent/docs/specs/2026-01-15-git-dated"))).toBe(false);
     rmProject({ dir });
   });
 

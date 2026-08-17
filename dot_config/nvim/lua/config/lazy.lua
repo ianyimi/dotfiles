@@ -71,8 +71,12 @@ require("lazy").setup({
 	-- Configure any other settings here. See the documentation for more details.
 	-- colorscheme that will be used when installing plugins.
 	install = { colorscheme = { "tokyonight" } },
-	-- automatically check for plugin updates
-	checker = { enabled = true, notify = false },
+	-- Automatic update checking is OFF: it periodically `git fetch`es all ~67
+	-- plugins, and lazy leaks a timeout timer per spawned process
+	-- (lazy/manage/process.lua:118). Profiling attributed 173 of 192 still-open
+	-- libuv handles to it, with idle timers climbing 116 -> 300 in 104 seconds.
+	-- Check for updates deliberately with `:Lazy check` instead.
+	checker = { enabled = false },
 })
 _bench("lazy.setup done")
 

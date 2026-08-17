@@ -2,7 +2,13 @@ return {
   "lewis6991/satellite.nvim",
   event = "VeryLazy",
   opts = {
-    current_only = false,
+    -- Draw only the focused window. With `false`, satellite renders for EVERY
+    -- window, and `handlers.render` spawns an async coroutine per handler per
+    -- window whose every step costs a `vim.schedule`. Profiled with `false`:
+    -- 3455 scheduled callbacks from satellite/async.lua averaging 8.4ms, about
+    -- 31s of main-loop callback time in a 62s session (~88% of all scheduled
+    -- work). That is the residual half-second on oil/telescope actions.
+    current_only = true,
     winblend = 50,
     zindex = 40,
     excluded_filetypes = { "oil" },
@@ -33,7 +39,11 @@ return {
         -- - SatelliteDiagnosticHint (default links to DiagnosticHint)
       },
       gitsigns = {
-        enable = true,
+        -- Disabled: recomputes hunk positions per window per redraw
+        -- (handlers/gitsigns.lua:63 -> gitsigns/actions.lua:681 ->
+        -- gitsigns/hunks.lua:115) and supplied 3 of the 4 hottest frames in an
+        -- 87ms stall. The gutter signs already carry this information.
+        enable = false,
         signs = { -- can only be a single character (multibyte is okay)
           add = "│",
           change = "│",
@@ -73,22 +83,19 @@ return {
       end
     end
 
-    -- Clamp util indices to valid line ranges defensively
+    -- Clamp util indices to valid line ranges defensively.
+    --
+    -- The previous version pre-clamped `row` with nvim_win_get_buf +
+    -- nvim_buf_line_count on EVERY call. satellite invokes this inside per-hunk
+    -- and per-line loops, so that added two API calls per iteration on a hot
+    -- path. The pcall alone gives identical crash protection for free: an
+    -- out-of-range row raises, we swallow it and report no virtual lines.
     local ok_util, util = pcall(require, "satellite.util")
     if ok_util and type(util.virtual_line_count) == "function" then
       local orig_vlc = util.virtual_line_count
-      util.virtual_line_count = function(winid, row, ...)
-        local buf_ok, buf = pcall(vim.api.nvim_win_get_buf, winid)
-        if buf_ok then
-          local line_count = vim.api.nvim_buf_line_count(buf)
-          if type(row) == "number" then
-            if row < 1 then row = 1 end
-            if row > line_count then row = line_count end
-          end
-        end
-        local ok1, res = pcall(orig_vlc, winid, row, ...)
-        if ok1 then return res end
-        return 0
+      util.virtual_line_count = function(...)
+        local ok1, res = pcall(orig_vlc, ...)
+        return ok1 and res or 0
       end
     end
   end,

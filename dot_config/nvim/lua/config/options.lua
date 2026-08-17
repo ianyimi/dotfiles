@@ -62,6 +62,14 @@ end
 -- LSP, treesitter and other ft plugins will be disabled.
 -- mini.animate will also be disabled.
 vim.g.bigfile_size = 1024 * 1024 * 1.5 -- 1.5 MB
+
+-- Markdown buffers above this many lines get the treesitter *highlighter*
+-- skipped (the parser stays, so render-markdown keeps working). Injection count
+-- scales with document length -- a 3761-line spec carries ~460 injected regions
+-- -- and the highlighter re-resolves them per visible line, so one full-screen
+-- redraw measured 1129ms. Read by after/ftplugin/markdown.lua and
+-- lua/plugins/editor/treesitter.lua.
+vim.g.markdown_ts_highlight_max_lines = 1500
 -- Fix markdown indentation settings
 vim.g.markdown_recommended_style = 0
 

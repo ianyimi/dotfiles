@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { HarnessError } from "../lib/errors.ts";
 import { parseFrontmatter } from "../lib/frontmatter.ts";
 import { writeFileAtomic } from "../lib/fsx.ts";
-import { headCommitDate } from "../lib/git.ts";
 import { loadManifest } from "../lib/manifest.ts";
 import { P } from "../lib/paths.ts";
 
@@ -14,14 +13,15 @@ function frontmatterBlock(specId: string): string {
 
 /**
  * `harness spec new "<slug>"` — creates docs/specs/<date>-<slug>/{spec.md,spec-tasks.md}.
- * Dates come from --date or the HEAD commit date, never the wall clock (D02-2).
+ * Date comes from --date, else the system wall clock (a spec created today is dated today).
+ * Supersedes D02-2's commit-date rule — the wall clock is the source of truth for "now".
  *
  * @param props.root - Project root.
  * @param props.slug - Kebab-case feature slug.
  * @param props.date - Optional YYYY-MM-DD override.
  * @param props.stdout - Line sink; both created paths are printed.
  * @returns EXIT.OK.
- * @throws {HarnessError} "usage" bad slug/date; "no-date" when no git date and no --date;
+ * @throws {HarnessError} "usage" bad slug/date;
  *   "spec-exists" when the directory already exists; "module-disabled" when modules.specs is off.
  */
 export function specNew(props: {
@@ -44,11 +44,8 @@ export function specNew(props: {
     throw new HarnessError("usage", `invalid --date ${JSON.stringify(date)} — expected YYYY-MM-DD`);
   }
   if (date === undefined) {
-    const gitDate = headCommitDate({ root: props.root });
-    if (gitDate === "") {
-      throw new HarnessError("no-date", "no git commit date available", { hint: "pass --date YYYY-MM-DD" });
-    }
-    date = gitDate;
+    const now = new Date();
+    date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   }
   const specId = `${date}-${props.slug}`;
   const dirRel = join(P.specs, specId);
@@ -63,7 +60,7 @@ export function specNew(props: {
   });
   writeFileAtomic({
     path: join(props.root, tasksPath),
-    content: `${frontmatterBlock(specId)}# ${specId} — Tasks\n\n## T1 — <title>\nWhy:\nVerify:\n- [ ] \n`,
+    content: `${frontmatterBlock(specId)}# ${specId} — Tasks\n\n## Step 1 — <title>\nWhy:\nVerify:\n- [ ] \n`,
   });
   props.stdout(specPath);
   props.stdout(tasksPath);

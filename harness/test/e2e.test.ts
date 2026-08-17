@@ -71,10 +71,10 @@ describe("e2e: cold start to session cycle", () => {
     expect(existsSync(join(dir, ".agent/docs/specs", slug, "spec.md"))).toBe(true);
     expect(existsSync(join(dir, ".agent/docs/specs", slug, "spec-tasks.md"))).toBe(true);
 
-    // 7. implement status lists T1 open.
+    // 7. implement status lists Step 1 open.
     const status = await runCli({ argv: ["implement", slug, "status"], cwd: dir });
     expect(status.code).toBe(0);
-    expect(status.stdout).toContain("T1");
+    expect(status.stdout).toContain("Step 1");
     expect(status.stdout).toContain("next");
 
     // 8. tasks add + move.

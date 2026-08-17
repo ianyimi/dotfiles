@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { EXIT, HarnessError } from "../lib/errors.ts";
 import { parseFrontmatter } from "../lib/frontmatter.ts";
-import { ensureSymlink, sha256, walk, writeFileAtomic } from "../lib/fsx.ts";
+import { checkSymlink, ensureSymlink, sha256, walk, writeFileAtomic } from "../lib/fsx.ts";
 import { headSha } from "../lib/git.ts";
 import { loadManifest, type HarnessManifest } from "../lib/manifest.ts";
 import { parseNamingRules } from "../lib/namingRules.ts";
@@ -346,19 +346,40 @@ export function bootstrapBridges(props: { root: string; stdout: (s: string) => v
 }
 
 /**
- * The adapter-agnostic sync engine (master §9.1 flow + D10 conflict rules).
+ * One planned filesystem operation the sync engine would perform. Produced by {@link planSync}
+ * (read-only) and executed by {@link applySync}. `harness fetch sync` renders these without
+ * applying, so `/harness-pull` can preview bridge changes before anything is written.
+ */
+export type SyncChange =
+  | { op: "create"; path: string; content: string; platform: PlatformId | "core" }
+  | { op: "update"; path: string; content: string; platform: PlatformId | "core" }
+  | { op: "unchanged"; path: string; platform: PlatformId | "core" }
+  | { op: "merge"; path: string; platform: PlatformId | "core"; merged: string | null; had: boolean }
+  | { op: "symlink"; path: string; targetPath: string; platform: PlatformId; result: "created" | "replaced" | "ok" }
+  | { op: "delete"; path: string; symlink: boolean; present: boolean }
+  | { op: "gitignore"; nextText: string | null }
+  | { op: "conflict"; path: string; message: string; hint?: string };
+
+/** The full read-only result of planning a sync: what would change + the resulting manifest. */
+export interface SyncPlan {
+  changes: SyncChange[];
+  nextEntries: SyncEntry[];
+  warnings: string[];
+}
+
+/**
+ * Read side of the sync engine (master §9.1 flow + D10 conflict rules): computes every
+ * filesystem operation a sync WOULD perform, WITHOUT writing anything. Reads disk + the prior
+ * sync manifest to make the same create/update/unchanged/conflict/delete decisions runSync makes.
  *
  * @param props.root - Absolute project root.
- * @param props.reporter - Sink; one line per created/updated/deleted/conflict + final summary.
- * @returns EXIT.FINDINGS when any conflict was reported, else EXIT.OK.
+ * @returns The planned changes, the manifest entries that would be saved, and context warnings.
  */
-export function runSync(props: { root: string; reporter: Reporter }): number {
+export function planSync(props: { root: string }): SyncPlan {
   const { ctx, warnings } = loadProjectContext({ root: props.root });
-  for (const w of warnings) props.reporter.warn(w, "sync");
   const prev = loadSyncManifest({ root: props.root });
   const prevByPath = new Map(prev.entries.map((e) => [e.path, e]));
 
-  // Desired state.
   const contextRulesYaml = buildContextRules({
     manifest: ctx.manifest,
     standards: ctx.standardsFiles.map((path) => {
@@ -394,17 +415,8 @@ export function runSync(props: { root: string; reporter: Reporter }): number {
   }
   files.sort((a, b) => (a.path < b.path ? -1 : 1));
 
+  const changes: SyncChange[] = [];
   const nextEntries: SyncEntry[] = [];
-  let created = 0;
-  let updated = 0;
-  let unchanged = 0;
-  let deleted = 0;
-  let conflicts = 0;
-
-  const conflict = (path: string, msg: string, hint?: string): void => {
-    conflicts++;
-    props.reporter.warn(`${path}: ${msg}`, "sync", hint);
-  };
 
   // FILES
   for (const f of files) {
@@ -418,45 +430,35 @@ export function runSync(props: { root: string; reporter: Reporter }): number {
           ? mergeManagedOmpConfig({ existingText: diskText, advisor: ctx.manifest.models.advisor, tiers: ctx.manifest.models.tiers })
           : mergeManagedJson({ existingText: diskText, fragment: CLAUDE_SETTINGS_FRAGMENT });
       if (result.conflict !== undefined) {
-        conflict(f.path, result.conflict);
+        changes.push({ op: "conflict", path: f.path, message: result.conflict });
         if (prevEntry !== undefined) nextEntries.push(prevEntry);
         continue;
       }
       const finalText = result.merged ?? (diskText as string);
-      if (result.merged !== null) {
-        writeFileAtomic({ path: abs, content: result.merged });
-        if (diskText === null) {
-          created++;
-          props.reporter.info(`created ${f.path}`, "sync");
-        } else {
-          updated++;
-          props.reporter.info(`updated ${f.path}`, "sync");
-        }
-      } else {
-        unchanged++;
-      }
+      changes.push({ op: "merge", path: f.path, platform: f.platform, merged: result.merged, had: diskText !== null });
       nextEntries.push({ path: f.path, kind: "generated", target_or_hash: sha256({ text: finalText }), platform: f.platform });
       continue;
     }
 
     if (diskText === null) {
-      writeFileAtomic({ path: abs, content: f.content });
-      created++;
-      props.reporter.info(`created ${f.path}`, "sync");
+      changes.push({ op: "create", path: f.path, content: f.content, platform: f.platform });
     } else if (prevEntry !== undefined && sha256({ text: diskText }) === prevEntry.target_or_hash) {
-      if (diskText === f.content) {
-        unchanged++;
-      } else {
-        writeFileAtomic({ path: abs, content: f.content });
-        updated++;
-        props.reporter.info(`updated ${f.path}`, "sync");
-      }
+      changes.push(
+        diskText === f.content
+          ? { op: "unchanged", path: f.path, platform: f.platform }
+          : { op: "update", path: f.path, content: f.content, platform: f.platform },
+      );
     } else if (prevEntry !== undefined) {
-      conflict(f.path, "user-modified managed file — left in place", `move your edits into .agent/ and delete ${f.path}, then re-run harness sync`);
+      changes.push({
+        op: "conflict",
+        path: f.path,
+        message: "user-modified managed file — left in place",
+        hint: `move your edits into .agent/ and delete ${f.path}, then re-run harness sync`,
+      });
       nextEntries.push(prevEntry); // keep the stale entry (design decision)
       continue;
     } else {
-      conflict(f.path, "exists but is not managed by harness — left untouched");
+      changes.push({ op: "conflict", path: f.path, message: "exists but is not managed by harness — left untouched" });
       continue;
     }
     nextEntries.push({ path: f.path, kind: "generated", target_or_hash: sha256({ text: f.content }), platform: f.platform });
@@ -464,28 +466,17 @@ export function runSync(props: { root: string; reporter: Reporter }): number {
 
   // SYMLINKS
   for (const s of symlinks) {
-    const result = ensureSymlink({
-      linkPath: join(props.root, s.linkPath),
-      targetPath: join(props.root, s.targetPath),
-    });
-    if (result === "created") {
-      created++;
-      props.reporter.info(`created ${s.linkPath} → ${s.targetPath}`, "sync");
-    } else if (result === "replaced") {
-      updated++;
-      props.reporter.info(`repaired ${s.linkPath} → ${s.targetPath}`, "sync");
-    } else if (result === "conflict") {
-      conflict(s.linkPath, "exists but is not a harness symlink — left untouched");
+    const result = checkSymlink({ linkPath: join(props.root, s.linkPath), targetPath: join(props.root, s.targetPath) });
+    if (result === "conflict") {
+      changes.push({ op: "conflict", path: s.linkPath, message: "exists but is not a harness symlink — left untouched" });
       continue;
-    } else {
-      unchanged++;
     }
+    changes.push({ op: "symlink", path: s.linkPath, targetPath: s.targetPath, platform: s.platform, result });
     nextEntries.push({ path: s.linkPath, kind: "symlink", target_or_hash: s.targetPath, platform: s.platform });
   }
 
   // DELETIONS — formerly-managed paths absent from the desired plan.
   const desiredPaths = new Set([...files.map((f) => f.path), ...symlinks.map((s) => s.linkPath)]);
-  const emptyDirCandidates = new Set<string>();
   for (const entry of prev.entries) {
     if (entry.kind === "gitignore-line") continue; // handled by the block rewrite
     if (desiredPaths.has(entry.path)) continue;
@@ -494,31 +485,129 @@ export function runSync(props: { root: string; reporter: Reporter }): number {
     try {
       st = lstatSync(abs);
     } catch {
-      deleted++; // already gone
+      changes.push({ op: "delete", path: entry.path, symlink: entry.kind === "symlink", present: false });
       continue;
     }
     if (entry.kind === "symlink") {
       if (st.isSymbolicLink()) {
-        unlinkSync(abs);
-        deleted++;
-        props.reporter.info(`deleted ${entry.path}`, "sync");
+        changes.push({ op: "delete", path: entry.path, symlink: true, present: true });
       } else {
-        conflict(entry.path, "was managed, now removed from plan, but is no longer a symlink — delete manually");
+        changes.push({ op: "conflict", path: entry.path, message: "was managed, now removed from plan, but is no longer a symlink — delete manually" });
         nextEntries.push(entry);
       }
     } else {
       const diskText = st.isFile() ? readFileSync(abs, "utf8") : null;
       if (diskText !== null && sha256({ text: diskText }) === entry.target_or_hash) {
-        rmSync(abs);
-        deleted++;
-        props.reporter.info(`deleted ${entry.path}`, "sync");
+        changes.push({ op: "delete", path: entry.path, symlink: false, present: true });
       } else {
-        conflict(entry.path, "was managed, now removed from plan, but user-modified — delete manually");
+        changes.push({ op: "conflict", path: entry.path, message: "was managed, now removed from plan, but user-modified — delete manually" });
         nextEntries.push(entry);
       }
     }
-    emptyDirCandidates.add(dirname(abs));
   }
+
+  // GITIGNORE
+  const gitignoreAbs = join(props.root, ".gitignore");
+  const sortedLines = [...new Set(gitignoreLines)].sort();
+  const gitignoreText = existsSync(gitignoreAbs) ? readFileSync(gitignoreAbs, "utf8") : null;
+  changes.push({ op: "gitignore", nextText: updateGitignoreBlock({ existingText: gitignoreText, lines: sortedLines }) });
+  for (const line of sortedLines) {
+    nextEntries.push({
+      path: `.gitignore#${line}`,
+      kind: "gitignore-line",
+      target_or_hash: line,
+      platform: gitignorePlatform.get(line) ?? "core",
+    });
+  }
+
+  return { changes, nextEntries, warnings };
+}
+
+/**
+ * Write side of the sync engine: executes a {@link SyncPlan}, emitting one reporter line per
+ * created/updated/deleted/conflict, pruning emptied bridge dirs, and saving the sync manifest.
+ *
+ * @param props.root - Absolute project root.
+ * @param props.plan - The plan from {@link planSync}.
+ * @param props.reporter - Sink for per-change lines + the final summary.
+ * @returns EXIT.FINDINGS when any conflict was reported, else EXIT.OK.
+ */
+export function applySync(props: { root: string; plan: SyncPlan; reporter: Reporter }): number {
+  for (const w of props.plan.warnings) props.reporter.warn(w, "sync");
+  let created = 0;
+  let updated = 0;
+  let unchanged = 0;
+  let deleted = 0;
+  let conflicts = 0;
+  const emptyDirCandidates = new Set<string>();
+
+  for (const c of props.plan.changes) {
+    const abs = c.op === "conflict" || c.op === "gitignore" ? "" : join(props.root, c.path);
+    switch (c.op) {
+      case "create":
+        writeFileAtomic({ path: abs, content: c.content });
+        created++;
+        props.reporter.info(`created ${c.path}`, "sync");
+        break;
+      case "update":
+        writeFileAtomic({ path: abs, content: c.content });
+        updated++;
+        props.reporter.info(`updated ${c.path}`, "sync");
+        break;
+      case "unchanged":
+        unchanged++;
+        break;
+      case "merge":
+        if (c.merged !== null) {
+          writeFileAtomic({ path: abs, content: c.merged });
+          if (c.had) {
+            updated++;
+            props.reporter.info(`updated ${c.path}`, "sync");
+          } else {
+            created++;
+            props.reporter.info(`created ${c.path}`, "sync");
+          }
+        } else {
+          unchanged++;
+        }
+        break;
+      case "symlink": {
+        if (c.result === "ok") {
+          unchanged++;
+          break;
+        }
+        ensureSymlink({ linkPath: abs, targetPath: join(props.root, c.targetPath) });
+        if (c.result === "created") {
+          created++;
+          props.reporter.info(`created ${c.path} → ${c.targetPath}`, "sync");
+        } else {
+          updated++;
+          props.reporter.info(`repaired ${c.path} → ${c.targetPath}`, "sync");
+        }
+        break;
+      }
+      case "delete":
+        if (c.present) {
+          if (c.symlink) unlinkSync(abs);
+          else rmSync(abs);
+          props.reporter.info(`deleted ${c.path}`, "sync");
+        }
+        deleted++;
+        emptyDirCandidates.add(dirname(abs));
+        break;
+      case "gitignore":
+        if (c.nextText !== null) {
+          writeFileAtomic({ path: join(props.root, ".gitignore"), content: c.nextText });
+          props.reporter.info("updated .gitignore managed block", "sync");
+        }
+        break;
+      case "conflict":
+        conflicts++;
+        props.reporter.warn(`${c.path}: ${c.message}`, "sync", c.hint);
+        break;
+    }
+  }
+
   // Prune now-empty bridge dirs, deepest first.
   for (const dir of [...emptyDirCandidates].sort((a, b) => b.length - a.length)) {
     let current = dir;
@@ -533,31 +622,24 @@ export function runSync(props: { root: string; reporter: Reporter }): number {
     }
   }
 
-  // GITIGNORE
-  const gitignoreAbs = join(props.root, ".gitignore");
-  const sortedLines = [...new Set(gitignoreLines)].sort();
-  const gitignoreText = existsSync(gitignoreAbs) ? readFileSync(gitignoreAbs, "utf8") : null;
-  const nextGitignore = updateGitignoreBlock({ existingText: gitignoreText, lines: sortedLines });
-  if (nextGitignore !== null) {
-    writeFileAtomic({ path: gitignoreAbs, content: nextGitignore });
-    props.reporter.info("updated .gitignore managed block", "sync");
-  }
-  for (const line of sortedLines) {
-    nextEntries.push({
-      path: `.gitignore#${line}`,
-      kind: "gitignore-line",
-      target_or_hash: line,
-      platform: gitignorePlatform.get(line) ?? "core",
-    });
-  }
-
   saveSyncManifest({
     root: props.root,
-    syncManifest: { version: 1, generated_at_sha: headSha({ root: props.root }), entries: nextEntries },
+    syncManifest: { version: 1, generated_at_sha: headSha({ root: props.root }), entries: props.plan.nextEntries },
   });
   props.reporter.info(
     `sync: ${created} created, ${updated} updated, ${unchanged} unchanged, ${deleted} deleted, ${conflicts} conflicts`,
     "sync",
   );
   return conflicts > 0 ? EXIT.FINDINGS : EXIT.OK;
+}
+
+/**
+ * The adapter-agnostic sync engine (master §9.1 flow + D10 conflict rules): plan, then apply.
+ *
+ * @param props.root - Absolute project root.
+ * @param props.reporter - Sink; one line per created/updated/deleted/conflict + final summary.
+ * @returns EXIT.FINDINGS when any conflict was reported, else EXIT.OK.
+ */
+export function runSync(props: { root: string; reporter: Reporter }): number {
+  return applySync({ root: props.root, plan: planSync({ root: props.root }), reporter: props.reporter });
 }

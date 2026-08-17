@@ -78,14 +78,10 @@ const COMMANDS: Record<string, Command> = {
         throw new HarnessError("usage", "pass either --refresh-skills (all) or --refresh-skill <name>, not both");
       }
       const refreshSkills = refreshOne !== undefined ? refreshOne.split(",").map((s) => s.trim()).filter((s) => s !== "") : parsed.flags["refresh-skills"];
-      // install must work on a brand-new directory: fall back to cwd when neither
-      // .agent/ nor .git/ exists yet (the install creates the .agent marker).
-      let root: string;
-      try {
-        root = resolveProjectRoot({ cwd: props.cwd });
-      } catch {
-        root = props.cwd;
-      }
+      // install anchors to the invocation directory: it CREATES the .agent marker that
+      // defines a project root, so walking up (resolveProjectRoot) would wrongly adopt an
+      // outer project's harness and no-op — nested projects could never bootstrap.
+      const root = props.cwd;
       const code = initScaffold({
         root,
         template: parsed.options["template"],
@@ -380,7 +376,7 @@ const COMMANDS: Record<string, Command> = {
     },
   },
   fetch: {
-    help: "fetch [<skill>] [--json] — report what the upstream harness WOULD change vs this project (read-only; nothing is written), like `git fetch`. Run by the `harness-pull` skill from the agent IDE — humans shouldn't invoke it directly. Omit <skill> for a summary of skills with incoming changes.",
+    help: "fetch [<skill>|sync] [--json] — report what the upstream harness / a re-sync WOULD change vs this project (read-only; nothing written), like `git fetch`. `fetch sync` previews bridge regeneration. Run by the `harness-pull` skill from the agent IDE — humans shouldn't invoke it directly. Omit the arg for a summary.",
     run: (props) => {
       const parsed = parseArgs({ argv: props.args, spec: { positionals: ["...rest"], flags: ["json"] } });
       const name = parsed.rest.find((a) => !a.startsWith("-"));

@@ -8,12 +8,12 @@ export interface TaskStep {
 }
 
 export interface TaskGroup {
-  id: string; // "T1"
+  id: string; // "Step 1" (legacy specs: "T1")
   title: string;
   why: string; // "" when the Why: line is absent (tolerated)
   verify: string; // shell command, or exactly "manual"
   steps: TaskStep[];
-  startLine: number; // 0-based line index of the "## Tn — " heading
+  startLine: number; // 0-based line index of the "## Step n — " (or legacy "## Tn — ") heading
   endLine: number; // exclusive — next "## " heading or EOF
 }
 
@@ -22,7 +22,7 @@ export interface SpecTasks {
   groups: TaskGroup[];
 }
 
-const GROUP_HEADING_RE = /^## (T\d+) — (.+)$/;
+const GROUP_HEADING_RE = /^## (Step \d+|T\d+) — (.+)$/;
 
 /**
  * Parses a spec-tasks.md document into ordered task groups (contract C-05a).

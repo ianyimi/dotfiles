@@ -3,6 +3,13 @@ import { DEMO_SPEC_TASKS } from "../../test/specFixture.ts";
 import { parseSpecTasks, tickGroup } from "./specTasks.ts";
 
 describe("parseSpecTasks", () => {
+  test("parses the Step-N heading convention (id captured verbatim)", () => {
+    const text = `---\nspec_id: step-demo\n---\n\n## Step 1 — Scaffold\nWhy: because\nVerify: manual\n\n- [ ] 1. do a thing\n`;
+    const st = parseSpecTasks({ text });
+    expect(st.groups.map((g) => g.id)).toEqual(["Step 1"]);
+    expect(st.groups[0]!.title).toBe("Scaffold");
+  });
+
   test("parses the demo fixture exactly", () => {
     const st = parseSpecTasks({ text: DEMO_SPEC_TASKS });
     expect(st.frontmatter["spec_id"]).toBe("demo-feature");

@@ -105,3 +105,27 @@ export function ensureSymlink(props: { linkPath: string; targetPath: string }): 
   }
   return "conflict";
 }
+
+/**
+ * Read-only counterpart to {@link ensureSymlink}: reports what ensureSymlink WOULD do without
+ * touching the filesystem. Used by the sync planner (`harness fetch sync`).
+ *
+ * @param props.linkPath - Absolute path where the link should live.
+ * @param props.targetPath - Absolute path the link must resolve to.
+ * @returns "ok" (already correct), "created" (nothing there yet), "replaced" (a symlink to
+ *   elsewhere), or "conflict" (a real file/dir occupies linkPath).
+ */
+export function checkSymlink(props: { linkPath: string; targetPath: string }): SymlinkResult {
+  const linkDir = dirname(props.linkPath);
+  let st;
+  try {
+    st = lstatSync(props.linkPath);
+  } catch {
+    return "created";
+  }
+  if (st.isSymbolicLink()) {
+    const current = readlinkSync(props.linkPath);
+    return resolve(linkDir, current) === resolve(props.targetPath) ? "ok" : "replaced";
+  }
+  return "conflict";
+}

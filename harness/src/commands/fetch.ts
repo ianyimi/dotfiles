@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { HarnessError } from "../lib/errors.ts";
 import { P } from "../lib/paths.ts";
+import { planSync, type SyncChange } from "./sync.ts";
 
 const TEMPLATES = join(dirname(fileURLToPath(import.meta.url)), "..", "templates");
 
@@ -61,6 +62,68 @@ export function planSkillFetch(props: { root: string; name: string }): FetchPlan
   return entries;
 }
 
+/** Human label for a planned sync change, or null when it is a no-op (nothing to preview). */
+function syncChangeLine(c: SyncChange): string | null {
+  switch (c.op) {
+    case "create":
+      return `NEW      ${c.path}`;
+    case "update":
+      return `CHANGED  ${c.path}`;
+    case "merge":
+      return c.merged === null ? null : `MERGE    ${c.path} (key-level ${c.had ? "update" : "create"})`;
+    case "symlink":
+      return c.result === "ok" ? null : `SYMLINK  ${c.path} -> ${c.targetPath} (${c.result})`;
+    case "delete":
+      return `DELETE   ${c.path}`;
+    case "gitignore":
+      return c.nextText === null ? null : "CHANGED  .gitignore (managed block)";
+    case "conflict":
+      return `CONFLICT ${c.path} — ${c.message}`;
+    case "unchanged":
+      return null;
+  }
+}
+
+/** Counts the actionable (non no-op) changes in a sync plan. */
+function syncActionable(root: string): number {
+  try {
+    return planSync({ root }).changes.filter((c) => syncChangeLine(c) !== null).length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * `harness fetch sync` — render the read-only bridge/sync plan: what `harness sync` WOULD
+ * create/update/delete/merge, without writing. The harness-pull skill applies these after review.
+ *
+ * @param props.root - Project root.
+ * @param props.json - Emit machine-readable JSON instead of the human table.
+ * @param props.stdout - Line sink.
+ * @returns EXIT.OK.
+ */
+function renderSyncPlan(props: { root: string; json?: boolean; stdout: (s: string) => void }): number {
+  const plan = planSync({ root: props.root });
+  if (props.json === true) {
+    props.stdout(JSON.stringify({ sync: plan.changes.filter((c) => syncChangeLine(c) !== null) }, null, 2));
+    return 0;
+  }
+  props.stdout("Incoming bridge/sync changes (nothing written — the harness-pull skill applies these):");
+  let n = 0;
+  for (const c of plan.changes) {
+    const line = syncChangeLine(c);
+    if (line === null) continue;
+    props.stdout(`  ${line}`);
+    n++;
+  }
+  if (n === 0) props.stdout("  (up to date — bridges match .agent/)");
+  else {
+    props.stdout("\nThese regenerate from `.agent/` via `harness sync`. CONFLICT lines are user-modified");
+    props.stdout("managed files sync won't touch — resolve by moving edits into `.agent/`.");
+  }
+  return 0;
+}
+
 /**
  * `harness fetch [<skill>]` — report what the upstream harness would change in this project,
  * WITHOUT applying anything (the read side of a harness pull).
@@ -79,6 +142,8 @@ export function runFetch(props: { root: string; name?: string; json?: boolean; s
   const skillsSrc = join(TEMPLATES, "skills");
   const shipped = readdirSync(skillsSrc, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
 
+  if (props.name === "sync") return renderSyncPlan({ root: props.root, json: props.json, stdout: props.stdout });
+
   if (props.name === undefined) {
     const summary = shipped
       .map((name) => ({ name, entries: planSkillFetch({ root: props.root, name }) }))
@@ -88,16 +153,18 @@ export function runFetch(props: { root: string; name?: string; json?: boolean; s
         added: entries.filter((e) => e.status === "new").length,
       }))
       .filter((s) => s.changed + s.added > 0);
+    const syncCount = syncActionable(props.root);
     if (props.json === true) {
-      props.stdout(JSON.stringify({ skills: summary }, null, 2));
+      props.stdout(JSON.stringify({ skills: summary, sync: syncCount }, null, 2));
       return 0;
     }
-    if (summary.length === 0) {
+    if (summary.length === 0 && syncCount === 0) {
       props.stdout("up to date — no upstream skill differs from this project.");
       return 0;
     }
     props.stdout("Incoming from upstream harness (run the `harness-pull` skill to merge):");
     for (const s of summary) props.stdout(`  ${s.name}: ${s.changed} changed, ${s.added} new`);
+    if (syncCount > 0) props.stdout(`  sync (bridges): ${syncCount} change(s) — run \`harness fetch sync\` for the plan`);
     props.stdout("\nNothing is applied. The `harness-pull` skill reads this and merges by hand,");
     props.stdout("preserving project-specific config — nothing is overwritten wholesale.");
     return 0;

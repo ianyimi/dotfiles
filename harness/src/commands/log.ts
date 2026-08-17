@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { HarnessError } from "../lib/errors.ts";
 import { writeFileAtomic } from "../lib/fsx.ts";
-import { changedFilesSince, headCommitIso, uncommittedFiles } from "../lib/git.ts";
+import { changedFilesSince, uncommittedFiles } from "../lib/git.ts";
 import { P } from "../lib/paths.ts";
 
 /** Fixed entry skeleton ({date}/{time}/{slug} substituted); structure per proposal §12. */
@@ -42,8 +42,8 @@ export interface LogDate {
 }
 
 /**
- * Resolves the effective log date/time — THE only clock/git-time touchpoint in this file.
- * The ISO string is sliced verbatim (committer-local time) — never timezone math.
+ * Resolves the effective log date/time from the system wall clock — the source of truth for
+ * "now". An explicit --date override wins (tests only); HEAD's commit time is never consulted.
  *
  * @param props.root - Project root.
  * @param props.dateOpt - Raw --date value, if given.
@@ -58,8 +58,8 @@ export function resolveLogDate(props: { root: string; dateOpt?: string }): LogDa
     }
     return { date: m[1] as string, time: m[3] ?? "00:00" };
   }
-  const iso = headCommitIso({ root: props.root });
-  if (iso !== "") return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
+  // The system wall clock is the source of truth for "now". (This previously preferred HEAD's
+  // commit time, which stranded every session on a stale date until the day's first commit.)
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
   return {
