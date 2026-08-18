@@ -29,13 +29,28 @@ vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
 	end,
 })
 
--- Check if we need to reload the file when it changed
--- Triggers on: focus, terminal close, cursor idle, entering buffers, entering windows
+-- Detect files changed outside nvim (agents, CLI tools, git) and reload them.
+-- Triggers on: window focus, terminal close/leave, cursor idle (updatetime=250ms).
+--
+-- Bare ":checktime" only reaches buffers currently displayed in a window, so an
+-- agent rewriting 9 files you have open-but-hidden would leave all 9 stale and
+-- their undo trees would die at exit (nvim keys persistent undo to a hash of the
+-- file contents, so a stale undofile is silently discarded on next open). The
+-- per-buffer ":checktime {buf}" form has no window requirement, so every loaded
+-- buffer absorbs the external change as an undo state via 'undoreload' and gets
+-- its undofile rewritten -- no visiting required.
+--
+-- Files nvim has never loaded are still invisible here; nothing can preserve
+-- history for those, because the hash mismatch happens before nvim sees them.
 vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave", "CursorHold", "CursorHoldI" }, {
 	group = augroup("checktime"),
 	callback = function()
-		if vim.o.buftype ~= "nofile" then
-			vim.cmd("checktime")
+		for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+			-- Real files only: skip terminals, oil://, quickfix, and other scratch buffers.
+			if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == ""
+				and vim.api.nvim_buf_get_name(buf) ~= "" then
+				pcall(vim.cmd, "checktime " .. buf)
+			end
 		end
 	end,
 })
@@ -121,68 +136,26 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
 	end,
 })
 
--- Preserve undo history across external file changes
--- When agents or external tools modify files, Neovim reloads them which clears undo history
--- We save the undo tree to disk before reload and restore it after
+-- External file changes (agents, CLI formatters, git checkout) always win.
+--
+-- Without this handler nvim leaves a locally-modified buffer stale on conflict
+-- and, because merely registering a FileChangedShell autocmd suppresses the
+-- default action, shows no W12 warning either. Setting v:fcs_choice restores an
+-- explicit policy: take the version on disk.
+--
+-- No undo history is lost. 'undoreload' (options.lua) files the pre-reload
+-- buffer as an undo state, so unsaved work is one `u` away, and nvim rewrites
+-- the undofile on reload so the tree survives into the next session.
+--
+-- Unmodified buffers never reach here -- 'autoread' reloads them and only
+-- FileChangedShellPost fires. Detection requires the file to be open in a
+-- loaded buffer; see the checktime autocmd above.
 vim.api.nvim_create_autocmd("FileChangedShell", {
-	group = augroup("preserve_undo_on_reload"),
-	callback = function(event)
-		local buf = event.buf
-
-		-- Only preserve undo for normal file buffers that are loaded
-		if vim.bo[buf].buftype ~= "" or not vim.api.nvim_buf_is_loaded(buf) then
-			return
-		end
-
-		local filepath = vim.api.nvim_buf_get_name(buf)
-		if filepath == "" or vim.fn.filereadable(filepath) ~= 1 then
-			return
-		end
-
-		-- Create a temp file to store the undo tree
-		local undo_dir = vim.fn.stdpath("cache") .. "/undo_preserve"
-		vim.fn.mkdir(undo_dir, "p")
-
-		-- Use buffer number to create unique undo file
-		local undo_file = undo_dir .. "/" .. buf .. ".undo"
-
-		-- Save current undo tree to temp file
-		local ok, err = pcall(function()
-			vim.cmd("wundo! " .. vim.fn.fnameescape(undo_file))
-		end)
-
-		if ok then
-			-- Mark this buffer to restore undo after reload
-			vim.b[buf].undo_preserve_file = undo_file
-		else
-			-- If we couldn't save undo, don't try to restore it
-			vim.b[buf].undo_preserve_file = nil
-		end
-	end,
-})
-
--- After external reload, restore the undo history from disk
-vim.api.nvim_create_autocmd("FileChangedShellPost", {
-	group = augroup("restore_undo_after_reload"),
-	callback = function(event)
-		local buf = event.buf
-		local undo_file = vim.b[buf].undo_preserve_file
-
-		if undo_file and vim.fn.filereadable(undo_file) == 1 then
-			-- Restore undo tree from temp file
-			local ok, err = pcall(function()
-				vim.cmd("rundo " .. vim.fn.fnameescape(undo_file))
-			end)
-
-			if ok then
-				vim.notify("File reloaded (undo history preserved)", vim.log.levels.INFO)
-			else
-				vim.notify("File reloaded (could not restore undo history)", vim.log.levels.WARN)
-			end
-
-			-- Clean up temp file
-			pcall(vim.fn.delete, undo_file)
-			vim.b[buf].undo_preserve_file = nil
+	group = augroup("reload_on_external_change"),
+	callback = function()
+		-- "deleted" cannot be reloaded; leave the buffer as the last copy of the file.
+		if vim.v.fcs_reason ~= "deleted" then
+			vim.v.fcs_choice = "reload"
 		end
 	end,
 })
@@ -686,4 +659,53 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
 			end
 		end
 	end,
+})
+
+-- UndoGuardHold: preemptively load a file to protect its undo history from external edits.
+-- Called by agent tool-call hooks before the agent writes a file. The file is loaded into
+-- a hidden buffer (buflisted=false) so it doesn't clutter the tabline or buffer list.
+-- When the agent's write occurs, the next CursorHold triggers per-buffer checktime which
+-- detects the change and reloads with undoreload, preserving history as an undo state.
+-- This is a no-op if the file is already loaded or doesn't exist.
+vim.api.nvim_create_user_command("UndoGuardHold", function(opts)
+	local path = opts.args
+	if path == "" then
+		vim.notify("UndoGuardHold: no path provided", vim.log.levels.ERROR)
+		return
+	end
+
+	-- Normalize and verify the file exists
+	path = vim.fn.fnamemodify(path, ":p")
+	if vim.fn.filereadable(path) ~= 1 then
+		-- File doesn't exist yet; can't preload. That's OK — return silently.
+		-- This happens when the agent is creating a new file.
+		return
+	end
+
+	-- If already loaded, nothing to do
+	local buf = vim.fn.bufloaded(path)
+	if buf ~= 0 then
+		return
+	end
+
+	-- Load the file into a hidden, unlisted buffer, without triggering autocmds
+	-- so LSP and treesitter don't attach to every guarded file (wasteful).
+	local ei = vim.o.eventignore
+	vim.o.eventignore = "all"
+
+	local ok, result = pcall(function()
+		return vim.fn.bufadd(path)
+	end)
+
+	if ok then
+		local new_buf = result
+		vim.fn.bufload(new_buf)
+		-- Keep it unlisted so it doesn't show in telescope/barbar
+		vim.api.nvim_set_option_value("buflisted", false, { buf = new_buf })
+	end
+
+	vim.o.eventignore = ei
+end, {
+	nargs = 1,
+	complete = "file",
 })
