@@ -107,8 +107,8 @@ Do not treat these as regressions; they are open items, not new problems.
 | item | cost | status |
 |---|---|---|
 | `lsp textDocument/documentColor` | 17 calls, 1288ms total, 752.9ms max | **Unfixed, and an attempted fix was reverted.** An `LspAttach` guard calling `vim.lsp.document_color.enable(false, { bufnr })` did disable the feature (`is_enabled` returned false) but the requests kept firing -- so it cost the inline colour swatches and saved nothing. Reverted deliberately; do not re-add it without first proving the request path actually stops. |
-| `lsp textDocument/semanticTokens/full` | 6 calls, 1225.9ms max | **Intentional.** Cost is per document version, not per action, and it materially improves TS highlighting. Gate on buffer size if file-open latency becomes the complaint. |
-| `plenary Job:sync [SYNC]` | 5 calls, 117.9ms max, blocking | **Unidentified.** Present through the whole investigation; fires around `find_files`. Blocking, so each occurrence is felt. |
+| `lsp textDocument/semanticTokens/*` | 1226ms max in a mid-size repo; **4300ms max** in a large Convex monorepo | **Intentional, but re-measure per project.** Async, so it does not freeze the editor -- the symptom is highlighting settling seconds after the buffer appears. Gating on buffer size does NOT help: a 42-line file measured 4300ms, so the cost is the server doing project-wide work, not the file. To remove it, disable semantic tokens for the client rather than by size. |
+| `plenary Job:sync [SYNC]` | ~110-117ms per call, blocking | **Fully identified.** Two sources, both blocking the main loop: (1) **chezmoi.nvim** `commands/__base.lua:48` runs `chezmoi status` from `__edit.watch` on BufRead for non-denied paths under `~/.local/share/chezmoi/` only -- it does NOT affect other projects, and it buys auto-apply on write. (2) **telescope-tmuxinator.nvim** `tmuxinator.lua:15` shells out to `tmuxinator` (116.9ms) via `telescope/utils.lua:499`. |
 | `LuaSnip` fs_event watchers | 10 and slowly climbing | Minor leak from `from_vscode.lua:394` (`lazy_load`). |
 | `render-markdown` decorator timers | 9, scales with markdown buffers touched | Minor; bounded in practice. |
 

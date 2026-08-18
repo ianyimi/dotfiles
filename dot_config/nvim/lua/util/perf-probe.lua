@@ -78,6 +78,13 @@ local state = {
 	defer = {},
 	parse = {},
 	decor = {},
+	-- caller -> {n,ms,max} for blocking plenary Job:sync
+	jobsync = {},
+	-- path -> {n,ms,max} for per-file open latency
+	opens = {},
+	-- path -> {n,ms,max} for Telescope select -> ready-for-input
+	selects = {},
+	select_pending = nil,
 	-- mark -> { spans = {label -> {n,total,max}}, stalls = n }. Lets two
 	-- conditions ("spec in split" vs not) be compared numerically instead of
 	-- being averaged together in the global table.
@@ -429,9 +436,22 @@ local function install_wrappers()
 	end
 
 	-- plenary Job:sync blocks the loop for up to its (5000ms default) timeout.
+	-- Attributed by caller: this has surfaced in every profile since the start of
+	-- the investigation and a bare span label never identified who runs it.
 	local ok_job, Job = pcall(require, "plenary.job")
-	if ok_job then
-		M.wrap(Job, "sync", "plenary Job:sync [SYNC]")
+	if ok_job and type(Job) == "table" and type(Job.sync) == "function" and not state.wrapped["Job.sync"] then
+		state.wrapped["Job.sync"] = true
+		local orig_sync = Job.sync
+		Job.sync = function(self, ...)
+			local site = origin(3)
+			local cmd = tostring(self and self.command or "?")
+			local t0 = uv.hrtime()
+			local r = pack(orig_sync(self, ...))
+			local d = ms(uv.hrtime() - t0)
+			add_span("plenary Job:sync [SYNC]", d)
+			bump(state.jobsync, cmd .. "  <- " .. site, d)
+			return unpack_(r, 1, r.n)
+		end
 	end
 
 	-- The real cost of `gd`/`gr` is the picker, not the LSP request.
@@ -520,6 +540,138 @@ local HOT_EVENTS = {
 	"LspAttach",
 	"ColorScheme",
 }
+
+--- Per-file open latency, keyed by path.
+---
+--- Nothing else here measures "opening THIS file took 1.2s". Spans cover named
+--- functions and stalls cover main-loop blocking, but a slow open can be a chain
+--- of individually-acceptable steps across BufReadPre -> BufWinEnter. Timing that
+--- window per buffer and reporting the worst offenders with their paths turns a
+--- vague "files in .agent are slow" into a ranked list.
+local function install_open_timing()
+	if state.wrapped["open_timing"] then
+		return
+	end
+	state.wrapped["open_timing"] = true
+	local grp = vim.api.nvim_create_augroup("perf_probe_open", { clear = true })
+	local started = {}
+
+	vim.api.nvim_create_autocmd({ "BufReadPre", "BufNewFile" }, {
+		group = grp,
+		callback = function(a)
+			started[a.buf] = uv.hrtime()
+		end,
+	})
+
+	-- BufWinEnter is the first point at which the buffer is actually displayed,
+	-- which is what the developer perceives as "opened".
+	vim.api.nvim_create_autocmd({ "BufWinEnter", "BufReadPost" }, {
+		group = grp,
+		callback = function(a)
+			local t0 = started[a.buf]
+			if not t0 then
+				return
+			end
+			started[a.buf] = nil
+			local d = ms(uv.hrtime() - t0)
+			local name = vim.api.nvim_buf_get_name(a.buf)
+			local key = name ~= "" and vim.fn.fnamemodify(name, ":~:.") or ("buf" .. a.buf)
+			bump(state.opens, key, d)
+			if d >= cfg.stall_ms then
+				logf("  [slow open] %8.1f ms  %s  (mark=%s)", d, key, state.mark)
+			end
+		end,
+	})
+end
+
+--- Time from a Telescope selection to Nvim being ready for input.
+---
+--- This is the window the developer actually perceives: "I hit enter on the
+--- preview and waited before I could type." `BufReadPre -> BufWinEnter` cannot
+--- measure it, because the previewer has already read the file, so BufReadPre may
+--- never fire on select. It is also not necessarily one main-loop stall -- it can
+--- be several small steps across separate loop turns, which is why a profile can
+--- show zero stalls while an action still feels slow.
+---
+--- `SafeState` fires when Nvim is about to block for a character, so it is the
+--- honest end marker for "ready to edit".
+--- Shared finaliser for a pending select measurement. Runs on the main loop.
+---@param now integer hrtime at which the editor became ready
+local function finalize_select(now)
+	local pend = state.select_pending
+	if not pend then
+		return
+	end
+	state.select_pending = nil
+	local d = ms(now - pend.t0)
+	local label = pend.label
+	if not label or label == "" then
+		local name = vim.api.nvim_buf_get_name(0)
+		label = name ~= "" and vim.fn.fnamemodify(name, ":~:.") or ("ft=" .. vim.bo.filetype)
+	end
+	bump(state.selects, label, d)
+	if d >= cfg.stall_ms then
+		logf("  [slow ready] %8.1f ms  %s  (mark=%s)", d, label, state.mark)
+	end
+end
+
+local function install_select_timing()
+	if state.wrapped["select_timing"] then
+		return
+	end
+	state.wrapped["select_timing"] = true
+
+	local grp = vim.api.nvim_create_augroup("perf_probe_select", { clear = true })
+
+	-- Start the clock on entering a real file buffer.
+	--
+	-- This measures "I landed in this file, how long until I could type" -- the
+	-- settle cost after the buffer appears: LSP attach, treesitter start,
+	-- render-markdown, decoration providers, statusline/tabline rebuild. Paired with
+	-- the BufReadPre -> BufWinEnter table it brackets a perceived open delay.
+	--
+	-- Keyed on BufEnter rather than on leaving a TelescopePrompt: `edit` on an
+	-- existing buffer fires NO BufLeave (verified), and BufEnter clears 'filetype'
+	-- before handlers run, so prompt-based triggers are unreliable. BufEnter always
+	-- fires and needs nothing from telescope.
+	vim.api.nvim_create_autocmd("BufEnter", {
+		group = grp,
+		callback = function(a)
+			if state.select_pending then
+				return
+			end
+			local ok, bt = pcall(function()
+				return vim.bo[a.buf].buftype
+			end)
+			if not ok or bt ~= "" then
+				return
+			end
+			local name = vim.api.nvim_buf_get_name(a.buf)
+			if name == "" then
+				return
+			end
+			state.select_pending = { t0 = uv.hrtime(), label = vim.fn.fnamemodify(name, ":~:.") }
+		end,
+	})
+
+	-- Two end markers, first to fire wins.
+	--
+	-- `SafeState` is the accurate one: it fires when Nvim is about to block for a
+	-- character, i.e. the instant you can type. It never fires in a headless session
+	-- (verified: 0 fires), so it cannot be tested without a UI.
+	--
+	-- The fallback lives in the stall timer: while the loop is busy ticks arrive
+	-- late, so the first on-time tick means the loop is free. Granularity is one
+	-- tick (20ms) -- ample for diagnosing a 1s delay -- and it works everywhere.
+	vim.api.nvim_create_autocmd("SafeState", {
+		group = grp,
+		callback = function()
+			if state.select_pending then
+				finalize_select(uv.hrtime())
+			end
+		end,
+	})
+end
 
 local function install_counters()
 	local grp = vim.api.nvim_create_augroup("perf_probe_counters", { clear = true })
@@ -692,6 +844,9 @@ function M.tick(label)
 			dump_attribution("vim.defer_fn by creation site", state.defer)
 			dump_attribution("LanguageTree:parse by caller", state.parse)
 			dump_attribution("decoration providers", state.decor)
+			dump_attribution("plenary Job:sync by caller [BLOCKING]", state.jobsync)
+			dump_attribution("slowest file opens (BufReadPre -> BufWinEnter)", state.opens, 20)
+			dump_attribution("buffer ready (BufEnter -> ready for input)", state.selects, 20)
 		end },
 	}) do
 		local ok, err = pcall(section[2])
@@ -951,6 +1106,9 @@ function M.report()
 	dump_attribution("vim.defer_fn by creation site", state.defer)
 	dump_attribution("LanguageTree:parse by caller", state.parse)
 	dump_attribution("decoration providers", state.decor)
+	dump_attribution("plenary Job:sync by caller [BLOCKING]", state.jobsync)
+	dump_attribution("slowest file opens (BufReadPre -> BufWinEnter)", state.opens, 20)
+	dump_attribution("buffer ready (BufEnter -> ready for input)", state.selects, 20)
 
 	log("  -- event fires --")
 	local ek = vim.tbl_keys(state.events)
@@ -1005,6 +1163,8 @@ function M.start(opts)
 		tostring(vim.version()), cfg.tick_ms, cfg.stall_ms, cfg.sample_every)
 
 	install_handle_tracking()
+	install_open_timing()
+	install_select_timing()
 	install_parse_attribution()
 	install_decor_attribution()
 	install_wrappers()
@@ -1036,6 +1196,13 @@ function M.start(opts)
 		local prev = state.last_tick
 		state.last_tick = now
 		local late = ms(delta - expected)
+		-- Idle-tick fallback for select->ready: an on-time tick means the loop is
+		-- free again, which is the observable form of "ready for input".
+		if state.select_pending and late < cfg.stall_ms then
+			vim.schedule(function()
+				finalize_select(now)
+			end)
+		end
 		if late >= cfg.stall_ms then
 			state.stalls[#state.stalls + 1] = late
 			-- Fast context here: no Nvim API. Hand off to the main loop.
@@ -1073,6 +1240,9 @@ function M.stop()
 		state.auto_timer = nil
 	end
 	pcall(vim.api.nvim_del_augroup_by_name, "perf_probe_counters")
+	pcall(vim.api.nvim_del_augroup_by_name, "perf_probe_select")
+	pcall(vim.api.nvim_del_augroup_by_name, "perf_probe_open")
+	state.select_pending = nil
 	local ok, err = pcall(M.report)
 	logf("########## perf-probe stop %s ##########", os.date("%Y-%m-%d %H:%M:%S"))
 	if ok then
