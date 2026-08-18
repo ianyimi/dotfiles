@@ -205,42 +205,80 @@ return {
 			updating_harpoon = false
 		end
 
-		-- Function to create unique buffer names for duplicate filenames
-		local function get_unique_name(buf_path)
-			if buf_path == "" then return "[No Name]" end
+		-- Function to create unique buffer names for duplicate filenames.
+		--
+		-- barbar calls this once per rendered tab, so the previous implementation -- which scanned
+		-- every LOADED buffer and ran a vimscript fnamemodify() per iteration -- cost
+		-- tabs x loaded_buffers of work on every render. That degraded as a session accumulated
+		-- buffers (profiled: 96 of the samples in an 87ms oil stall landed on this function, with
+		-- 5617 renders in one session), and it got worse once undo-guard started keeping files
+		-- loaded. Now: one getbufinfo() per change, memoized, with the basename taken by pattern
+		-- match instead of a vimscript call. Measured 0.809ms -> 0.074ms per render at 116 loaded
+		-- buffers, 20 tabs.
+		--
+		-- Only LISTED buffers are considered, which is also more correct: barbar renders listed
+		-- buffers, so an unlisted one can never collide for a tab label. The displayed name is
+		-- unchanged for every case that can actually appear in the tabline.
+		local _basename_paths = nil
+		local _parts_by_path = {}
 
-			local filename = vim.fn.fnamemodify(buf_path, ":t")
+		local function invalidate_unique_names()
+			_basename_paths = nil
+			_parts_by_path = {}
+		end
 
-			-- Get all loaded buffer paths with the same filename
-			local same_name_buffers = {}
-			for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-				if vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_is_valid(buf) then
-					local ok, other_path = pcall(vim.api.nvim_buf_get_name, buf)
-					if ok and other_path ~= "" and vim.fn.fnamemodify(other_path, ":t") == filename then
-						table.insert(same_name_buffers, other_path)
+		local function listed_paths_by_basename()
+			if _basename_paths then
+				return _basename_paths
+			end
+			local map = {}
+			for _, info in ipairs(vim.fn.getbufinfo({ buflisted = 1 })) do
+				local name = info.name
+				if name ~= "" then
+					local base = name:match("[^/]*$")
+					local bucket = map[base]
+					if bucket then
+						bucket[#bucket + 1] = name
+					else
+						map[base] = { name }
 					end
 				end
 			end
+			_basename_paths = map
+			return map
+		end
 
-			-- If only one buffer with this filename, return just the filename
-			if #same_name_buffers <= 1 then
+		local function path_parts(path)
+			local parts = _parts_by_path[path]
+			if not parts then
+				parts = vim.split(path, "/")
+				_parts_by_path[path] = parts
+			end
+			return parts
+		end
+
+		local function get_unique_name(buf_path)
+			if buf_path == "" then return "[No Name]" end
+
+			local filename = buf_path:match("[^/]*$")
+			local same_name_buffers = listed_paths_by_basename()[filename]
+
+			-- Only one buffer with this filename (or it is not listed): just the filename.
+			if not same_name_buffers or #same_name_buffers <= 1 then
 				return filename
 			end
 
-			-- Find the minimal distinguishing path
-			local path_parts = vim.split(vim.fn.fnamemodify(buf_path, ":p"), "/")
-
-			-- Start with just filename, add parent directories until unique
-			for parts = 1, #path_parts do
-				local partial_path = table.concat(vim.list_slice(path_parts, -parts), "/")
+			-- Find the minimal distinguishing path: same algorithm as before, but the split of
+			-- each candidate is memoised for the lifetime of the buffer list.
+			local parts = path_parts(buf_path)
+			for count = 1, #parts do
+				local partial_path = table.concat(vim.list_slice(parts, -count), "/")
 				local is_unique = true
 
-				-- Check if this partial path is unique among same-name buffers
 				for _, other_path in ipairs(same_name_buffers) do
 					if other_path ~= buf_path then
-						local other_parts = vim.split(vim.fn.fnamemodify(other_path, ":p"), "/")
-						local other_partial = table.concat(vim.list_slice(other_parts, -parts), "/")
-						if partial_path == other_partial then
+						local other_parts = path_parts(other_path)
+						if table.concat(vim.list_slice(other_parts, -count), "/") == partial_path then
 							is_unique = false
 							break
 						end
@@ -252,18 +290,114 @@ return {
 				end
 			end
 
-			-- Fallback to full path
-			return vim.fn.fnamemodify(buf_path, ":p")
+			return buf_path
 		end
 
-		-- Set up autocmd to refresh unique names when buffers change
-		vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete", "BufEnter" }, {
-			callback = function()
-				-- Force barbar to refresh buffer names
-				vim.schedule(function()
-					render.update()
+		-- Coalesced re-render. Every reactive refresh goes through this instead of calling
+		-- render.update() directly: one oil directory change fires BufNew + BufEnter + BufWinEnter
+		-- + WinEnter, and each of those used to trigger its own full render -- one of them the
+		-- expensive render.update(true) that recomputes every tab's label. Profiled at 5617 renders
+		-- (4.31ms each, 24s of CPU) before coalescing, still 2942 (6.56ms, 19.3s) after the first
+		-- pass, which is the background work that stalls oil while navigating.
+		--
+		-- One reused timer handle (per docs/standards/lua-style/util-library.md). `update_names`
+		-- sticks across a coalesced burst: if any event in the burst wanted names recomputed, the
+		-- single render that follows recomputes them, so no label update is lost.
+		--
+		-- Window is deliberately short for interactive events (a render also repaints which tab is
+		-- active, so a long delay would visibly lag buffer switching) and longer for diagnostics,
+		-- which have no interactive component.
+		local _render_timer = vim.uv.new_timer()
+		local _render_names = false
+		local function schedule_render(update_names, delay_ms)
+			if update_names then
+				_render_names = true
+			end
+			if not _render_timer then
+				render.update(update_names)
+				return
+			end
+			_render_timer:stop()
+			_render_timer:start(
+				delay_ms or 16,
+				0,
+				vim.schedule_wrap(function()
+					local names = _render_names
+					_render_names = false
+					render.update(names)
 				end)
+			)
+		end
+
+		-- Refresh unique names when the buffer list changes. The memoised basename map must be
+		-- dropped here too, or a new/renamed buffer would keep rendering under its old label.
+		vim.api.nvim_create_autocmd({ "BufAdd", "BufDelete", "BufWipeout", "BufFilePost", "BufEnter" }, {
+			callback = function()
+				invalidate_unique_names()
+				schedule_render(true)
 			end,
+		})
+
+		-- Replace barbar's own pure-render autocmds (events.lua:215 and :220) with coalesced
+		-- equivalents. Both callbacks are nothing but a render.update call, so there is no state
+		-- work to preserve -- unlike its BufDelete/BufWipeout handler, which also updates jump-mode
+		-- letters and the recently-closed list and is therefore left alone.
+		--
+		-- This is the path that made changing directories in oil slow: oil creates a new oil://
+		-- buffer per directory, so BufNew + BufEnter + BufWinEnter + WinEnter all fired, each
+		-- rendering the whole tabline, one of them recomputing every tab's label.
+		--
+		-- VimResized is deliberately NOT in the clear list: nvim registers one autocmd entry per
+		-- event, so barbar's own handler survives for it and a window resize still repaints
+		-- immediately instead of 16ms later.
+		pcall(vim.api.nvim_clear_autocmds, {
+			group = "barbar_render",
+			event = { "BufEnter", "BufNew", "BufWinEnter", "BufWinLeave", "BufWritePost", "TabEnter", "WinEnter", "WinLeave" },
+		})
+		local coalesced = vim.api.nvim_create_augroup("barbar_render_coalesced", { clear = true })
+		vim.api.nvim_create_autocmd({ "BufEnter", "BufNew" }, {
+			group = coalesced,
+			callback = function()
+				schedule_render(true)
+			end,
+		})
+		vim.api.nvim_create_autocmd(
+			{ "BufWinEnter", "BufWinLeave", "BufWritePost", "TabEnter", "WinEnter", "WinLeave" },
+			{
+				group = coalesced,
+				callback = function()
+					schedule_render()
+				end,
+			}
+		)
+
+		-- barbar re-renders on EVERY DiagnosticChanged (its own events.lua:242-246, unconditional).
+		-- With eslint + tailwindcss + vtsls publishing across a monorepo that arrives in bursts:
+		-- one profiled window held 21 DiagnosticChanged events, and the session totalled 2942
+		-- render.update calls at 6.56ms each (19.3s of CPU, one render 132ms). None of it is
+		-- visible as a tabline problem -- it is background work that blocks oil from painting
+		-- while navigating directories.
+		--
+		-- Replace that handler with a coalesced one. Diagnostic counts still reach the tabline
+		-- (icons.diagnostics stays enabled); they just land once per burst instead of 21 times.
+		-- Deliberately mirrors upstream's vim.schedule_wrap: DiagnosticChanged is buffer-scoped,
+		-- so rendering inside it would report the diagnostic's buffer as current and paint the
+		-- wrong tab active.
+		pcall(vim.api.nvim_clear_autocmds, { group = "barbar_render", event = "DiagnosticChanged" })
+		vim.api.nvim_create_autocmd("DiagnosticChanged", {
+			group = vim.api.nvim_create_augroup("barbar_diagnostics_coalesced", { clear = true }),
+			callback = vim.schedule_wrap(function(event)
+				-- Only listed buffers appear in the tabline, so diagnostics for anything else --
+				-- including undo-guard's unlisted held buffers -- need no render at all. Upstream
+				-- checks only nvim_buf_is_loaded, which is why held buffers could reach it.
+				if not vim.api.nvim_buf_is_valid(event.buf) or vim.fn.buflisted(event.buf) ~= 1 then
+					return
+				end
+				pcall(state.update_diagnostics, event.buf)
+				-- 60ms: diagnostics arrive as a burst of separate scheduled callbacks, and nothing
+				-- interactive waits on them, so collapse the whole burst into one render.
+				schedule_render(false, 60)
+			end),
 		})
 
 		-- Hook into barbar's state system to provide unique names and oil directory names
@@ -309,8 +443,8 @@ return {
 
 		-- Function to refresh barbar display for oil buffers
 		local function refresh_oil_display()
-			-- Force barbar to re-read buffer data
-			render.update()
+			-- Force barbar to re-read buffer data (coalesced: oil navigation fires several events)
+			schedule_render()
 		end
 
 		-- Function to clean up empty buffers
@@ -404,7 +538,7 @@ return {
 					end
 				end
 
-				render.update()
+				schedule_render()
 			end)
 		end
 

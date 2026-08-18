@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "slug": "2026-08-17-undo-guard",
+  "updated": "2026-08-18T06:39:51.531Z",
+  "groups": {
+    "Step 1": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "Step 1: OK",
+        "Reading undo file: /var/folders/6j/65gmhg_92wq518p0w2vtwt6c0000gn/T/tmp.j6AcRVR1A7/undodir/%private%var%folders%6j%65gmhg_92wq518p0w2vtwt6c0000gn%T%tmp.j6AcRVR1A7%proj%file.ts",
+        "PASS: hold=held seq_last=1",
+        "PASS: idempotent/no-history/missing/leak-on-throw correct (throw status=missing)PASS: release drained held buffers"
+      ]
+    },
+    "Step 2": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "PASS: autocmds.lua wiring present, old leaking body gone, file parses",
+        "Step 2: OK",
+        "PASS: advertise wrote cwd + servername",
+        "PASS: dead-pid files pruned, live file kept",
+        "PASS: unadvertise removed the file and is idempotent"
+      ]
+    },
+    "Step 3": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "PASS: advertise file present (49813)",
+        "PASS: file held, unlisted, undo tree intact (seq_last=1) in 26ms total",
+        "PASS: stale advertise file ignored, exit 0 in 18ms",
+        "PASS: no live nvim → silent exit 0 in 27ms",
+        "PASS: malformed stdin → silent exit 0",
+        "Step 3: OK"
+      ]
+    },
+    "Step 4": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "PASS: settings.json shape matches the documented schema, existing keys intact",
+        "PASS: PreToolUse payload held the file, unlisted, silent stdout, exit 0",
+        "PASS: payload for a nonexistent file → silent exit 0",
+        "Step 4: OK"
+      ]
+    },
+    "Step 5": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "PASS: extraction, cwd resolution, dedupe, filtering, fail-open all correct",
+        "PASS: config.yml registers the hook at user level, original keys intact",
+        "NOTE: /Users/zaye/.config/nvim/scripts/undo-guard-omp-hook.ts not present yet — run 'chezmoi apply' to deploy it (hook fails open until then)",
+        "Step 5: OK"
+      ]
+    },
+    "Step 6": {
+      "attempts": 2,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "PASS: deferred VimEnter trigger present with $HOME and / guards",
+        "Step 6: OK",
+        "PASS: candidates windowed to 7 days, scoped to root (excluded stale.ts and outside/)",
+        "PASS: candidates sorted newest first",
+        "Reading undo file: /var/folders/6j/65gmhg_92wq518p0w2vtwt6c0000gn/T/tmp.aed6E9pNII/undodir/%private%var%folders%6j%65gmhg_92wq518p0w2vtwt6c0000gn%T%tmp.aed6E9pNII%proj%recent-one.ts",
+        "Reading undo file: /var/folders/6j/65gmhg_92wq518p0w2vtwt6c0000gn/T/tmp.aed6E9pNII/undodir/%private%var%folders%6j%65gmhg_92wq518p0w2vtwt6c0000gn%T%tmp.aed6E9pNII%proj%sub%recent-two.ts",
+        "PASS: arm held both in-window files, unlisted, history intact, no option leak",
+        "PASS: release(n) evicts n, release() drains the rest"
+      ]
+    },
+    "Step 7": {
+      "attempts": 3,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "PASS: all 18 extractor cases match (including 8 that must extract nothing)",
+        "PASS: 3 paths held in one invocation (29ms total, one Bun startup)",
+        "PASS: Bash PreToolUse document extracted and held, silent exit 0",
+        "PASS: both hooks wired for shell commands, no CLI import in the hook",
+        "Step 7: OK"
+      ]
+    },
+    "Step 8": {
+      "attempts": 2,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "NOTE: ~/.config/nvim does not have this feature yet — running in SOURCE mode.",
+        "      The advertise and CursorHold-sweep autocmds cannot load pre-apply, so this run",
+        "      calls advertise() and the per-buffer checktime directly. Their wiring is covered",
+        "      by verify/step-2.sh and verify/step-6.sh. Re-run after 'chezmoi apply' for the",
+        "      full path through the real autocmds.",
+        "PASS: config up in source mode, instance advertised at /var/folders/6j/65gmhg_92wq518p0w2vtwt6c0000gn/T/tmp.HtJHLL2M1G/tmp/nvim-undo/59352",
+        "PASS: Claude Code entry point held via-claude.ts",
+        "PASS: omp entry point held via-omp.ts",
+        "PASS: agent rewrote all three files on disk",
+        "PASS: via-claude.ts absorbed the write as an undo state in-session (seq_last=2)",
+        "PASS: via-omp.ts absorbed the write as an undo state in-session (seq_last=2)",
+        "PASS: via-claude.ts — history survived (seq_last=2), undo returns the pre-agent line",
+        "PASS: via-omp.ts — history survived (seq_last=2), undo returns the pre-agent line",
+        "PASS: unprotected.ts — baseline confirmed: unheld file lost its entire tree (seq_last=0)",
+        "e2e: OK",
+        "PASS: startup 111.809ms (preload is deferred 2000ms, so it never lands here)",
+        "PASS: CursorHold sweep 0.91ms at 60 loaded buffers (budget 1.0ms/callback)",
+        "PASS: decision record present, matching the existing format, gaps recorded",
+        "Step 8: OK"
+      ]
+    }
+  }
+}

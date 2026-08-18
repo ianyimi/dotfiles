@@ -9,9 +9,10 @@ rules:
       - docs/standards/plugins/lazy-loading.md
       - docs/standards/plugins/spec-shape.md
   - id: std-lua-style
-    when: ["**/*.lua", "lua/util/**/*.lua"]
+    when: ["**/*.lua", "lua/config/autocmds.lua", "lua/util/**/*.lua"]
     inject:
       - docs/standards/lua-style/README.md
+      - docs/standards/lua-style/autocmds.md
       - docs/standards/lua-style/indentation-and-formatting.md
       - docs/standards/lua-style/naming.md
       - docs/standards/lua-style/util-library.md

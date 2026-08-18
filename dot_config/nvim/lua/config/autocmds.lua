@@ -661,50 +661,60 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
 	end,
 })
 
+-- Advertise this nvim instance so external tools can reach it.
+-- Writes $TMPDIR/nvim-undo/<pid> — line 1 cwd, line 2 v:servername — removed on VimLeavePre.
+-- Every nvim already listens on msgpack-RPC (v:servername is always populated), so nothing is
+-- started here; the file only makes an existing socket discoverable. Agent tool-call hooks read
+-- it to find this instance and call LazyVim.undo.hold() before writing a file.
+--
+-- The group id is created ONCE and reused: augroup() passes clear = true, so calling it a
+-- second time for the same name deletes the autocmd registered by the first call. Registering
+-- both of these through separate augroup() calls silently left only VimLeavePre behind.
+local undo_guard_group = augroup("undo_guard_advertise")
+
+vim.api.nvim_create_autocmd("VimEnter", {
+	group = undo_guard_group,
+	callback = function()
+		LazyVim.undo.advertise()
+	end,
+})
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+	group = undo_guard_group,
+	callback = function()
+		LazyVim.undo.unadvertise()
+	end,
+})
+
+-- Windowed startup preload: arms LazyVim.undo's 7-day candidate sweep so undo history for
+-- git checkout, `prettier --write .`, npm install, codegen, and xd://ast_edit rewrites keeps
+-- accumulating the same way tool-call-hook holds do -- none of those pass through a hooked
+-- tool, and a manual `git checkout` in a tmux pane has no agent involved at all. Deferred 2s
+-- past VimEnter so it never touches startup time; skipped for $HOME and "/" so a bare `nvim`
+-- outside a real project doesn't walk the whole undo store for nothing.
+vim.api.nvim_create_autocmd("VimEnter", {
+	group = augroup("undo_guard_preload"),
+	callback = function()
+		local cwd = vim.uv.cwd()
+		if not cwd or cwd == vim.env.HOME or cwd == "/" then
+			return
+		end
+		vim.defer_fn(function()
+			LazyVim.undo.arm()
+		end, 2000)
+	end,
+})
+
 -- UndoGuardHold: preemptively load a file to protect its undo history from external edits.
--- Called by agent tool-call hooks before the agent writes a file. The file is loaded into
--- a hidden buffer (buflisted=false) so it doesn't clutter the tabline or buffer list.
--- When the agent's write occurs, the next CursorHold triggers per-buffer checktime which
--- detects the change and reloads with undoreload, preserving history as an undo state.
--- This is a no-op if the file is already loaded or doesn't exist.
+-- Delegates to lua/util/undo.lua. The previous inline implementation called vim.fn.bufload
+-- OUTSIDE its pcall, so a throw left eventignore="all" set for the rest of the session,
+-- silently disabling every autocmd (LSP attach, checktime, format-on-save). The module
+-- restores eventignore and swapfile unconditionally instead.
 vim.api.nvim_create_user_command("UndoGuardHold", function(opts)
-	local path = opts.args
-	if path == "" then
-		vim.notify("UndoGuardHold: no path provided", vim.log.levels.ERROR)
-		return
+	local ok, status = pcall(LazyVim.undo.hold, opts.args)
+	if ok and status and vim.in_fast_event() == false then
+		LazyVim.info("UndoGuardHold: " .. status, { title = "LazyVim" })
 	end
-
-	-- Normalize and verify the file exists
-	path = vim.fn.fnamemodify(path, ":p")
-	if vim.fn.filereadable(path) ~= 1 then
-		-- File doesn't exist yet; can't preload. That's OK — return silently.
-		-- This happens when the agent is creating a new file.
-		return
-	end
-
-	-- If already loaded, nothing to do
-	local buf = vim.fn.bufloaded(path)
-	if buf ~= 0 then
-		return
-	end
-
-	-- Load the file into a hidden, unlisted buffer, without triggering autocmds
-	-- so LSP and treesitter don't attach to every guarded file (wasteful).
-	local ei = vim.o.eventignore
-	vim.o.eventignore = "all"
-
-	local ok, result = pcall(function()
-		return vim.fn.bufadd(path)
-	end)
-
-	if ok then
-		local new_buf = result
-		vim.fn.bufload(new_buf)
-		-- Keep it unlisted so it doesn't show in telescope/barbar
-		vim.api.nvim_set_option_value("buflisted", false, { buf = new_buf })
-	end
-
-	vim.o.eventignore = ei
 end, {
 	nargs = 1,
 	complete = "file",

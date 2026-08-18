@@ -5,3 +5,4 @@
 - Document config/autocmds.lua conventions (MRU cache, oil auto-open) in standards
 
 ## Recently Done
+- undo-guard

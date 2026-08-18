@@ -45,9 +45,9 @@ Scale totals by session length; per-call figures are directly comparable.
 | `vim.schedule cb` total | **4,003ms / 108s** (~3.7% duty) | duty cycle > 10% |
 | `vim.schedule cb` per call | **0.30ms** | > 1.0ms |
 | `vim.defer_fn cb` total | **374ms**, 0.11ms/call | > 1.5ms/call |
-| `oil.toggle_float` | **18.2ms** avg, 26.4ms max | > 50ms avg |
+| `oil.toggle_float` | **11.8ms** avg, 20.0ms max (was 18.2/26.4 before the barbar render fix) | > 40ms avg |
 | `telescope.find_files` | **26.2ms** avg | > 60ms avg |
-| `barbar render.update` | **1.21ms**/call | > 3ms/call |
+| `barbar render.update` | **787 calls**, 5.33ms/call, 4.2s total per session | calls in the thousands, or total > 8s |
 | `lualine.statusline` | **0.83ms**/call | > 2ms/call |
 | `treesitter.start` | **0.61ms** avg, 34.4ms max | > 3ms avg |
 | `util.root.get` | **0.003ms**/call | > 0.5ms/call (cache broken) |
