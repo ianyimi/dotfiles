@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "project": "nvim-config",
+  "description": "Personal Neovim configuration managed by chezmoi — lazy.nvim plugin system, custom Ghana Cozy colorschemes, LSP + AI integration",
+  "harness": {
+    "base_version": "0.1.0"
+  },
+  "platforms": {
+    "active": [
+      "omp",
+      "claude"
+    ]
+  },
+  "workflow": {
+    "default_tier": "low-care",
+    "importance": "medium",
+    "developer_implements": false,
+    "post_implement_polish": false,
+    "commit_mode": "message-only"
+  },
+  "modules": {
+    "specs": true,
+    "tasks": true,
+    "session_log": true,
+    "roadmap": false,
+    "design": false,
+    "decisions": true,
+    "research": true,
+    "env_manifest": false,
+    "naming_conventions": false
+  },
+  "standards_domains": [
+    "plugins",
+    "lua-style",
+    "keymaps"
+  ],
+  "dependencies": [
+    {
+      "package": "lazy.nvim",
+      "version": "306a05526ada86a7b30af95c5cc81ffba93fef97",
+      "repo": "github.com/folke/lazy.nvim"
+    },
+    {
+      "package": "barbar.nvim",
+      "version": "539d73def39c9172b4d4d769f14090e08f37b29d",
+      "repo": "github.com/romgrk/barbar.nvim"
+    },
+    {
+      "package": "harpoon",
+      "version": "87b1a3506211538f460786c23f98ec63ad9af4e5",
+      "repo": "github.com/ThePrimeagen/harpoon"
+    }
+  ],
+  "doctor": {
+    "budgets": {
+      "preferences_lines": 80,
+      "anti_patterns_lines": 40,
+      "skill_lines": 150,
+      "agents_md_directives_lines": 20
+    },
+    "stale_spec_days": 14
+  },
+  "models": {
+    "subagent_selection": "dynamic",
+    "advisor": true,
+    "tiers": {
+      "frontier": "anthropic/claude-fable-5",
+      "standard": "anthropic/claude-sonnet-5",
+      "cheap": "anthropic/claude-haiku-4-5"
+    }
+  }
+}

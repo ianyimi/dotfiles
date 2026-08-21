@@ -58,15 +58,15 @@ Steps 4–6. If a verified value differs from the expected one, the golden chang
 
 | # | Constant | Expected (00 §3 + authoring notes) | Verified value | Source file |
 |---|---|---|---|---|
-| V1 | `disabledProviders` config key name + location | top-level key in `.omp/config.yml`, string array | *(fill in)* | `src/config/settings-schema.ts` |
-| V2 | Provider id that ingests `.claude/` | `claude` | *(fill in)* | `src/discovery/` |
-| V3 | Provider id(s) that ingest `.agent`/`.agents` | `agent`, `agents` (may be a single id) | *(fill in)* | `src/discovery/` |
-| V4 | Any other provider ids harness must disable | none (harness manages only `.claude`, `.agent`) | *(fill in)* | `src/discovery/` |
-| V5 | `applyTo` multi-glob syntax in `*.instructions.md` | comma-separated globs in one string | *(fill in)* | instructions loader in `src/discovery/` |
-| V6 | `thinking-level` allowed values (agents frontmatter) | kebab-case set, e.g. `off|minimal|low|medium|high` | *(fill in)* | `settings-schema.ts` / agents loader |
-| V7 | Event-hook API: event name + notify surface | `pi.on("session_start", …)`; `ctx.ui.notify(msg)` shape | *(fill in)* | `@oh-my-pi/pi-coding-agent/hooks` types |
-| V8 | `HookAPI` type import specifier | `"@oh-my-pi/pi-coding-agent/hooks"` | *(fill in)* | package.json `exports` |
-| V9 | `modelRoles` key name + role set | `modelRoles:` group; roles incl. `default smol slow vision plan designer commit tiny task advisor` | *(fill in)* | `settings-schema.ts` |
+| V1 | `disabledProviders` config key name + location | top-level key in `.omp/config.yml`, string array | ✅ confirmed: `disabledProviders: { type: "array" }`; consumed by EXACT provider-id match | `src/config/settings-schema.ts:529`, `src/capability/index.ts:239,285-288` |
+| V2 | Provider id that ingests `.claude/` | `claude` | ✅ `claude` | `src/discovery/claude.ts:32` |
+| V3 | Provider id(s) that ingest `.agent`/`.agents` | `agent`, `agents` (may be a single id) | ⚠️ SINGLE id `agents` covers both dirs — "agent" is not a provider id | `src/discovery/agents.ts:26` |
+| V4 | Any other provider ids harness must disable | none | ✅ none — `agents-md` walks up for ROOT `AGENTS.md` only (ours is inside `.agent/`); `native` (.omp) must stay enabled. Disabled set = `["agents", "claude"]` | `src/discovery/agents-md.ts` |
+| V5 | `applyTo` multi-glob syntax in `*.instructions.md` | comma-separated globs in one string | ⚠️ `applyTo?: string` is a SINGLE glob (comma support unverified in the matcher) → fallback taken: one instructions file per glob, `<id>.instructions.md` when 1 glob else `<id>-<n>.instructions.md` | `src/capability/instruction.ts:20`, `src/discovery/github.ts:143` |
+| V6 | `thinking-level` allowed values | kebab-case set | ✅ `ThinkingLevel` enum incl. `off` (harness emits no thinking-level — unused) | `src/thinking.ts:23` |
+| V7 | Event-hook API: event name + notify surface | `pi.on("session_start", …)`; `ctx.ui.notify(msg)` | ✅ `on("session_start", handler)` where `HookHandler<E,R> = (event, ctx) => …`; `ctx.ui.notify(message, type?: "info"\|"warning"\|"error")` | `src/extensibility/hooks/types.ts:447,483,84` |
+| V8 | `HookAPI` type import specifier | `"@oh-my-pi/pi-coding-agent/hooks"` | ⚠️ shipped examples import from the PACKAGE ROOT: `import type { HookAPI } from "@oh-my-pi/pi-coding-agent"` — use that | `examples/hooks/*.ts`, package.json `exports` (`"./*"`) |
+| V9 | `modelRoles` key name + role set | `modelRoles:` group | ✅ `modelRoles: { type: "record" }` | `src/config/settings-schema.ts:569` |
 
 ---
 

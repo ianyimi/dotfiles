@@ -454,6 +454,8 @@ run sync for that platform. Adding opencode later = write `src/platforms/opencod
 | `.claude/skills` | symlink | → `../.agent/skills` |
 | `.claude/CLAUDE.md` | generated | `@.agent/AGENTS.md` import line + routing directive (proposal §17) + "run `harness context --for` before specs" note. |
 | `.claude/settings.json` | generated/merged | `hooks.SessionStart` → `harness doctor` (managed keys only; D10 merge rules — never touch keys sync didn't write). |
+| `.claude/commands/<name>.md` | generated (09) | One slash-command shim per described skill ("invoke the skill, follow it exactly", `$ARGUMENTS`). `init` ships as `harness-init.md` — Claude Code's builtin `/init` collides. |
+| `.omp/prompts/<name>.md` | generated (09) | Same shims for OMP (`/init` keeps its name there). Natural-language skill triggering is unaffected — shims are an additional invocation path. |
 | `.gitignore` (project) | managed lines | `.omp/`, `.claude/`, `.agent/dependencies/*` (unless `commit_bridges`). |
 
 Both platforms tolerate unknown frontmatter keys in SKILL.md (verified: OMP `[key: string]: unknown`;
@@ -499,8 +501,10 @@ of the existing pi prompts, trimmed to router format).
 | `06-deps.md` | Dependency source clones | `deps clone/sync/add/remove/list`, registry.md, doctor `stale-dependencies` | Clone pinned tag into `.agent/dependencies/`, registry accurate, drift detected |
 | `07-templates.md` | Init templates mechanism | `template save/list/inspect/delete`, `init --template` wiring | Save from `initialized` fixture → re-init a fresh fixture from it, structural questions skipped |
 | `08-integration.md` | Wiring + worktree + migration runbook | tasks.md wiring into skills, `worktree`, cascade-check reference, end-to-end smoke test, migration runbook (maprios / vex / this repo, incl. deleting old harness trees + pi-agent-base shrink) | Cold-start-from-state.md e2e; runbook executed on this dotfiles repo |
+| `09-commands-guide-discovery.md` | Slash commands, harness guide, init discovery | Command shims in both adapters (`/dev-spec` etc., `/harness-init`), generated `docs/harness-guide.md` (per-project harness organization + knowledge routing), init skill discovery pass (full-codebase practice mining with `applies_to` globs), `context-coverage` doctor check | Shims visible as slash commands; guide written once by finish; discovery closes with index/struct/sync/doctor; coverage check catches a seeded uncovered dir |
 
-Dependencies are strictly linear (each spec may use anything from earlier specs, nothing later).
+Dependencies are strictly linear for 01–08 (each spec may use anything earlier, nothing later).
+Spec 09 amends 01/04 surfaces and depends only on them — it may run before or alongside 05–08.
 
 ---
 
@@ -538,6 +542,9 @@ phase spec's prose is ambiguous; each row names the owning spec (implement it th
 | Progress-file `template: <name>` frontmatter | 07 (writes at scaffold) | 01 (`initWritePhase` phase 7 sets `manifest.harness.template` from it) | Small documented delta to 01's phase-7 writer; implement when building 07. |
 | git clone helpers throw | 06 (`lsRemoteTags`, `shallowCloneAtRef`) | 06 only | Documented deviation from 01's safe-default git wrappers: clone failures are actionable, so they throw `HarnessError` (`git-ls-remote-failed`, `git-clone-failed`). |
 | `.agent/docs/research/` | 03 (research/learn skills create on first use) | 02 `struct` (tolerate), 04 sync (ignore) | Additive to §6 layout; module-gated by `modules.research`. |
+| Command shims + `/harness-init` rename | 09 (adapters emit `.claude/commands/`, `.omp/prompts/`) | 04 sync tests (file counts/goldens updated by 09 Step 1) | One shim per described skill; only the init shim is renamed, only on Claude. |
+| `docs/harness-guide.md` | 09 (`init finish` writes once, never overwrites) | init skill, sync-spec skill, all harness-editing agents | The per-project "how this harness is organized + where knowledge goes" doc. Additive to §6 layout. |
+| `commit/references/commit-checklist.md` | 09 (default template; init's commit-gate step rewrites per project) | commit skill (runs every item, blocks on failures, waivers logged) | The sanctioned per-project customization point for the commit gate — reference file, not a manifest field. |
 | tasks.md sections | 08 (`tasksFile.ts`: ids `in-progress|inbox|done`, `SECTION_HEADINGS`) | 01 (scaffold writes the matching `## In Progress / ## Inbox / ## Recently Done` skeleton), 02/03/05 skill edits | Headings are the contract; 08's parser is tolerant of extra content between sections. |
 | `shared-references/cascade-checks.md` | 08 (authors it) | 01 (scaffold copies `.agent/skills/shared-references/` — small documented delta, implement when building 08), 02 dev-spec/sync-spec pointers | Non-skill shared reference location. |
 | Error-code registry additions | 02/03/05/06/07/08 | all | `module-disabled`, `spec-exists`, `spec-tasks-invalid`, `no-log-entry`, `no-pending-commit`, `bad-date`, `polish-disabled`, `dep-unknown`, `dep-exists`, `dep-version-unknown`, `git-ls-remote-failed`, `git-clone-failed`, `template-not-found`, `template-invalid`, `template-exists`, `template-name-invalid`, `init-incomplete`, `not-initialized`, `no-project`, `usage`, `manifest-invalid`, `task-not-found`, `task-ambiguous`, `not-worktree-repo`, `worktree-path-exists`, `branch-exists`, `git-failed`. Codes are stable API — tests assert them. |

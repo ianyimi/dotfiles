@@ -18,6 +18,7 @@ local LazyUtil = require("lazy.core.util")
 ---@field mini lazyvim.util.mini
 ---@field pick lazyvim.util.pick
 ---@field cmp lazyvim.util.cmp
+---@field undo lazyvim.util.undo
 local M = {}
 
 -- Safe buffer deletion that prevents satellite.nvim and gitsigns errors

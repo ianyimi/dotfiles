@@ -1,0 +1,2 @@
+[test]
+# Deterministic test runs; no preload needed.

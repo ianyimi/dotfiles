@@ -87,7 +87,43 @@ return {
 		-- whatever the buffer's filetype is, silently does nothing if no parser
 		-- exists (e.g. for filetypes we never installed, or before background
 		-- install finishes on first run).
+		-- Filetypes whose injection count scales with document length, where the
+		-- highlighter becomes the dominant cost in every redraw.
+		--
+		-- A 3761-line spec carries 493 injected regions (428 markdown_inline +
+		-- 64 typescript fences). The highlighter re-resolves injections roughly
+		-- once per visible line, each pass walking every child tree, so a single
+		-- full-screen redraw measured 1129ms -- about 12x one full re-resolution
+		-- (93.7ms). Anything forcing a redraw while such a buffer is visible pays
+		-- it: opening an Oil float, a Telescope keystroke, a window switch.
+		--
+		-- Skipping `vim.treesitter.start` leaves the parser reachable via
+		-- get_parser, so render-markdown keeps working (verified: it re-renders
+		-- all 97 extmarks with the highlighter off). The cost is plain syntax
+		-- colouring inside the buffer, which the rendered view largely replaces.
+		local HEAVY_INJECTION_FT = { markdown = true, mdx = true, ["markdown.mdx"] = true }
+		-- Shared with after/ftplugin/markdown.lua, which is the override that
+		-- actually wins against Nvim's bundled ftplugin/markdown.lua.
+		local HEAVY_INJECTION_LINES = vim.g.markdown_ts_highlight_max_lines or 1500
+
+		---@param bufnr integer
+		---@return boolean
+		local function skip_highlighter(bufnr)
+			if not HEAVY_INJECTION_FT[vim.bo[bufnr].filetype] then
+				return false
+			end
+			return vim.api.nvim_buf_line_count(bufnr) > HEAVY_INJECTION_LINES
+		end
+
 		local function start_treesitter(bufnr)
+			if skip_highlighter(bufnr) then
+				-- Ensure a parser exists for consumers that ask for one directly
+				-- (render-markdown, treesitter-context) without attaching the
+				-- per-line highlighter.
+				pcall(vim.treesitter.get_parser, bufnr)
+				vim.b[bufnr].ts_highlight_skipped = true
+				return
+			end
 			local ok = pcall(vim.treesitter.start, bufnr)
 			if ok then
 				-- Indentation (provided by nvim-treesitter; experimental but stable)

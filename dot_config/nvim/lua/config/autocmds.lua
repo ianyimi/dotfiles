@@ -29,13 +29,28 @@ vim.api.nvim_create_autocmd({ "BufLeave", "BufWinLeave" }, {
 	end,
 })
 
--- Check if we need to reload the file when it changed
--- Triggers on: focus, terminal close, cursor idle, entering buffers, entering windows
+-- Detect files changed outside nvim (agents, CLI tools, git) and reload them.
+-- Triggers on: window focus, terminal close/leave, cursor idle (updatetime=250ms).
+--
+-- Bare ":checktime" only reaches buffers currently displayed in a window, so an
+-- agent rewriting 9 files you have open-but-hidden would leave all 9 stale and
+-- their undo trees would die at exit (nvim keys persistent undo to a hash of the
+-- file contents, so a stale undofile is silently discarded on next open). The
+-- per-buffer ":checktime {buf}" form has no window requirement, so every loaded
+-- buffer absorbs the external change as an undo state via 'undoreload' and gets
+-- its undofile rewritten -- no visiting required.
+--
+-- Files nvim has never loaded are still invisible here; nothing can preserve
+-- history for those, because the hash mismatch happens before nvim sees them.
 vim.api.nvim_create_autocmd({ "FocusGained", "TermClose", "TermLeave", "CursorHold", "CursorHoldI" }, {
 	group = augroup("checktime"),
 	callback = function()
-		if vim.o.buftype ~= "nofile" then
-			vim.cmd("checktime")
+		for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+			-- Real files only: skip terminals, oil://, quickfix, and other scratch buffers.
+			if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].buftype == ""
+				and vim.api.nvim_buf_get_name(buf) ~= "" then
+				pcall(vim.cmd, "checktime " .. buf)
+			end
 		end
 	end,
 })
@@ -121,80 +136,26 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
 	end,
 })
 
---  e.g. ~/.local/share/chezmoi/*
-vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-	pattern = { os.getenv("HOME") .. "/.local/share/chezmoi/*" },
-	callback = function(ev)
-		local bufnr = ev.buf
-		local edit_watch = function()
-			require("chezmoi.commands.__edit").watch(bufnr)
-		end
-		vim.schedule(edit_watch)
-	end,
-})
-
--- Preserve undo history across external file changes
--- When agents or external tools modify files, Neovim reloads them which clears undo history
--- We save the undo tree to disk before reload and restore it after
+-- External file changes (agents, CLI formatters, git checkout) always win.
+--
+-- Without this handler nvim leaves a locally-modified buffer stale on conflict
+-- and, because merely registering a FileChangedShell autocmd suppresses the
+-- default action, shows no W12 warning either. Setting v:fcs_choice restores an
+-- explicit policy: take the version on disk.
+--
+-- No undo history is lost. 'undoreload' (options.lua) files the pre-reload
+-- buffer as an undo state, so unsaved work is one `u` away, and nvim rewrites
+-- the undofile on reload so the tree survives into the next session.
+--
+-- Unmodified buffers never reach here -- 'autoread' reloads them and only
+-- FileChangedShellPost fires. Detection requires the file to be open in a
+-- loaded buffer; see the checktime autocmd above.
 vim.api.nvim_create_autocmd("FileChangedShell", {
-	group = augroup("preserve_undo_on_reload"),
-	callback = function(event)
-		local buf = event.buf
-
-		-- Only preserve undo for normal file buffers that are loaded
-		if vim.bo[buf].buftype ~= "" or not vim.api.nvim_buf_is_loaded(buf) then
-			return
-		end
-
-		local filepath = vim.api.nvim_buf_get_name(buf)
-		if filepath == "" or vim.fn.filereadable(filepath) ~= 1 then
-			return
-		end
-
-		-- Create a temp file to store the undo tree
-		local undo_dir = vim.fn.stdpath("cache") .. "/undo_preserve"
-		vim.fn.mkdir(undo_dir, "p")
-
-		-- Use buffer number to create unique undo file
-		local undo_file = undo_dir .. "/" .. buf .. ".undo"
-
-		-- Save current undo tree to temp file
-		local ok, err = pcall(function()
-			vim.cmd("wundo! " .. vim.fn.fnameescape(undo_file))
-		end)
-
-		if ok then
-			-- Mark this buffer to restore undo after reload
-			vim.b[buf].undo_preserve_file = undo_file
-		else
-			-- If we couldn't save undo, don't try to restore it
-			vim.b[buf].undo_preserve_file = nil
-		end
-	end,
-})
-
--- After external reload, restore the undo history from disk
-vim.api.nvim_create_autocmd("FileChangedShellPost", {
-	group = augroup("restore_undo_after_reload"),
-	callback = function(event)
-		local buf = event.buf
-		local undo_file = vim.b[buf].undo_preserve_file
-
-		if undo_file and vim.fn.filereadable(undo_file) == 1 then
-			-- Restore undo tree from temp file
-			local ok, err = pcall(function()
-				vim.cmd("rundo " .. vim.fn.fnameescape(undo_file))
-			end)
-
-			if ok then
-				vim.notify("File reloaded (undo history preserved)", vim.log.levels.INFO)
-			else
-				vim.notify("File reloaded (could not restore undo history)", vim.log.levels.WARN)
-			end
-
-			-- Clean up temp file
-			pcall(vim.fn.delete, undo_file)
-			vim.b[buf].undo_preserve_file = nil
+	group = augroup("reload_on_external_change"),
+	callback = function()
+		-- "deleted" cannot be reloaded; leave the buffer as the last copy of the file.
+		if vim.v.fcs_reason ~= "deleted" then
+			vim.v.fcs_choice = "reload"
 		end
 	end,
 })
@@ -698,4 +659,63 @@ vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
 			end
 		end
 	end,
+})
+
+-- Advertise this nvim instance so external tools can reach it.
+-- Writes $TMPDIR/nvim-undo/<pid> — line 1 cwd, line 2 v:servername — removed on VimLeavePre.
+-- Every nvim already listens on msgpack-RPC (v:servername is always populated), so nothing is
+-- started here; the file only makes an existing socket discoverable. Agent tool-call hooks read
+-- it to find this instance and call LazyVim.undo.hold() before writing a file.
+--
+-- The group id is created ONCE and reused: augroup() passes clear = true, so calling it a
+-- second time for the same name deletes the autocmd registered by the first call. Registering
+-- both of these through separate augroup() calls silently left only VimLeavePre behind.
+local undo_guard_group = augroup("undo_guard_advertise")
+
+vim.api.nvim_create_autocmd("VimEnter", {
+	group = undo_guard_group,
+	callback = function()
+		LazyVim.undo.advertise()
+	end,
+})
+
+vim.api.nvim_create_autocmd("VimLeavePre", {
+	group = undo_guard_group,
+	callback = function()
+		LazyVim.undo.unadvertise()
+	end,
+})
+
+-- Windowed startup preload: arms LazyVim.undo's 7-day candidate sweep so undo history for
+-- git checkout, `prettier --write .`, npm install, codegen, and xd://ast_edit rewrites keeps
+-- accumulating the same way tool-call-hook holds do -- none of those pass through a hooked
+-- tool, and a manual `git checkout` in a tmux pane has no agent involved at all. Deferred 2s
+-- past VimEnter so it never touches startup time; skipped for $HOME and "/" so a bare `nvim`
+-- outside a real project doesn't walk the whole undo store for nothing.
+vim.api.nvim_create_autocmd("VimEnter", {
+	group = augroup("undo_guard_preload"),
+	callback = function()
+		local cwd = vim.uv.cwd()
+		if not cwd or cwd == vim.env.HOME or cwd == "/" then
+			return
+		end
+		vim.defer_fn(function()
+			LazyVim.undo.arm()
+		end, 2000)
+	end,
+})
+
+-- UndoGuardHold: preemptively load a file to protect its undo history from external edits.
+-- Delegates to lua/util/undo.lua. The previous inline implementation called vim.fn.bufload
+-- OUTSIDE its pcall, so a throw left eventignore="all" set for the rest of the session,
+-- silently disabling every autocmd (LSP attach, checktime, format-on-save). The module
+-- restores eventignore and swapfile unconditionally instead.
+vim.api.nvim_create_user_command("UndoGuardHold", function(opts)
+	local ok, status = pcall(LazyVim.undo.hold, opts.args)
+	if ok and status and vim.in_fast_event() == false then
+		LazyVim.info("UndoGuardHold: " .. status, { title = "LazyVim" })
+	end
+end, {
+	nargs = 1,
+	complete = "file",
 })

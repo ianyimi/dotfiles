@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "generated_at_sha": "dc9485c40325e22ecad6d0747da9cf6b3b5a7b78",
+  "entries": [
+    {
+      "path": ".agent/context-rules.yaml",
+      "kind": "generated",
+      "target_or_hash": "f5539691e4012ae13e00271fe813e764691725b58eccaedb57bb0c39d6620ed3",
+      "platform": "core"
+    },
+    {
+      "path": ".claude/CLAUDE.md",
+      "kind": "generated",
+      "target_or_hash": "33eb6e909502563f52ad5f03ff78bfed316f83931d4d59ebd6677f556475fa33",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/commit.md",
+      "kind": "generated",
+      "target_or_hash": "187d5a6022579239c8918fbd7296d777c2109eb1006a19b2dce7be635f8ff58b",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/debug.md",
+      "kind": "generated",
+      "target_or_hash": "78d08345ce7c14e309b3d0b8829a6d50d40f8f707ed9489da402f7279415d6ac",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/dev-spec.md",
+      "kind": "generated",
+      "target_or_hash": "6c5c79b7e2d29ef9a77a7f2b756e9a5d3120464d759077aea7cb0ec3ce40ec59",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/document.md",
+      "kind": "generated",
+      "target_or_hash": "96fb6a5dff16b57526c072b332084c33f5bd0e634b32bd5215782efffae092ed",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-advisor.md",
+      "kind": "generated",
+      "target_or_hash": "b694eaa02108fd39237cd3a720c009983e1e9b3468632e9a7a7cd4cf5396e845",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-config.md",
+      "kind": "generated",
+      "target_or_hash": "70187c5d75172f6db7a9647e60e53ccb834ee489b353649162f3569d8fed1428",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-init.md",
+      "kind": "generated",
+      "target_or_hash": "079f8639b4b38f226c7ef08063591d293e8b138c4e86d7d2e23dac187e2d2bca",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-pull.md",
+      "kind": "generated",
+      "target_or_hash": "8ec83c8834eeecc77fdf1d82a19d84ea0fcffb728fa2ccc5a0feec25619bd10c",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/implement.md",
+      "kind": "generated",
+      "target_or_hash": "5d4a17f9524d4d203cd252a49013a2e1e677eacfbed7040cd6a34ce4bd90341a",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/learn.md",
+      "kind": "generated",
+      "target_or_hash": "25cdc27d10ec081e2299e99649d09b07022fc294f21a6bd215fd1240dc06551d",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/polish.md",
+      "kind": "generated",
+      "target_or_hash": "d80fc327460ba800840f2660ba71f78bc913c96a7af87537120b081f6ecea8b5",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/research.md",
+      "kind": "generated",
+      "target_or_hash": "0c3db0936ab6101da39e16fbcb46ddae1ffda833ba97127dcdba83b5837471d8",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/summary-prompt.md",
+      "kind": "generated",
+      "target_or_hash": "b8fd812eb917ad6c9fca6eb078786db97f23ac21054306e5956c6660d6d55c64",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/sync-spec.md",
+      "kind": "generated",
+      "target_or_hash": "fa777558d715008acc45c505ffc6ef35ef219b12902128bd94f1210c049ac0bb",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/settings.json",
+      "kind": "generated",
+      "target_or_hash": "5658ee03aeddd930e1cd4bcdd243aaaa087aad29e44b5aa0a21bacaee5cd96e3",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/skills",
+      "kind": "symlink",
+      "target_or_hash": ".agent/skills",
+      "platform": "claude"
+    },
+    {
+      "path": ".gitignore#.agent/dependencies/*",
+      "kind": "gitignore-line",
+      "target_or_hash": ".agent/dependencies/*",
+      "platform": "core"
+    },
+    {
+      "path": ".gitignore#.claude/",
+      "kind": "gitignore-line",
+      "target_or_hash": ".claude/",
+      "platform": "claude"
+    },
+    {
+      "path": ".gitignore#.omp/",
+      "kind": "gitignore-line",
+      "target_or_hash": ".omp/",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/AGENTS.md",
+      "kind": "symlink",
+      "target_or_hash": ".agent/AGENTS.md",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/WATCHDOG.yml",
+      "kind": "generated",
+      "target_or_hash": "beb4dc0e1c1b39d70f636c83ab52f7562af33f3e636800fdb6c60ea374d2e6c6",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/commit.md",
+      "kind": "generated",
+      "target_or_hash": "0cb2dd6c415e623f6aa83752628913568b10c88de51836777553b8463271a082",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/debug.md",
+      "kind": "generated",
+      "target_or_hash": "f6452dd9841155599fe45b16d91dda50b5531feb5451f0d003e52286f7dd1c24",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/dev-spec.md",
+      "kind": "generated",
+      "target_or_hash": "c78e9fda246fa83ed5483859eae66795a0b4b929561523b358cf66771f21ae7d",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/document.md",
+      "kind": "generated",
+      "target_or_hash": "ce671f8ab640f5458d0e31237e944435a778eb1bc9c9b7207038c4a7f2e58125",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/harness-config.md",
+      "kind": "generated",
+      "target_or_hash": "ef027aa4c6c090f11c1ee2e528cd3f35d46ac7570d8762af0e4f34e3ea7b2181",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/implement.md",
+      "kind": "generated",
+      "target_or_hash": "79df2feb3be67205cf400fc7ee00f809e9d9ffefffdc5de8b5840f30a6309ca5",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/polish.md",
+      "kind": "generated",
+      "target_or_hash": "123abae1bdfc76c9b29f3694e19ac969ce1dc25475ca85c0dd806eaf84f65a58",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/summary-prompt.md",
+      "kind": "generated",
+      "target_or_hash": "bca46f31d5f64e04a129063b0fed2f70f8913bbfbce0ea4b4063c2d5d4548074",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/agents/sync-spec.md",
+      "kind": "generated",
+      "target_or_hash": "36470c0ca8a88f6f97882e184c4a51d0b8edb6677e0e0f3ec449f4ec5987ffd9",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/config.yml",
+      "kind": "generated",
+      "target_or_hash": "80af76b7505c821d986a29cad39e753d5fb42c361f67fe9e9aa10546de3334c1",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/hooks/session-doctor.ts",
+      "kind": "generated",
+      "target_or_hash": "46c2dc2de1560576188fd8eea83dd0b0430e13105d4468f088286b746e2f59b9",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-keymaps-0.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "c15c61fe26916dc202ad1c78fc7086a2ed7171f71e03108c024d884f1234c2e1",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-keymaps-1.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "86dec3ade9ced91792f142efee7b2401458caddb421cb2559a98f55bb0afce28",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-keymaps-2.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "2a9767130d49bbb9e81c36a4482ab2ff9cfc284c424adeb52abadda03452f10d",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-lua-style-0.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "3db5a9bd62ae83c033ac23ad6b83709dd1c205d42278a3cd8d90a7e4f841ea0b",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-lua-style-1.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "bcf86419b2fa9a957ccc5489f356121789f72c9974de58a457942ad4b1b071b7",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-lua-style-2.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "bb7dbd0a7938e6312e6149478df108c8eb34e2d2aab7149c49e73543461031b1",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-plugins-0.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "c26deeb22b65de31b99c8817bfe5c0e504564016a6b45fcc76c91e0a996d78cf",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/instructions/std-plugins-1.instructions.md",
+      "kind": "generated",
+      "target_or_hash": "72cfec813b44106712123889d0f320a4da3c32f48ab3aa0f90d904451aa1f455",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/commit.md",
+      "kind": "generated",
+      "target_or_hash": "8fef23302631d28140402eabbc1315c39dc6c5c403ca8d3fb50b775f9e961f08",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/debug.md",
+      "kind": "generated",
+      "target_or_hash": "1c0025373be6ff61e1545220701c726db908664e0d72df9a65facbd723ebd92b",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/dev-spec.md",
+      "kind": "generated",
+      "target_or_hash": "d446982c9ef3b4598733241e25f362eecae441fde78007d7532d8b8714a0e163",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/document.md",
+      "kind": "generated",
+      "target_or_hash": "a992be48cf6ee3df0f4b5ea15b27e69768a218c61d6af7dc2bf0ed89bf10b3cb",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/harness-config.md",
+      "kind": "generated",
+      "target_or_hash": "4af84748adca76de43d5bed3694b021f58c53dade27799d284c6d441ae1dffee",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/harness-init.md",
+      "kind": "generated",
+      "target_or_hash": "f7f77cd1246074c03c080c5c717443a4b1a8b6f9a647888da6984fc17a908f07",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/harness-pull.md",
+      "kind": "generated",
+      "target_or_hash": "db9d26de0bfd05f1c7c1b4b0174dc9b87c887b2119060823d96af5895ff0781d",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/implement.md",
+      "kind": "generated",
+      "target_or_hash": "f25c6e5ecfa7130a969d753afb28721dbc87067d6aaeeaaed8529bf59d9203d3",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/learn.md",
+      "kind": "generated",
+      "target_or_hash": "49aae11f388063dcb3ab4b80fe9494086cdbbaa5a4b8f14cdeb3a16935b7d525",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/polish.md",
+      "kind": "generated",
+      "target_or_hash": "af86ece79e8703f71f7785c504ecc907903b0b021e257e6bbb719a14657a0c39",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/research.md",
+      "kind": "generated",
+      "target_or_hash": "cd05c3f06e0e54e9b475d0ce8c72a1748229ae6b17508b8d9297f91fec765551",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/summary-prompt.md",
+      "kind": "generated",
+      "target_or_hash": "5fac8c623c6c9186dd8450b8bf4261f9c0eb8f5108f50bfa0b8d63f29492b037",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/sync-spec.md",
+      "kind": "generated",
+      "target_or_hash": "ef9ccc5a2921b3a4a753fc54d563bc1b280b938ae8181526ee046b6c656d2662",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/skills",
+      "kind": "symlink",
+      "target_or_hash": ".agent/skills",
+      "platform": "omp"
+    }
+  ]
+}

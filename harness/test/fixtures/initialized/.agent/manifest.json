@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "project": "initialized",
+  "description": "Healthy fixture project for harness tests",
+  "harness": { "base_version": "0.1.0" },
+  "platforms": { "active": ["omp", "claude"] },
+  "workflow": {
+    "default_tier": "high-care",
+    "importance": "medium",
+    "developer_implements": true,
+    "post_implement_polish": false,
+    "commit_mode": "message-only"
+  },
+  "modules": {
+    "specs": true, "tasks": true, "session_log": true,
+    "roadmap": false, "design": false, "decisions": true,
+    "research": true, "env_manifest": true, "naming_conventions": true
+  },
+  "standards_domains": ["backend"],
+  "dependencies": [],
+  "doctor": {
+    "budgets": {
+      "preferences_lines": 80,
+      "anti_patterns_lines": 40,
+      "skill_lines": 150,
+      "agents_md_directives_lines": 20
+    },
+    "stale_spec_days": 14
+  }
+}

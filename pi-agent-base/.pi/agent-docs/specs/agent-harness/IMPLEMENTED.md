@@ -1,0 +1,357 @@
+# Implementation Summary — Specs 01–09 (ALL SPECS COMPLETE)
+
+> Implemented and verified 2026-08-06/07 on branch `feat/agent-harness`.
+> Package: `/Users/zaye/.local/share/chezmoi/harness/` (`@zaye/harness` 0.1.0).
+> Status: **the full spec suite is built** — 314 tests green (incl. the capstone e2e),
+> `tsc --noEmit` clean, all manual smokes pass. `harness` is globally installed via `bun link`.
+> Remaining work is the developer's: run `/harness-init` per project (dotfiles, maprios, vex)
+> and delete old harness trees after verifying — 08's runbook is the reference for what maps
+> where and what is safe to delete; the init skill mines old `.pi`/`.claude` setups itself.
+> (Sections below are per-session summaries: 01–02, 03–04, 05, 06, 07–08, 09.)
+
+## What works right now
+
+```bash
+bun run /Users/zaye/.local/share/chezmoi/harness/src/cli.ts <command>
+# or from harness/: bun run harness -- <command>
+```
+
+| Command | Does |
+|---|---|
+| `harness install` (né `init scaffold`) | Idempotent `.agent/` skeleton + embedded skills (init, dev-spec, sync-spec). Falls back to cwd on brand-new dirs; never resurrects the progress file post-init. |
+| `harness init write-phase <n> --data <path\|->` | Deterministic phase writers 1–9; phase 7 assembles + validates `manifest.json`; progress + collected data survive compaction in `.agent/.setup-progress.md`. |
+| `harness init status` / `finish` | Resume checklist; finish validates 1–9, swaps in the post-init AGENTS.md, deletes progress. |
+| `harness doctor [--json]` | 11 checks (8 from spec 01 + 3 from spec 02), memoized file access, crash-isolated per check, `doctor.checks` manifest filter. Exit 1 only on error-severity. |
+| `harness state` | Regenerates `docs/state.md`: active specs w/ checkbox counts, tasks sections, recent sessions, silent doctor summary. |
+| `harness spec new "<slug>" [--date]` / `spec list [--all] [--json]` | Spec dirs with the D02-1 frontmatter; dates from git or `--date`, never the wall clock. |
+| `harness struct` / `struct --check` | Generates the annotated `directory-structure.md` (golden-pinned, byte-idempotent); `--check` = naming-rule validation, exit 1 on violations. |
+| `harness index rebuild` | Regenerates `docs/standards/index.yml` — hand-emitted, yaml-parse-validated, description auto-extracted (no more "Needs description" rot). |
+| `harness context --for "<task>" [--files a,b]` | Matches context-rules.yaml by path token / word token / file hints; degrades gracefully pre-sync. Exports `contextFilesFor` for spec 05. |
+| `harness pref compact [--budget n]` / `pref remove <id>` | Supersedes → dedupe → oldest-drop pipeline; ids never renumbered; removal ledger reported. |
+
+## New files (67 source/test/template files)
+
+### `harness/` package scaffold
+- `package.json`, `tsconfig.json`, `bunfig.toml` — Bun ≥1.3.14, strict TS, ESM, one runtime dep (`yaml`).
+
+### `src/lib/` — shared infrastructure (spec 01 + 02 additions)
+- `errors.ts` — `HarnessError` (stable `code`, optional `hint`) + `EXIT` codes (0 ok / 1 findings / 2 usage / 3 failure).
+- `paths.ts` — `.agent/*` path constants (`P`), `resolveProjectRoot` (nearest `.agent/` wins over `.git/`).
+- `args.ts` — zero-dep arg parser: positionals, `...rest`, `--flag`, `--key value|=value`, `--` passthrough.
+- `output.ts` — `Reporter`: ordered ok/info/warn/error items, exact human format (`🔴 ERROR  …` + `→ hint`), `--json` mode.
+- `frontmatter.ts` — tolerant flat-YAML frontmatter parse/serialize; byte-exact round-trip for pi + OMP fixtures (quoted values, kebab keys, inline arrays, dash lists, folded descriptions).
+- `fsx.ts` — `sha256`, `writeFileAtomic` (tmp+rename), `walk` (sorted, prunes .git/node_modules/dependency-clone bodies), `ensureSymlink` (created/ok/replaced/**conflict** — never clobbers real files, ready for spec 04).
+- `git.ts` — safe-default wrappers: `isRepo`, `headSha`, `changedFilesSince`, `commitsTouching`, + spec 02's `headCommitDate`, `recentChangedFiles`.
+- `manifest.ts` — full `HarnessManifest` schema (master §7.1), validation with defaults (budgets, `commit_mode`), unknown-key warn+preserve.
+- `syncManifest.ts` — the D10 sync ledger (load default / stable sorted save) for spec 04.
+- `glob.ts` — minimal `**`/`*`/`?` matcher, compiled+cached, no deps.
+- `namingRules.ts` — `parseNamingRules` (yaml fence extraction + validation) and `checkPath` (scope globs → basename regex; multi-rule "any accepts" semantics).
+
+### `src/platforms/types.ts`
+`KNOWN_PLATFORM_IDS`, `PlatformAdapter`/`BridgePlan`/`ProjectContext`/`ContextRule` — the spec 04 contract, consumed today by manifest validation and `context`.
+
+### `src/commands/`
+`init.ts`, `doctor.ts` (framework: `CheckContext`, `DoctorCheck`, `runDoctor`), `state.ts`, `spec.ts`, `struct.ts` (`buildStruct` = the directory-structure generator), `index.ts` (`buildIndex` + `extractDescription`), `context.ts` (`matchContextRules` + `contextFilesFor`), `pref.ts` (`parsePrefEntries` + `compactPrefs`). `cli.ts` is the single command-registration point.
+
+### `src/checks/` — 11 doctor checks
+Spec 01: `preferences-over-budget` (error), `anti-patterns-over-budget`, `skill-over-budget`, `agents-md-directives-over-budget`, `stale-commands`, `stale-packages` (+ `verified_at` info), `open-specs-stale`, `decisions-inconsistent`. Spec 02: `naming-violations` (last-10-commits vs rules), `structure-stale` (SHA provenance line), `index-stale` (two-way index↔disk diff). Registry: `checks/index.ts` (static imports).
+
+### `src/templates/` — embedded defaults copied by `init scaffold`
+- `agent/` — AGENTS.md fallback + post-init (≤20-line directives block), setup-progress checklist.
+- `skills/init/` — SKILL.md + `references/{phases.md,inference.md,naming-interview.md}` (the full 10-phase interview contract).
+- `skills/dev-spec/` — SKILL.md router + `references/{interview.md,spec-format.md,code-rules.md,build-order.md}`.
+- `skills/sync-spec/` — SKILL.md + `references/{pattern-extraction.md,compaction-rules.md}`.
+- `standards/naming-conventions.template.md` — empty-rules skeleton for init phase 8.
+- `templates.test.ts` enforces every SKILL.md ≤150 lines / reference ≤120 / valid frontmatter.
+
+### `test/`
+- `helpers.ts` — `mkTmpProject`, `rmProject`, `gitInit` (identity + optional pinned date), in-process `runCli`.
+- `fixtures/{empty-project, ts-monorepo, initialized}` — `initialized` matches spec 02's normative tree, including the two **committed generated goldens** (`directory-structure.md`, `index.yml`) asserted in both directions (fixture == command output) and byte-idempotent.
+
+## Verification results
+
+- `bun test`: **166 pass, 0 fail** (318 assertions, 22 files). `bunx tsc --noEmit`: clean.
+- Spec 01 smoke (scratch repo): scaffold → write-phase 1–9 → finish → doctor exit 0 (all 8 checks ✅) → state renders with real SHA → re-scaffold is a no-op.
+- Spec 02 smoke (scratch repo): `spec new`/`list` → `struct` → `struct --check` reports exactly the 2 seeded violations (exit 1) → `index rebuild` → `pref compact` removes exactly P-002 (superseded) + P-003 (duplicate) → doctor exit 0 → `struct`/`index rebuild` re-runs byte-identical.
+- The index golden matched the spec's predicted output **exactly**, including `lines: 55` for directory-structure.md.
+
+## Deviations from the specs (each intentional, none user-facing)
+
+1. **Frontmatter body kept verbatim** (01 said "leading newline stripped") — required for the byte-exact `raw + body === source` round-trip guarantee.
+2. **Doctor findings may override level per item** — `stale-packages` emits warn findings + an info `verified_at` finding from one check; `CheckFinding` gained an optional `level`.
+3. **`init` falls back to cwd** when neither `.agent/` nor `.git/` exists — `harness init` must work on brand-new directories.
+4. **`init scaffold` skips `.setup-progress.md` when `manifest.json` exists** — post-finish re-scaffold must not resurrect the wizard.
+5. **Phase 5 env_vars accept optional `required`** (default yes) so `env.manifest.md` matches spec 03's `| VAR | required | description |` parser; phase 7 also reads phase 3's domains (manifest needs `standards_domains`).
+6. **`structure-stale` ignores `directory-structure.md` itself** in `changedFilesSince` — otherwise every struct→commit cycle self-flags stale forever (caught by the test).
+7. **`buildStruct` renders subdirectories in byte-alphabetical order** — spec 02's golden tree had `standards/` before `specs/`, contradicting its own algorithm; the spec's golden was patched to match (`02-spec-naming.md` updated).
+8. **`stale-packages` skips the `verified_at` comparison when HEAD is unknown** (non-repo) — avoids a permanent info finding on gitless projects.
+9. **`verified_at` frontmatter omitted entirely when no git** (init phase 4/5 writers) rather than an empty value.
+
+---
+
+# Specs 03 + 04 (second session)
+
+## What works now (added to the 01–02 surface)
+
+| Command | Does |
+|---|---|
+| `harness log append [--slug s] [--date d]` | Appends a session-log entry skeleton (append-only; dates from `--date` → git HEAD timestamp → clock, in that order). |
+| `harness log session-end` | Ensures today's entry, appends the wrap-up marker, prints the four interview questions for the commit skill. Idempotent. |
+| `harness log backfill-sha --sha <sha>` | The one sanctioned in-place log edit: fills the LAST `**Commit:** (pending)`. |
+| `harness log commit-msg` | Derives `type(scope): title` + why-body from today's latest entry; scope inferred from workspace globs vs changed files; writes `<date>.commit.md`. |
+| `harness env check` | Validates documented env vars against env + `.env`/`.env.local`. **Never prints values** (test-pinned). |
+| `harness sync [--json]` | **The bridge generator.** Compiles `context-rules.yaml`, plans `.omp/` + `.claude/` via pure adapters, applies with D10 conflict rules (never clobbers user files), maintains the `.gitignore` managed block and the sync-manifest ledger. Byte-idempotent. |
+| `harness platform add <id> / list` | Adds a platform to the manifest and bridges it in one command; lists active/available. |
+
+**Bridges generated** (15 paths on the fixture): `.omp/` gets `skills` + `AGENTS.md` symlinks into `.agent/`, one subagent file per routed skill (`model: "@role"` from `harness_model_role`), one instructions file **per context-rule glob** (see deviations), `config.yml` with the `disabledProviders` guard, and a `session_start` doctor hook; `.claude/` gets the `skills` symlink, a thin `CLAUDE.md` (`@.agent/AGENTS.md` import + proposal §17 routing directive), and a SessionStart→`harness doctor` hook merged into `settings.json` without touching user keys.
+
+## New files (03–04)
+
+- `src/commands/log.ts` (+test) — entry template, `resolveLogDate`, `logAppend`, `appendLogLine` (05's hook), `logSessionEnd`, `logBackfillSha`, `sectionBullets`, `inferScope`, `buildCommitMessage`, `logCommitMsg`.
+- `src/commands/env.ts` (+test) — `parseEnvManifest`, `envCheck` (value-privacy pinned).
+- `src/commands/sync.ts` (+test) — `buildContextRules`, `loadProjectContext` (the only planning I/O gateway), `mergeManagedJson`, `updateGitignoreBlock`, `ADAPTERS`, `runSync` engine.
+- `src/commands/platform.ts` (+test) — `runPlatform`.
+- `src/platforms/omp.ts` + `claude.ts` (+tests) — pure `plan()` adapters, every generated file golden-pinned.
+- `src/checks/` — `envVarsUndocumented`, `shimsStale`, `contextRulesStale` (registry now 13 checks).
+- `src/lib/git.ts` — added `headCommitIso`, `uncommittedFiles`.
+- Skills: `commit` (both commit_modes) + `references/session-log-format.md`, `debug` + `references/debug-hierarchy.md`, `document`, `research`, `learn` (≤60-line routers). 10 embedded skills total.
+- `test/e2e-session.test.ts` — full cycle: append → seed → commit-msg (golden) → real `git commit -F` → backfill-sha.
+- Fixture: `implement` skill + `applies_to` frontmatter on `backend/api.md` (additive only — 02's goldens regenerated, all still both-direction-asserted).
+
+## Verified OMP constants (04 Step 1 — recorded in `04-platform-bridges.md`)
+
+Confirmed against `@oh-my-pi/pi-coding-agent@17.2.10` source: `disabledProviders` is a top-level array matched by **exact provider id**; the ids to disable are **`agents`** (single id covering `.agent`/`.agents` — not "agent") and **`claude`**; `applyTo` in instructions files is a **single-glob string** (comma support unverified → fallback taken: one file per glob); hook handlers are `(event, ctx)` with `ctx.ui.notify(msg, type?)`; `HookAPI` imports from the **package root** (per OMP's shipped examples, not `/hooks`).
+
+## Verification results (03–04)
+
+- `bun test`: **232 pass, 0 fail** (536 assertions, 31 files). `bunx tsc --noEmit`: clean.
+- Spec 03 smoke: HEAD-timestamp log path, commit-msg, session-end, `env check` exit 0 with value privacy, doctor flags a seeded `.env.example` drift.
+- Spec 04 smoke: `sync` creates 15 paths; skills visible through `.claude/skills` symlink; re-sync reports `0 created … 15 unchanged … 0 conflicts`; `shims-stale` + `context-rules-stale` pass clean; `omp --version` runs under the installed Bun (bridge is consumable).
+
+## Deviations (03–04)
+
+1. **`uncommittedFiles` reads raw porcelain output** — the shared `tryGit` trim was eating the first status line's leading space and corrupting its path (caught by tests).
+2. **04's fixture replacements were made additive instead** — the spec was authored in parallel with 02 and its wholesale fixture swaps would have destroyed 02's byte-pinned goldens; the verified-constants rule ("goldens follow reality") covers the reconciliation.
+3. **Instructions: one file per glob** (`<id>.instructions.md` / `<id>-<n>.instructions.md`) — V5 confirmed `applyTo` is a single-glob string; this is the spec's own sanctioned fallback.
+4. **`OMP_DISABLED_PROVIDERS = ["agents", "claude"]`** — the spec expected a third id "agent" which does not exist in OMP.
+5. **`HookAPI` imported from the package root** — the spec's `"@oh-my-pi/pi-coding-agent/hooks"` path isn't what OMP's own examples use.
+6. **`context-rules-stale` gates on "has ever synced"** — the spec's `appliesWhen: always` would warn on every never-synced project and broke the clean-fixture goldens from specs 01–03.
+7. **templates.test.ts extended, not duplicated** — spec 03's Step 10 test file overlapped spec 02's; merged into one.
+
+---
+
+# Spec 05 (third session)
+
+## What works now
+
+| Command | Does |
+|---|---|
+| `harness implement <slug> [status]` | Task-group table (ID/Title/Steps/Verify/State — done/failed/next/pending). Bare form = status + skill hint. |
+| `harness implement <slug> next [--from Tn]` | The working packet (D12: packaging, never analysis): group heading, Why/Verify, verbatim step checkboxes, the matching spec.md section, `harness context` results, dep-registry note when clones exist, naming-conventions pointer. This stdout IS the implement skill's context bundle. |
+| `harness implement <slug> verify <Tn> [--confirmed]` | Runs the group's `Verify:` command (`sh -c`, 300s timeout, runtime bin dir prepended to PATH) and records attempts/result/exit/40-line tail in `.implement-state.json`. `Verify: manual` requires `--confirmed`. |
+| `harness implement <slug> done <Tn> [--force --reason]` | Gated on a recorded passing verify; ticks exactly that group's checkboxes byte-faithfully; appends the session-log line via 03's `appendLogLine`; `--force` demands a reason, recorded in state + log. |
+| `harness polish <slug>` | Emits the polish packet (spec edge cases, `touches[]`, checklist path) — hard-gated on `workflow.importance === "high"` with the proposal's exact refusal message. |
+
+## New files (05)
+
+- `test/specFixture.ts` — the seeded demo-feature spec (3 groups incl. a `Verify: manual` one).
+- `src/lib/specTasks.ts` (+test) — `parseSpecTasks` (C-05a format: `## Tn — title`, Why/Verify lines, checkbox steps; Verify mandatory) and `tickGroup` (byte-preserving checkbox ticking).
+- `src/lib/implementState.ts` (+test) — the C-05b `.implement-state.json` ledger (sorted keys, atomic, tolerant load).
+- `src/commands/implement.ts` (+test) — the four state-machine functions; golden-pinned status table and next packet.
+- `src/commands/polish.ts` (+test) — `buildPolishPacket`, golden-pinned.
+- Skills: `implement` (+`references/verification.md` — max-2-retries protocol, never weaken a Verify command, forced-skip discipline) and `polish` (+`references/polish-checklist.md` — proposal §14 verbatim, incl. the exact output format). 12 embedded skills total.
+
+## Verification (05)
+
+- `bun test`: **257 pass, 0 fail** (616 assertions, 35 files). `tsc --noEmit` clean.
+- Manual smoke: status golden → verify T1 (pass) → done T1 (boxes ticked, `next: T2`) → status shows T2 next → T3 manual gate blocks without `--confirmed` → polish refuses on medium importance and emits the golden packet on high.
+
+## Deviations (05)
+
+1. **Verify subprocess PATH** — `implementVerify` prepends the running runtime's bin dir to the child PATH; without it, `bun`-invoking Verify commands fail with exit 127 under login shells that don't export `~/.bun/bin` (caught by tests).
+2. None else — 05's C-05a/C-05b/C-05c contracts matched what 02/03 shipped without changes (the ledger reconciliation from the spec-authoring session paid off).
+
+---
+
+# Spec 06 (third session, continued)
+
+## What works now
+
+| Command | Does |
+|---|---|
+| `harness deps clone [<pkg>]` | Shallow-clones each `manifest.json#dependencies` pin at its best-matching tag (`v<version>` → `<version>` → `<pkg>@<version>` → unique `@/-` suffix scan) into `.agent/dependencies/<dirname>`. No tag match → default branch + `(no tag match)` marker + warn. Unreachable repo → warn and continue; one bad dep never fails the batch. Byte-idempotent. |
+| `harness deps sync [<pkg>]` | Detects drift between the registry and the PROJECT manifest pin (package.json / Cargo.toml / pyproject.toml readers), re-clones, and updates registry + manifest pin together. |
+| `harness deps add <pkg> --repo <url> [--version]` | Version defaults from the project manifest; a failed clone never leaves a dead pin. |
+| `harness deps remove <pkg>` / `deps list` | Removes clone dir + registry row + manifest pin atomically; list prints the registry table. |
+
+Doctor gained `stale-dependencies` (info, 14 checks total): version drift → `harness deps sync <pkg>` hint; registered-but-missing clone → `deps clone` hint; reference-only clones (not in the project manifest) stay silent.
+
+## New files (06)
+
+- `test/helpers.ts` — `mkBareRepoWithTags` (local bare repo with `v1.0.0` + `pkg@1.1.0` tags; **no test touches the network**).
+- `src/lib/git.ts` — `lsRemoteTags` + `shallowCloneAtRef` (execFileSync, `file://` prefix on local paths so `--depth 1` is honored, dest removed on failure; these THROW typed errors — the documented deviation from the file's safe-default wrappers).
+- `src/lib/depsRegistry.ts` (+golden test) — registry.md parse/serialize, sorted, tolerant of hand-edits.
+- `src/commands/deps.ts` (+test) — `depDirname` (`@tanstack/form` → `tanstack__form`), `resolveRepoUrl`, `readProjectPin` (npm ranges, Cargo plain+table forms, pyproject specifiers), `resolveTag` (never guesses between monorepo packages), `cloneOne`, `runDeps`.
+- `src/checks/staleDependencies.ts` (+test).
+
+## Verification (06)
+
+- `bun test`: **275 pass, 0 fail** (677 assertions, 38 files) — first full run green. `tsc --noEmit` clean.
+- Manual smoke (local bare repo): `deps add` resolves `v3.23.8`, `list` shows the row, pin bump → doctor prints the exact drift finding → `deps sync` clears it, second `clone` leaves the registry byte-identical, `remove` leaves only `.gitignore` + `registry.md`. The `.gitignore` contract is verified against real `git check-ignore`.
+
+## Deviations (06)
+
+1. **Check file named `staleDependencies.ts`** (camelCase) — matches the existing check-file convention rather than the spec's literal `stale-dependencies.ts`.
+2. **01's scaffold `REGISTRY_HEADER` updated** to be byte-identical to `serializeRegistry({ rows: [] })` — one registry format, two writers; the fixture registry was re-pinned to the same golden (spec 06 Step 7).
+
+---
+
+# Specs 07 + 08 (third session, continued)
+
+## What works now
+
+| Command | Does |
+|---|---|
+| `harness template save <name> [--force]` | Snapshots an initialized project's STRUCTURAL answers into `~/.harness/templates/<name>/` (`HARNESS_HOME` honored): domains, dep names+repos (**versions stripped** — they re-resolve per project), workflow/modules/platforms, `naming-conventions.md` as a standards seed, and every skill that differs from the embedded defaults (sha256 dir diff) as a skills seed. Project name/description/mission/env values are never templated. |
+| `harness template list / inspect / delete` | Store management; `inspect` prints the exact 5-line summary; `delete` refuses to rm anything without a template.json. |
+| `harness install --template <name>` | Seeds win over embedded defaults; structural phase data is **staged** into `.setup-progress.md` with checkboxes unticked — `init status` marks those phases `prefilled (confirm or edit)`, and `write-phase` validates exactly as always. The template name lands in `manifest.harness.template` at phase 7. |
+| `harness tasks add <title> [--to]` / `tasks move <substr> --to <section>` | The only sanctioned way skills touch `docs/tasks.md`. Stable section ids (`in-progress`/`inbox`/`done`), tolerant parser (unknown user sections preserved, never targeted), idempotent moves, ambiguity errors listing matches. |
+| `harness worktree <feature> [--path]` | For `repo.type: bare-git-worktrees`: creates a sibling worktree + branch, records it in `manifest.repo.worktrees`, opens a tmux window only when `$TMUX` is set (injected runner — tests never touch tmux). Clear errors for branch-exists / path-exists / wrong repo type. |
+
+Plus: `shared-references/cascade-checks.md` (proposal §10's cascade table as an actionable checklist with the verbatim confirmation-block format) ships into `.agent/skills/shared-references/` on scaffold, and six skill-template edits wire `harness tasks` + the cascade pointer into dev-spec, sync-spec, commit, and implement.
+
+## The capstone e2e (`test/e2e.test.ts`)
+
+From a bare temp dir: git init → scaffold → write-phases 1–9 → finish → sync (symlinks verified) → index rebuild → **doctor exit 0** → spec new → implement status → tasks add/move → log append → commit-msg → `harness state` asserted against a **full golden** (SHA-normalized) proving the cold-start claim: active spec, open tasks, and last session all readable from one `harness state` call.
+
+## New files (07–08)
+
+- `src/lib/templateStore.ts` (+test) — `InitTemplate` schema, name-guarded `templateDir`, tolerant `loadTemplate`/`listTemplates`.
+- `src/commands/template.ts` (+test incl. the save→re-init round-trip centerpiece) — `deriveTemplate` (manifest-derived, post-hoc; sha256 skill diffing), `runTemplate`.
+- `src/lib/tasksFile.ts` (+test) — sections model, byte-stable serializer, `addTask`/`moveTask`.
+- `src/commands/tasks.ts` (+test), `src/commands/worktree.ts` (+test, 7 cases).
+- `src/templates/skills/shared-references/cascade-checks.md`; init skill gained the "Using a Template" section + the questions-that-remain table.
+- `harnessHome()` in paths; `mkHarnessHome`/`rmHarnessHome` test helpers (the real `~/.harness` is never touched by tests).
+
+## Deviations (07–08)
+
+1. **`specTasks` parser accepts bare `Why:`/`Verify:` lines** (empty values) — 02's `spec new` template writes them as fill-me placeholders; 05's parser required values, so `implement status` on a fresh spec crashed. Presence is the contract now; an empty Verify means "draft". Caught by the e2e.
+2. **templates.test.ts scoped to dirs containing SKILL.md** — `shared-references/` is deliberately not a skill (D08-6) and gets its own assertion.
+3. **Seed overwrite guard**: `--template` seeds overwrite embedded defaults only for skill dirs that did NOT pre-exist the scaffold run — keeps re-scaffold idempotent without clobbering project customizations (implements D-07-4's intent precisely).
+
+---
+
+# Spec 09 + distribution-lite (third session, final)
+
+## What works now
+
+- **Slash commands on both platforms**: sync generates one shim per described skill —
+  `.claude/commands/<name>.md` and `.omp/prompts/<name>.md` ("invoke the skill, follow it
+  exactly", `$ARGUMENTS` supported). Init is `/harness-init` on Claude Code (builtin `/init`
+  collides) and `/init` on OMP. Natural-language triggering is unchanged — shims are an
+  additional path. Re-syncing an existing bridge adds exactly the 4 new files (verified live:
+  `4 created, 0 updated, 15 unchanged`).
+- **`docs/harness-guide.md`** — written once by `init finish` (never regenerated over edits):
+  the per-project layout (generated/authored/learned per path + regenerating command), the
+  knowledge-routing table, the code-map explanation ("a standards file without `applies_to` is
+  invisible to the map"), active config, and editing rules.
+- **`docs/setup-report.md`** — regenerated by every `init finish`: everything configured
+  (platforms, workflow, domains, modules, deps), how agents will use the harness, what to
+  review, and a "What discovery found" section the init skill appends — presented to the
+  developer as init's last act with an explicit invitation to question/correct/change.
+- **Init discovery pass** (`references/discovery.md`): mine existing agent setups FIRST
+  (`.pi/agent-docs/**`, `.claude/commands/`, CLAUDE.md/AGENTS.md — mapping table presented,
+  old trees never deleted by the agent), then sweep the codebase domain-by-domain writing
+  `applies_to`-scoped standards, extend naming rules, close with index/struct/sync/doctor +
+  map spot-checks. `references/inference.md` gained the mining table.
+- **The commit gate**: default `commit/references/commit-checklist.md` (Must pass / Must be
+  current), the commit skill's gate step (run every item, block the message on failures,
+  waivers logged), and init's commit-gate interview step that customizes the checklist with
+  THIS project's build/test commands.
+- **`context-coverage` doctor check** (16 checks total, info): top-level source dirs (≥5 files)
+  matched by no context rule → map holes visible, with the guide-referencing hint. Gated on a
+  compiled map existing.
+- **Distribution-lite**: `#!/usr/bin/env bun` shebang, `bun link` → global `harness` command
+  (verified working from a scratch project), `harness/README.md` with install + usage. Compiled
+  binaries remain deferred.
+
+## Verification (09)
+
+`bun test`: **314 pass, 0 fail** (843 assertions, 45 files). `tsc --noEmit` clean. Live smokes:
+global `harness doctor`/`sync` from a scratch project; shims present in both bridge dirs with
+correct frontmatter; `context-coverage` clean on covered fixtures and firing on a seeded
+uncovered dir; guide survives re-finish with hand edits intact.
+
+## Post-live-test fixes (from the first real init on maprios, 2026-08-07)
+
+1. **`harness install` now bootstraps a minimal bridge** — previously a fresh project showed NO
+   `/init` in OMP because shims only came from `harness sync`, which needs a manifest that
+   doesn't exist until init finishes. Install now writes the skills symlinks, `/init` (OMP) +
+   `/harness-init` (Claude) shims, `CLAUDE.md`, the OMP double-load guard, and the gitignore
+   block — all sync-manifest-recorded so the first full sync adopts them hash-clean and prunes
+   inactive platforms' pieces (validated by the e2e).
+2. **Verify-then-adopt is the mining default** — existing `.pi`/`.claude` docs are drafts whose
+   every claim is checked against the actual code (verified/corrected/dropped + drift report);
+   the code is usually newer than the docs.
+3. **Trusted-context opening question** — init's first question asks which documents the
+   developer KNOWS are current/authoritative (and what to distrust); they anchor all
+   verification and the discovery pass.
+4. **Subagent fan-out is the discovery default** — one subagent per standards domain wherever
+   the platform supports it; the main agent reconciles and writes. Deferred areas become
+   `harness tasks add … --to inbox` follow-ups — the harness keeps investigating after init.
+5. **CLI rename**: `harness install` (was `init scaffold`) is the terminal entry point.
+
+## Second live-test batch (2026-08-08) — model economy, advisor, handoff, cleanup
+
+- **`manifest.json#models`**: `subagent_selection` (`dynamic` default / `uniform`), `advisor`
+  (default true), `tiers` (frontier/standard/cheap hints, default OMP roles `@slow`/`@default`/
+  `@smol`). dev-spec keeps the AUTHOR on the frontier tier but spawns each spec-section
+  subagent at the cheapest adequate tier; discovery sweeps request the cheap tier; `uniform`
+  turns all of that off. Fully defaulted for pre-existing manifests.
+- **The harness-keeper advisor**: sync generates `.omp/WATCHDOG.yml` (OMP's native advisor
+  system — cheap `advisor`-role model, read/grep/glob/bash) + `advisor.enabled` in config.yml,
+  toggled by `models.advisor`. Protocol in `.agent/skills/harness-advisor/references/`:
+  watches the developer's words (absolutes like "always"/"never", corrections, repetition),
+  maps signals to harness files via the guide's routing table, interjects ONE cascade-format
+  change-set, **logs every applied change to `docs/harness-changelog.md` and relays the digest
+  to the developer**, and advises subagent tiers. `/harness-advisor` = manual retrospective
+  sweep on non-OMP platforms. Assign a cheap model to OMP's `advisor` role to cap its cost.
+- **`/summary-prompt`**: new skill — portable session handoff prompt (imperative, addressed to
+  the receiving agent, grounded in file paths + `harness state`), saved as
+  `session-log/YYYY/MM/<date>.handoff.md` and printed as one copy-paste block.
+- **Init cleanup step**: finish now ends with an explicit yes/no question to delete the
+  outdated agent files from the mining map (exact list shown; yes → delete + re-sync +
+  report note; no → tasks-inbox follow-up). No more manual old-tree removal.
+- **`/harness-init` everywhere**: OMP ships its own `/init`, so the OMP shim was renamed —
+  the harness init prompt is `/harness-init` on every platform.
+- Tests: **318 pass**; existing projects pick everything up with one `harness sync`
+  (verified: `1 created, 1 updated, 18 unchanged, 0 conflicts`).
+
+## Third live-test batch (2026-08-08) — real model routing + config toggles
+
+- **Found live: subagents/advisor were silently on the session model.** OMP falls back to the
+  parent model for unmapped roles (#985) and the advisor role without a model never runs
+  (`no_model`) — or falls to a big role-default (user saw Opus). Fix: `models.tiers` defaults
+  are now CONCRETE catalog ids (`anthropic/claude-fable-5` / `claude-sonnet-5` /
+  `claude-haiku-4-5`) and sync writes a real `modelRoles` block (slow/task/smol/tiny/advisor).
+- **`.omp/config.yml` is now merge-managed, not whole-file-managed** — OMP itself persists
+  project-level `modelRoles` there, which made the old whole-file approach flag OMP's own
+  writes as a permanent "user-modified" conflict (user saw "no files changed"). Sync now
+  enforces only its keys (disabledProviders, advisor.enabled, tier-mapped roles) and preserves
+  everything else, byte-idempotent.
+- **`harness config` CLI + `/harness-config` skill** — list/get/set over the toggles
+  (`models.subagent_selection`, `models.advisor`, `models.tiers.*`, `workflow.commit_mode`,
+  `workflow.importance`); bridge-affecting sets auto-run sync. The skill shim makes it a slash
+  command in every agent IDE.
+- Tests: **322 pass**. Rollout to an existing project: `harness install && harness sync`
+  (install adds new skill copies, sync merges the config even over OMP's writes).
+
+## How to stand this up in a project (the step-11 you'll run yourself)
+
+1. `cd <project>` → open your agent → `/harness-init` (Claude Code) or `/init` (OMP)
+   (first time in a fresh project: `harness install` makes the skills available to invoke).
+2. Answer the interview — drafts come from your existing `.pi`/`.claude` docs + the codebase.
+3. Read `docs/setup-report.md`; question/correct/request changes.
+4. When satisfied, delete the old harness trees (08's runbook lists what is safe per project).
+
+All of specs 03–09 are uncommitted on `feat/agent-harness` for your review (01–02 were committed earlier).
