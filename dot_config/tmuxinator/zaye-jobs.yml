@@ -11,7 +11,7 @@ windows:
   - agents:
       layout: tiled
       panes:
-        - claude
-        - claude
-        - claude
-        - claude
+        - omp
+        - omp
+        - omp
+        - omp

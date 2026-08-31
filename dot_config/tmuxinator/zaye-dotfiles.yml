@@ -4,11 +4,8 @@ name: zaye-dotfiles
 root: ~/.local/share/chezmoi/
 
 windows:
-  - nvim:
+  - editor:
       layout: tiled
       panes:
         - nv
-  - agents:
-      layout: even-horizontal
-      panes:
-        - claude
+        - omp

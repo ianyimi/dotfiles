@@ -12,6 +12,7 @@ return {
 				{ "<leader>f",     group = "file/find" },
 				{ "<leader>g",     group = "git" },
 				{ "<leader>w",     group = "write" },
+				{ "<leader>t",     group = "toggle/theme" },
 				{ "[",             group = "prev" },
 				{ "]",             group = "next" },
 				{ "g",             group = "goto" },

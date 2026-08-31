@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "slug": "2026-08-21-pull-mattpocock-tier1",
+  "updated": "2026-08-22T01:45:53.877Z",
+  "groups": {
+    "T1": {
+      "attempts": 2,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": []
+    },
+    "T2": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": []
+    },
+    "T3": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": []
+    },
+    "T4": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": []
+    },
+    "T5": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": []
+    },
+    "T6": {
+      "attempts": 1,
+      "last_result": "pass",
+      "last_exit_code": 0,
+      "last_output_tail": [
+        "✅ OK     preferences-over-budget",
+        "✅ OK     anti-patterns-over-budget",
+        "✅ OK     skill-over-budget",
+        "✅ OK     agents-md-directives-over-budget",
+        "✅ OK     open-specs-stale",
+        "✅ OK     decisions-inconsistent",
+        "✅ OK     structure-stale",
+        "✅ OK     index-stale",
+        "✅ OK     shims-stale",
+        "✅ OK     context-rules-stale",
+        "✅ OK     stale-dependencies",
+        "✅ OK     context-coverage"
+      ]
+    }
+  }
+}

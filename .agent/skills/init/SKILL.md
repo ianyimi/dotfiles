@@ -17,11 +17,15 @@ description: Initialize or update the agent harness for a project. Triggers on "
 
 ## Opening question — trusted context (before any inference)
 
-Ask the developer FIRST: "Which documents or files do you KNOW are current and authoritative
-(goals, roadmaps, architecture notes, critical context)? Anything I should distrust as stale?"
-Read every trusted document before inferring anything — they are the accuracy baseline for the
-whole setup, and existing agent docs are verified AGAINST them and against the code
-(see references/inference.md — mined docs are drafts to verify, never facts to migrate).
+Ask the developer FIRST, as an OPEN question: "Which documents or files do you KNOW are
+current and authoritative (goals, roadmaps, architecture notes, critical context)? Anything I
+should distrust as stale?" Let them name the docs — if you suggest candidates, suggest only
+PROJECT documents (root README, docs/, product notes). **Never offer harness artifacts as
+candidates**: anything under `.agent/`, the harness CLI's own files (e.g. `harness/README.md`),
+and generated bridges are this process's machinery — trusted by construction, authoritative
+only once THIS setup fills them. Old agent docs (`.pi/`, `.claude/`) are mining INPUTS to be
+verified, never "trusted" candidates. Read every named document before inferring anything —
+they are the accuracy baseline (see references/inference.md).
 
 ## Using a Template
 

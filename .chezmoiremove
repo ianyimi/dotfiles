@@ -1,0 +1,13 @@
+# Targets to delete on `chezmoi apply`.
+#
+# Removing a file from the source tree does NOT remove it from the target --
+# chezmoi simply stops managing that path and leaves the existing file behind.
+# Anything intentionally deleted from source therefore has to be listed here
+# once, or the stale copy keeps being loaded.
+
+# Deleted 2026-08-25: its ts/tsx/js/json/yaml/bash fenced_code_block patterns
+# duplicated Nvim core's generic `(info_string (language) @injection.language)`
+# rule and double-injected every fence (288 -> 302 regions on a 2179-line spec).
+# dataviewjs/datacoretsx moved to vim.treesitter.language.register in
+# lua/plugins/editor/treesitter.lua.
+.config/nvim/after/queries/markdown/injections.scm

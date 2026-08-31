@@ -63,21 +63,18 @@ end
 -- mini.animate will also be disabled.
 vim.g.bigfile_size = 1024 * 1024 * 1.5 -- 1.5 MB
 
--- Markdown buffers above this many lines get the treesitter *highlighter*
--- skipped (the parser stays, so render-markdown keeps working). Injection count
--- scales with document length -- a 3761-line spec carries ~460 injected regions
--- -- and the highlighter re-resolves them per visible line, so one full-screen
--- redraw measured 1129ms. Read by after/ftplugin/markdown.lua and
--- lua/plugins/editor/treesitter.lua.
-vim.g.markdown_ts_highlight_max_lines = 1500
 -- Fix markdown indentation settings
 vim.g.markdown_recommended_style = 0
 
--- Enable syntax highlighting for fenced code blocks in markdown.
--- This is what makes ```css ... ``` highlight as CSS inside LSP hover popups
--- (and any other markdown buffer). Required for tailwindcss hover, JSDoc code
--- examples, etc. Used by both vim's markdown syntax and treesitter markdown_inline
--- injection queries.
+-- Fenced-block languages for Vim's REGEX markdown syntax (syntax/markdown.vim
+-- builds one `markdownHighlight_<lang>` region per entry). That path is what
+-- colours ```css ... ``` inside LSP hover popups and any other markdown buffer
+-- the treesitter highlighter is not attached to -- needed for tailwindcss hover,
+-- JSDoc code examples, etc.
+--
+-- It has nothing to do with treesitter: injected fences come from
+-- queries/markdown/injections.scm, which resolves the info-string through
+-- vim.treesitter.language.get_lang (see lua/plugins/editor/treesitter.lua).
 vim.g.markdown_fenced_languages = {
 	"css",
 	"scss",

@@ -1,10 +1,17 @@
 ---
 date: 2026-08-17
-status: accepted
+status: superseded
 supersedes: none
+superseded_by: 2026-08-25-markdown-conceal-lines-not-a-size-gate
 ---
 
 # Gate the treesitter highlighter on large markdown instead of trimming injections
+
+> **Superseded 2026-08-25.** The size gate below is removed; the treesitter highlighter now
+> runs on markdown of any size. The gate treated a symptom — see
+> `2026-08-25-markdown-conceal-lines-not-a-size-gate.md` for the actual root cause
+> (`conceal_lines` in markdown's highlights query) and the fix. This record's measurements and
+> reasoning about the original stall are unchanged and still accurate.
 
 ## Context
 

@@ -11,6 +11,12 @@ Reference numbers for this config in a **healthy** state, captured after the
 August 2026 perf investigation. Compare a fresh profile against these before
 theorising about a new slowdown.
 
+**Revised 2026-08-25:** the markdown highlighter gate this baseline used to
+depend on was replaced -- see "Markdown highlighting: conceal-sweep fix" below
+and the updated "Fixes this baseline depends on" table. `captured_at` below is
+left at the original capture date; session-wide numbers (stalls, schedule/defer
+totals, RSS, etc.) are unaffected, only the markdown-specific rows changed.
+
 ## How to capture a comparable profile
 
 ```vim
@@ -72,16 +78,25 @@ plus small plugin contributions. **Red flags:**
 - `markdown <- highlighter.lua:529` ~328 calls / 14.2ms
 - `markdown <- render-markdown/request/view.lua:62` ~10 calls / ~168ms (~75ms max)
 
-Note the markdown figures were captured before `;; extends` was restored to
-`after/queries/markdown/injections.scm`. That raises injected regions in a
-3761-line spec from 461 to 493 (typescript 32 -> 64) and adds ~28% to every
-markdown re-resolution -- roughly +48ms across a 2-minute session. Expect
-markdown parse totals about a quarter higher than the numbers above; that is
-intentional, not a regression.
+Note these two `markdown <- ...` lines were captured 2026-08-17, under the
+highlighter gate and with `;; extends` restored to
+`after/queries/markdown/injections.scm` (the file existed then; it does not
+now, see below). Both premises are gone: the gate was replaced 2026-08-25 by
+stripping `conceal_lines` from the highlights query (see "Markdown
+highlighting: conceal-sweep fix" below), and `injections.scm` was deleted
+because its patterns duplicated core's and double-injected every fence. Expect
+these numbers to shift on a fresh capture; the cost driver is the
+`conceal_lines` directive, not injected-region count -- the 2026-08-25
+investigation measured a 288-region buffer at 0.5ms warm ranged parse per
+redraw with the directive stripped, against 35.4ms/redraw for the
+`on_conceal_line` sweep it replaces.
 
-**Red flag:** hundreds of `markdown` parses from `highlighter.lua`, or per-call
-cost in the tens of ms. That means the large-markdown highlighter gate broke --
-check the buffer inventory for a big `.md` marked `[ts]`.
+**Red flag:** a markdown buffer whose highlighter has `_conceal_line == true`
+(inspect via `vim.treesitter.highlighter.active[buf]`), or a warm ranged parse
+cost above roughly 1ms/redraw on the `undo-guard` spec. The treesitter
+highlighter is expected to be attached to markdown of any size now; either
+symptom means the `conceal_lines` strip in `lua/plugins/editor/treesitter.lua`
+did not apply.
 
 `decoration providers` — `gitsigns on_win` ~1923 calls / 47.3ms and the two
 `vim/lsp/*` providers at ~1463 calls each are normal. Individual provider totals
@@ -90,15 +105,57 @@ should stay under ~100ms.
 ## Buffer inventory check
 
 The snapshot lists buffers with `v<N>` (visible) and `[ts]` (treesitter
-highlighter attached). **A markdown buffer over 1500 lines must NOT show `[ts]`:**
+highlighter attached). **Since the 2026-08-25 conceal-sweep fix, a markdown
+buffer of any size SHOULD show `[ts]`** -- the size gate that used to strip it
+above 1500 lines is gone:
 
 ```
-b7   v1  3761 lines  markdown    spec.md              <- correct: no [ts]
+b7   v1  3761 lines  markdown    spec.md              [ts]  <- correct
 b8   v1   319 lines  typescript  hasPermission.ts     [ts]
 ```
 
-If a large `.md` shows `[ts]`, `after/ftplugin/markdown.lua` is not winning
-against Nvim's bundled `ftplugin/markdown.lua`, and 1s+ stalls will return.
+If a large `.md` does NOT show `[ts]`,
+`lua/plugins/editor/treesitter.lua` failed to install the stripped highlights
+query (or an already-open buffer kept a pre-patch highlighter with
+`_conceal_line = true`) -- expect the 35.4ms/redraw conceal sweep to be back.
+
+## Markdown highlighting: conceal-sweep fix (2026-08-25)
+
+The 2026-08-17 highlighter gate (the "markdown highlighter gate" / "regex
+syntax fallback" rows this table used to carry) treated a symptom: it capped
+the treesitter highlighter by file size instead of removing the
+`conceal_lines` directive that caused the actual cost, and its own regex
+fallback regressed further -- Vim's `syntax/markdown.vim` sets
+`syn sync minlines=50`, so fenced blocks longer than the 50-line sync window
+lost highlighting entirely below it. The fix removes the size gate and the
+regex fallback, and strips `(#set! conceal_lines "")` from markdown's
+highlights query at runtime instead. Markdown is the only language in the
+runtime whose highlights query sets `conceal_lines` (verified by grep), which
+is why markdown alone was pathological.
+
+Measured on `.agent/docs/specs/2026-08-17-undo-guard/spec.md` (2179 lines, 288
+injected regions of which 255 are `markdown_inline`, 38-row window):
+
+| metric | before | after |
+|---|---|---|
+| `on_conceal_line` sweep per redraw | 35.4ms | 0.01ms |
+| warm ranged parse per redraw | 0.2ms | 0.5ms |
+| one screen of highlight queries | 4.5ms | 4.5ms |
+| cold full parse (one-time, on open) | ~40ms | ~40ms |
+| ranged parse after a 1-line edit | 14-17ms | 14-17ms |
+| open + redraw + jump to line 700 + redraw, wall clock, 5-run avg | 1626ms | 1465ms |
+
+The old decision record described the highlighter as re-resolving injections
+"roughly once per visible line" and attributed that to markdown's injection
+count. It was a `conceal_lines` artefact: that metadata made Nvim run
+`on_conceal_line` once per screen row, and each call did a full
+`prepare_highlight_states` walk of every injected child tree. With the
+directive stripped, the warm per-redraw parse above is 0.5ms on the same
+288-region buffer -- injection count is not the cost driver. Cold parse and
+post-edit parse costs were already being paid under the gate (render-markdown
+kept a parser alive and reparses on change), so removing the gate added no
+parse cost; it only added the ~4.5ms/screen highlight query and removed the
+35.4ms conceal sweep.
 
 ## Known-unfixed costs (expected in a healthy profile)
 
@@ -119,9 +176,9 @@ one of them was silently reverted by a broad `chezmoi re-add` mid-investigation.
 
 | fix | file | marker |
 |---|---|---|
-| markdown highlighter gate | `after/ftplugin/markdown.lua` | stops treesitter above `vim.g.markdown_ts_highlight_max_lines` (1500) |
-| regex syntax fallback | `after/ftplugin/markdown.lua` | `vim.bo.syntax = "markdown"` |
-| md injections use `;; extends` | `after/queries/markdown/injections.scm` | first line IS `;; extends` -- affordable only because of the gate above; costs +28% per markdown re-resolution. If the gate is removed or its threshold raised, re-measure before keeping it. |
+| markdown `conceal_lines` strip | `lua/plugins/editor/treesitter.lua` | `vim.treesitter.query.set("markdown", "highlights", ...)` installs the highlights query with `(#set! conceal_lines "")` stripped -- if reverted, markdown redraws go back to a per-screen-row `on_conceal_line` sweep (35.4ms per redraw, measured on the 2179-line `undo-guard` spec) repaid after every keystroke. |
+| fence-language aliases | `lua/plugins/editor/treesitter.lua` | `vim.treesitter.language.register` maps `shell`/`zsh` -> bash, `yml` -> yaml, `dataviewjs` -> javascript, `datacoretsx` -> tsx -- do not re-add hand-written `fenced_code_block` injection patterns for these; core already resolves them, and duplicate patterns double-inject every fence (measured 288 -> 302 regions, +20% post-edit parse, zero added coverage). |
+| no markdown injections override | `after/queries/markdown/injections.scm` | file must stay **deleted**; `after/ftplugin/markdown.lua` must not set `vim.bo.syntax` or call `vim.treesitter.stop`. |
 | satellite single-window | `lua/plugins/ui/satellite.lua` | `current_only = true` |
 | satellite gitsigns handler off | `lua/plugins/ui/satellite.lua` | `gitsigns = { enable = false }` |
 | auto-dark-mode poll | `lua/plugins/ui/auto-dark-mode.lua` | `update_interval = 60000` |

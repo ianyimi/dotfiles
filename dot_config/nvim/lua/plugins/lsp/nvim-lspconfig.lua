@@ -1,426 +1,428 @@
 return {
-	"neovim/nvim-lspconfig",
-	dependencies = {
-		"mason-org/mason.nvim",
-		"mason-org/mason-lspconfig.nvim",
-		"hrsh7th/cmp-nvim-lsp",
-		"j-hui/fidget.nvim",
-		"luckasRanarison/tailwind-tools.nvim",
-		"onsails/lspkind-nvim",
-		"hrsh7th/nvim-cmp",
-		"hrsh7th/cmp-buffer",
-		"hrsh7th/cmp-path",
-		"hrsh7th/cmp-cmdline",
-		"saadparwaiz1/cmp_luasnip",
-		"L3MON4D3/LuaSnip",
-		"rafamadriz/friendly-snippets",
-		"dmmulroy/ts-error-translator.nvim",
-	},
-	config = function()
-		-- Setup fidget for LSP progress notifications
-		require("fidget").setup({
-		notification = {
-			override_vim_notify = true,
-		},
-	})
+  "neovim/nvim-lspconfig",
+  dependencies = {
+    "mason-org/mason.nvim",
+    "mason-org/mason-lspconfig.nvim",
+    "hrsh7th/cmp-nvim-lsp",
+    "j-hui/fidget.nvim",
+    "luckasRanarison/tailwind-tools.nvim",
+    "onsails/lspkind-nvim",
+    "hrsh7th/nvim-cmp",
+    "hrsh7th/cmp-buffer",
+    "hrsh7th/cmp-path",
+    "hrsh7th/cmp-cmdline",
+    "saadparwaiz1/cmp_luasnip",
+    "L3MON4D3/LuaSnip",
+    "rafamadriz/friendly-snippets",
+    "dmmulroy/ts-error-translator.nvim",
+  },
+  config = function()
+    -- Setup fidget for LSP progress notifications
+    require("fidget").setup({
+      notification = {
+        override_vim_notify = true,
+      },
+    })
 
-	-- Mirror all notifications into :messages so they are copyable
-	local __orig_notify = vim.notify
-	vim.notify = function(msg, level, opts)
-		-- push content to :messages using echomsg so it persists in history
-		local function echomsg_line(line)
-			-- use :echomsg with a quoted string to handle special chars
-			vim.cmd("silent! echomsg " .. vim.fn.string(tostring(line)))
-		end
-		if type(msg) == "table" then
-			for _, line in ipairs(msg) do echomsg_line(line) end
-		else
-			for _, line in ipairs(vim.split(tostring(msg), "\n", { plain = true })) do echomsg_line(line) end
-		end
-		return __orig_notify(msg, level, opts)
-	end
+    -- Mirror all notifications into :messages so they are copyable
+    local __orig_notify = vim.notify
+    vim.notify = function(msg, level, opts)
+      -- push content to :messages using echomsg so it persists in history
+      local function echomsg_line(line)
+        -- use :echomsg with a quoted string to handle special chars
+        vim.cmd("silent! echomsg " .. vim.fn.string(tostring(line)))
+      end
+      if type(msg) == "table" then
+        for _, line in ipairs(msg) do echomsg_line(line) end
+      else
+        for _, line in ipairs(vim.split(tostring(msg), "\n", { plain = true })) do echomsg_line(line) end
+      end
+      return __orig_notify(msg, level, opts)
+    end
 
-	-- Also mirror LSP $/progress messages into :messages without altering Fidget
-	local __orig_progress = vim.lsp.handlers["$/progress"]
-	vim.lsp.handlers["$/progress"] = function(err, result, ctx, config)
-		pcall(function()
-			if result and type(result.value) == "table" then
-				local v = result.value
-				local msg = v.message or v.title or v.kind
-				if msg and msg ~= "" then
-					vim.cmd("silent! echomsg " .. vim.fn.string("[LSP] " .. msg))
-				end
-			end
-		end)
-		return __orig_progress and __orig_progress(err, result, ctx, config)
-	end
+    -- Also mirror LSP $/progress messages into :messages without altering Fidget
+    local __orig_progress = vim.lsp.handlers["$/progress"]
+    vim.lsp.handlers["$/progress"] = function(err, result, ctx, config)
+      pcall(function()
+        if result and type(result.value) == "table" then
+          local v = result.value
+          local msg = v.message or v.title or v.kind
+          if msg and msg ~= "" then
+            vim.cmd("silent! echomsg " .. vim.fn.string("[LSP] " .. msg))
+          end
+        end
+      end)
+      return __orig_progress and __orig_progress(err, result, ctx, config)
+    end
 
 
-		-- Setup ts-error-translator
-		require('ts-error-translator').setup()
-		
-		-- Setup LSP performance optimizations, memory monitoring, and debugging
-		require('util.lsp-performance').setup()
-		require('util.memory-monitor').setup()
-		require('util.lsp-debug').setup()
+    -- Setup ts-error-translator
+    require('ts-error-translator').setup()
 
-		-- LSP capabilities
-		local capabilities = require('cmp_nvim_lsp').default_capabilities()
+    -- Setup LSP performance optimizations, memory monitoring, and debugging
+    require('util.lsp-performance').setup()
+    require('util.memory-monitor').setup()
+    require('util.lsp-debug').setup()
 
-		-- Function to set up LSP keymaps (extracted so it can be reused)
-		local function setup_lsp_keymaps(bufnr)
-			local map = function(keys, func, desc)
-				-- Force override any existing keymaps (like nvim-surround's gr)
-				vim.keymap.set("n", keys, func, { buffer = bufnr, desc = "LSP: " .. desc, remap = false })
-			end
+    -- LSP capabilities
+    local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
-			-- All your keybindings - using buffer-specific override
-			map("gh", vim.lsp.buf.hover, "Preview Hover")
-			map("gd", function()
-				-- Optimized definition lookup with timeout
-				require("telescope.builtin").lsp_definitions({
-					timeout = 5000, -- 5 second timeout
-				})
-			end, "[G]oto [D]efinition")
-			map("gr", function()
-				-- Add timeout and performance optimizations for references in large projects
-				require("telescope.builtin").lsp_references({
-					timeout = 10000, -- 10 second timeout for monorepos
-					include_declaration = false, -- Exclude declaration to speed up
-				})
-			end, "[G]oto [R]eferences")
-			map("<leader>cd", vim.diagnostic.open_float, "[S]how [D]iagnostic")
-			map("gI", function()
-				require("telescope.builtin").lsp_implementations()
-			end, "[G]oto [I]mplementation")
-			map("<leader>D", function()
-				require("telescope.builtin").lsp_type_definitions()
-			end, "Type [D]efinition")
-			map("<leader>ds", function()
-				require("telescope.builtin").lsp_document_symbols()
-			end, "[D]ocument [S]ymbols")
-			map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
-			map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
-			map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
-		end
+    -- Function to set up LSP keymaps (extracted so it can be reused)
+    local function setup_lsp_keymaps(bufnr)
+      local map = function(keys, func, desc)
+        -- Force override any existing keymaps (like nvim-surround's gr)
+        vim.keymap.set("n", keys, func, { buffer = bufnr, desc = "LSP: " .. desc, remap = false })
+      end
 
-		-- Full on_attach function with all keymaps
-		local on_attach = function(client, bufnr)
-			setup_lsp_keymaps(bufnr)
+      -- All your keybindings - using buffer-specific override
+      map("gh", vim.lsp.buf.hover, "Preview Hover")
+      -- Path display for these pickers is configured centrally, under
+      -- `pickers` in lua/plugins/editor/telescope.lua.
+      map("gd", function()
+        -- Optimized definition lookup with timeout
+        require("telescope.builtin").lsp_definitions({
+          timeout = 5000, -- 5 second timeout
+        })
+      end, "[G]oto [D]efinition")
+      map("gr", function()
+        -- Add timeout and performance optimizations for references in large projects
+        require("telescope.builtin").lsp_references({
+          timeout = 10000,             -- 10 second timeout for monorepos
+          include_declaration = false, -- Exclude declaration to speed up
+        })
+      end, "[G]oto [R]eferences")
+      map("<leader>cd", vim.diagnostic.open_float, "[S]how [D]iagnostic")
+      map("gI", function()
+        require("telescope.builtin").lsp_implementations()
+      end, "[G]oto [I]mplementation")
+      map("<leader>D", function()
+        require("telescope.builtin").lsp_type_definitions()
+      end, "Type [D]efinition")
+      map("<leader>ds", function()
+        require("telescope.builtin").lsp_document_symbols()
+      end, "[D]ocument [S]ymbols")
+      map("<leader>rn", vim.lsp.buf.rename, "[R]e[n]ame")
+      map("<leader>ca", vim.lsp.buf.code_action, "[C]ode [A]ction")
+      map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
+    end
 
-			-- Document highlighting (disabled for performance in large files)
-			-- Uncomment if needed, but can cause slowdowns in monorepos
-			-- if client.supports_method("textDocument/documentHighlight") then
-			-- 	local highlight_augroup = vim.api.nvim_create_augroup("lsp_document_highlight_" .. bufnr, { clear = true })
-			-- 	vim.api.nvim_create_autocmd({ "CursorHold" }, {
-			-- 		group = highlight_augroup,
-			-- 		buffer = bufnr,
-			-- 		callback = function()
-			-- 			-- Only highlight if not in a large file
-			-- 			if vim.api.nvim_buf_line_count(bufnr) < 1000 then
-			-- 				vim.lsp.buf.document_highlight()
-			-- 			end
-			-- 		end,
-			-- 	})
-			-- 	vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
-			-- 		group = highlight_augroup,
-			-- 		buffer = bufnr,
-			-- 		callback = vim.lsp.buf.clear_references,
-			-- 	})
-			-- end
+    -- Full on_attach function with all keymaps
+    local on_attach = function(client, bufnr)
+      setup_lsp_keymaps(bufnr)
 
-			-- Disable LSP format on save when Conform is available
-			-- This prevents conflicts and improves performance
-			local has_conform = pcall(require, "conform")
-			if not has_conform and client.supports_method("textDocument/formatting") then
-				-- Only enable LSP formatting as fallback when Conform is not available
-				vim.api.nvim_create_autocmd("BufWritePre", {
-					buffer = bufnr,
-					callback = function()
-						if vim.bo.filetype == "bigfile" or vim.b.minianimate_disable then
-							return
-						end
-						vim.lsp.buf.format({ async = false, timeout_ms = 2000 })
-					end
-				})
-			end
-		end
+      -- Document highlighting (disabled for performance in large files)
+      -- Uncomment if needed, but can cause slowdowns in monorepos
+      -- if client.supports_method("textDocument/documentHighlight") then
+      -- 	local highlight_augroup = vim.api.nvim_create_augroup("lsp_document_highlight_" .. bufnr, { clear = true })
+      -- 	vim.api.nvim_create_autocmd({ "CursorHold" }, {
+      -- 		group = highlight_augroup,
+      -- 		buffer = bufnr,
+      -- 		callback = function()
+      -- 			-- Only highlight if not in a large file
+      -- 			if vim.api.nvim_buf_line_count(bufnr) < 1000 then
+      -- 				vim.lsp.buf.document_highlight()
+      -- 			end
+      -- 		end,
+      -- 	})
+      -- 	vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+      -- 		group = highlight_augroup,
+      -- 		buffer = bufnr,
+      -- 		callback = vim.lsp.buf.clear_references,
+      -- 	})
+      -- end
 
-		-- Setup Mason (for installation only)
-		require("mason").setup({})
+      -- Disable LSP format on save when Conform is available
+      -- This prevents conflicts and improves performance
+      local has_conform = pcall(require, "conform")
+      if not has_conform and client.supports_method("textDocument/formatting") then
+        -- Only enable LSP formatting as fallback when Conform is not available
+        vim.api.nvim_create_autocmd("BufWritePre", {
+          buffer = bufnr,
+          callback = function()
+            if vim.bo.filetype == "bigfile" or vim.b.minianimate_disable then
+              return
+            end
+            vim.lsp.buf.format({ async = false, timeout_ms = 2000 })
+          end
+        })
+      end
+    end
 
-		-- Install servers manually through Mason registry
-		local mason_registry = require("mason-registry")
-		-- Optimized server list - keeping ESLint for JSDoc enforcement
-		local servers = {
-			"astro",
-			"bashls",
-			"clangd",
-			"dockerls",
-			"eslint", -- Keep for JSDoc rules and advanced TypeScript linting
-			"glsl_analyzer",
-			"gopls",
-			"html",
-			"jsonls",
-			"lua_ls",
-			-- "remark_ls", -- REMOVED: Causes exit code 1 errors, mdx_analyzer handles markdown
-			"mdx_analyzer", -- Handles both MDX and markdown
-			"tailwindcss",
-			"taplo",
-			"vtsls", -- TypeScript language features
-		}
+    -- Setup Mason (for installation only)
+    require("mason").setup({})
 
-		-- Ensure servers are installed via Mason registry
-		local mason_name_map = {
-			lua_ls = "lua-language-server",
-			-- remark_ls = "remark-language-server", -- REMOVED: causes errors
-			mdx_analyzer = "mdx-analyzer",
-		}
-		for _, server in ipairs(servers) do
-			local pkg_name = mason_name_map[server] or server
-			local ok, pkg = pcall(mason_registry.get_package, pkg_name)
-			if ok and not pkg:is_installed() then
-				pkg:install()
-			end
-		end
+    -- Install servers manually through Mason registry
+    local mason_registry = require("mason-registry")
+    -- Optimized server list - keeping ESLint for JSDoc enforcement
+    local servers = {
+      "astro",
+      "bashls",
+      "clangd",
+      "dockerls",
+      "eslint", -- Keep for JSDoc rules and advanced TypeScript linting
+      "glsl_analyzer",
+      "gopls",
+      "html",
+      "jsonls",
+      "lua_ls",
+      -- "remark_ls", -- REMOVED: Causes exit code 1 errors, mdx_analyzer handles markdown
+      "mdx_analyzer", -- Handles both MDX and markdown
+      "tailwindcss",
+      "taplo",
+      "vtsls", -- TypeScript language features
+    }
 
-		-- Direct LSP setup with loop
-		local lspconfig = require("lspconfig")
+    -- Ensure servers are installed via Mason registry
+    local mason_name_map = {
+      lua_ls = "lua-language-server",
+      -- remark_ls = "remark-language-server", -- REMOVED: causes errors
+      mdx_analyzer = "mdx-analyzer",
+    }
+    for _, server in ipairs(servers) do
+      local pkg_name = mason_name_map[server] or server
+      local ok, pkg = pcall(mason_registry.get_package, pkg_name)
+      if ok and not pkg:is_installed() then
+        pkg:install()
+      end
+    end
 
-		for _, server in ipairs(servers) do
-			if server == "lua_ls" then
-				-- Custom config for lua_ls
-				lspconfig.lua_ls.setup({
-					on_attach = on_attach,
-					capabilities = capabilities,
-					settings = {
-						Lua = {
-							runtime = { version = "LuaJIT" },
-							diagnostics = { globals = { "vim" } },
-							workspace = {
-								library = vim.api.nvim_get_runtime_file("", true),
-								checkThirdParty = false,
-							},
-							telemetry = { enable = false },
-						},
-					},
-				})
-			-- remark_ls removed - caused exit code 1 errors
-			elseif server == "mdx_analyzer" then
-				lspconfig.mdx_analyzer.setup({
-					on_attach = on_attach,
-					capabilities = capabilities,
-					-- Only MDX files. Plain .md is handled by treesitter (no LSP needed).
-					-- Attaching to "markdown" causes "Invalid glob: **/*.{mdx}" errors in Nvim 0.12.
-					filetypes = { "mdx", "markdown.mdx" },
-				})
-			elseif server == "tailwindcss" then
-				lspconfig.tailwindcss.setup({
-					on_attach = on_attach,
-					capabilities = capabilities,
-					filetypes = {
-						"aspnetcorerazor", "astro", "astro-markdown", "blade", "clojure", "django-html",
-						"htmldjango", "edge", "eelixir", "elixir", "ejs", "erb", "eruby", "gohtml",
-						"gohtmltmpl", "haml", "handlebars", "hbs", "html", "htmlangular", "html-eex",
-						"heex", "jade", "leaf", "liquid", "mustache", "njk", "nunjucks", "php",
-						"razor", "slim", "twig", "css", "less", "postcss", "sass", "scss", "stylus",
-						"sugarss", "javascript", "javascriptreact", "reason", "rescript", "typescript",
-						"typescriptreact", "vue", "svelte", "templ",
-					},
-					-- Support Tailwind v4 CSS-based config (no tailwind.config.js needed)
-					-- For monorepos: add tailwind.css with "@import tailwindcss" at root
-					root_dir = require("lspconfig.util").root_pattern(
-						"tailwind.config.js",
-						"tailwind.config.cjs",
-						"tailwind.config.mjs",
-						"tailwind.config.ts",
-						"tailwind.css", -- Tailwind v4 monorepo entry point
-						"postcss.config.js",
-						"postcss.config.cjs",
-						"postcss.config.mjs",
-						"postcss.config.ts"
-					),
-					settings = {
-						tailwindCSS = {
-							experimental = {
-								-- Enable class regex for cn, cva, clsx, cx, etc.
-								classRegex = {
-									{ "cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]" },
-									{ "cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
-									{ "cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
-									{ "clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
-								},
-							},
-							classAttributes = { "class", "className", "class:list", "classList", "ngClass" },
-							lint = {
-								cssConflict = "warning",
-								invalidApply = "error",
-								invalidConfigPath = "error",
-								invalidScreen = "error",
-								invalidTailwindDirective = "error",
-								invalidVariant = "error",
-								recommendedVariantOrder = "warning",
-							},
-							validate = true,
-						},
-					},
-				})
-			elseif server == "eslint" then
-				lspconfig.eslint.setup({
-					on_attach = function(client, bufnr)
-						on_attach(client, bufnr)
-						-- codeActionOnSave is a VS Code concept — Neovim doesn't read it.
-						-- EslintFixAll is the Neovim-native equivalent: runs eslint --fix
-						-- (perfectionist sorting, import dedup, jsdoc fixes, etc.)
-						-- before the file is written. Completely separate from conform/oxfmt
-						-- which handles whitespace/formatting — they don't interfere.
-						vim.api.nvim_create_autocmd("BufWritePre", {
-							buffer = bufnr,
-							callback = function()
-								-- undojoin merges ESLint's buffer changes into the previous undo
-								-- block so they don't create a separate entry that causes cursor
-								-- jumps on undo. pcall handles E790 on first save (nothing to join).
-								pcall(vim.cmd, "undojoin")
-								-- Direct LSP request with explicit 2.5s timeout instead of the
-								-- EslintFixAll command's nil (default ~1s). Type-aware rules in a
-								-- monorepo consistently exceed 1s, causing silent timeouts.
-								local eslint_client = vim.lsp.get_clients({ bufnr = bufnr, name = "eslint" })[1]
-								if eslint_client then
-									eslint_client.request_sync("workspace/executeCommand", {
-										command = "eslint.applyAllFixes",
-										arguments = {{
-											uri = vim.uri_from_bufnr(bufnr),
-											version = vim.lsp.util.buf_versions[bufnr],
-										}},
-									}, 2500, bufnr)
-								end
-							end,
-						})
-					end,
-					capabilities = capabilities,
-					filetypes = {
-						"javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact",
-						"typescript.tsx", "vue", "svelte", "astro", "htmlangular",
-					},
-					settings = {
-						useFlatConfig = true, -- Enable ESLint 9+ flat config support
-						format = false, -- oxfmt handles formatting, not ESLint
-						codeActionOnSave = { enable = false }, -- handled by BufWritePre above
-						workingDirectories = { mode = "auto" }, -- Smart project detection
-						run = "onSave", -- Less CPU intensive than onType
-					},
-				})
-			else
-				-- Default config for all other servers
-				lspconfig[server].setup({
-					on_attach = on_attach,
-					capabilities = capabilities,
-				})
-			end
-		end
+    -- Direct LSP setup with loop
+    local lspconfig = require("lspconfig")
 
-		-- Setup nvim-cmp
-		local cmp = require("cmp")
-		require("luasnip.loaders.from_vscode").lazy_load()
+    for _, server in ipairs(servers) do
+      if server == "lua_ls" then
+        -- Custom config for lua_ls
+        lspconfig.lua_ls.setup({
+          on_attach = on_attach,
+          capabilities = capabilities,
+          settings = {
+            Lua = {
+              runtime = { version = "LuaJIT" },
+              diagnostics = { globals = { "vim" } },
+              workspace = {
+                library = vim.api.nvim_get_runtime_file("", true),
+                checkThirdParty = false,
+              },
+              telemetry = { enable = false },
+            },
+          },
+        })
+        -- remark_ls removed - caused exit code 1 errors
+      elseif server == "mdx_analyzer" then
+        lspconfig.mdx_analyzer.setup({
+          on_attach = on_attach,
+          capabilities = capabilities,
+          -- Only MDX files. Plain .md is handled by treesitter (no LSP needed).
+          -- Attaching to "markdown" causes "Invalid glob: **/*.{mdx}" errors in Nvim 0.12.
+          filetypes = { "mdx", "markdown.mdx" },
+        })
+      elseif server == "tailwindcss" then
+        lspconfig.tailwindcss.setup({
+          on_attach = on_attach,
+          capabilities = capabilities,
+          filetypes = {
+            "aspnetcorerazor", "astro", "astro-markdown", "blade", "clojure", "django-html",
+            "htmldjango", "edge", "eelixir", "elixir", "ejs", "erb", "eruby", "gohtml",
+            "gohtmltmpl", "haml", "handlebars", "hbs", "html", "htmlangular", "html-eex",
+            "heex", "jade", "leaf", "liquid", "mustache", "njk", "nunjucks", "php",
+            "razor", "slim", "twig", "css", "less", "postcss", "sass", "scss", "stylus",
+            "sugarss", "javascript", "javascriptreact", "reason", "rescript", "typescript",
+            "typescriptreact", "vue", "svelte", "templ",
+          },
+          -- Support Tailwind v4 CSS-based config (no tailwind.config.js needed)
+          -- For monorepos: add tailwind.css with "@import tailwindcss" at root
+          root_dir = require("lspconfig.util").root_pattern(
+            "tailwind.config.js",
+            "tailwind.config.cjs",
+            "tailwind.config.mjs",
+            "tailwind.config.ts",
+            "tailwind.css", -- Tailwind v4 monorepo entry point
+            "postcss.config.js",
+            "postcss.config.cjs",
+            "postcss.config.mjs",
+            "postcss.config.ts"
+          ),
+          settings = {
+            tailwindCSS = {
+              experimental = {
+                -- Enable class regex for cn, cva, clsx, cx, etc.
+                classRegex = {
+                  { "cva\\(([^)]*)\\)",  "[\"'`]([^\"'`]*).*?[\"'`]" },
+                  { "cx\\(([^)]*)\\)",   "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+                  { "cn\\(([^)]*)\\)",   "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+                  { "clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)" },
+                },
+              },
+              classAttributes = { "class", "className", "class:list", "classList", "ngClass" },
+              lint = {
+                cssConflict = "warning",
+                invalidApply = "error",
+                invalidConfigPath = "error",
+                invalidScreen = "error",
+                invalidTailwindDirective = "error",
+                invalidVariant = "error",
+                recommendedVariantOrder = "warning",
+              },
+              validate = true,
+            },
+          },
+        })
+      elseif server == "eslint" then
+        lspconfig.eslint.setup({
+          on_attach = function(client, bufnr)
+            on_attach(client, bufnr)
+            -- codeActionOnSave is a VS Code concept — Neovim doesn't read it.
+            -- EslintFixAll is the Neovim-native equivalent: runs eslint --fix
+            -- (perfectionist sorting, import dedup, jsdoc fixes, etc.)
+            -- before the file is written. Completely separate from conform/oxfmt
+            -- which handles whitespace/formatting — they don't interfere.
+            vim.api.nvim_create_autocmd("BufWritePre", {
+              buffer = bufnr,
+              callback = function()
+                -- undojoin merges ESLint's buffer changes into the previous undo
+                -- block so they don't create a separate entry that causes cursor
+                -- jumps on undo. pcall handles E790 on first save (nothing to join).
+                pcall(vim.cmd, "undojoin")
+                -- Direct LSP request with explicit 2.5s timeout instead of the
+                -- EslintFixAll command's nil (default ~1s). Type-aware rules in a
+                -- monorepo consistently exceed 1s, causing silent timeouts.
+                local eslint_client = vim.lsp.get_clients({ bufnr = bufnr, name = "eslint" })[1]
+                if eslint_client then
+                  eslint_client.request_sync("workspace/executeCommand", {
+                    command = "eslint.applyAllFixes",
+                    arguments = { {
+                      uri = vim.uri_from_bufnr(bufnr),
+                      version = vim.lsp.util.buf_versions[bufnr],
+                    } },
+                  }, 2500, bufnr)
+                end
+              end,
+            })
+          end,
+          capabilities = capabilities,
+          filetypes = {
+            "javascript", "javascriptreact", "javascript.jsx", "typescript", "typescriptreact",
+            "typescript.tsx", "vue", "svelte", "astro", "htmlangular",
+          },
+          settings = {
+            useFlatConfig = true,             -- Enable ESLint 9+ flat config support
+            format = false,                   -- oxfmt handles formatting, not ESLint
+            codeActionOnSave = { enable = false }, -- handled by BufWritePre above
+            workingDirectories = { mode = "auto" }, -- Smart project detection
+            run = "onSave",                   -- Less CPU intensive than onType
+          },
+        })
+      else
+        -- Default config for all other servers
+        lspconfig[server].setup({
+          on_attach = on_attach,
+          capabilities = capabilities,
+        })
+      end
+    end
 
-		cmp.setup.cmdline("/", {
-			mapping = cmp.mapping.preset.cmdline(),
-			sources = { { name = "buffer" } },
-		})
+    -- Setup nvim-cmp
+    local cmp = require("cmp")
+    require("luasnip.loaders.from_vscode").lazy_load()
 
-		cmp.setup.cmdline(":", {
-			mapping = cmp.mapping.preset.cmdline(),
-			sources = cmp.config.sources(
-				{ { name = "path" } },
-				{ { name = "cmdline", option = { ignore_cmds = { "Man", "!" } } } }
-			),
-		})
+    cmp.setup.cmdline("/", {
+      mapping = cmp.mapping.preset.cmdline(),
+      sources = { { name = "buffer" } },
+    })
 
-		cmp.setup({
-			snippet = {
-				expand = function(args)
-					require("luasnip").lsp_expand(args.body)
-				end,
-			},
-			sources = {
-				{ name = "nvim_lsp", keyword_length = 0 },
-				{ name = "luasnip",  keyword_length = 2 },
-				{ name = "buffer",   keyword_length = 3 },
-				{ name = "path",     keyword_length = 3 },
-			},
-			formatting = {
-				format = require("lspkind").cmp_format({
-					before = require("tailwind-tools.cmp").lspkind_format,
-				}),
-			},
-			mapping = cmp.mapping.preset.insert({
-				["<Tab>"] = cmp.mapping(function(fallback)
-					if cmp.visible() then
-						cmp.select_next_item()
-					elseif require("luasnip").expand_or_jumpable() then
-						require("luasnip").expand_or_jump()
-					else
-						fallback()
-					end
-				end, { "i", "s" }),
-				["<S-Tab>"] = cmp.mapping(function(fallback)
-					if cmp.visible() then
-						cmp.select_prev_item()
-					elseif require("luasnip").jumpable(-1) then
-						require("luasnip").jump(-1)
-					else
-						fallback()
-					end
-				end, { "i", "s" }),
-				["<CR>"] = cmp.mapping.confirm({ select = false }),
-				["<Esc>"] = cmp.mapping(function(fallback)
-					cmp.mapping.abort()
-					vim.cmd("stopinsert")
-				end, { "i", "s" }),
-			}),
-		})
+    cmp.setup.cmdline(":", {
+      mapping = cmp.mapping.preset.cmdline(),
+      sources = cmp.config.sources(
+        { { name = "path" } },
+        { { name = "cmdline", option = { ignore_cmds = { "Man", "!" } } } }
+      ),
+    })
 
-		-- Add LspAttach autocmd to ensure keymaps are always restored after LSP restart
-		-- This is a safety net in case on_attach doesn't fire reliably during restart
-		vim.api.nvim_create_autocmd("LspAttach", {
-			group = vim.api.nvim_create_augroup("lsp_keymaps_restore", { clear = true }),
-			callback = function(args)
-				local bufnr = args.buf
-				-- Only set up keymaps if they don't already exist (avoid duplicates)
-				local existing_maps = vim.api.nvim_buf_get_keymap(bufnr, "n")
-				local has_leader_ca = false
-				for _, map in ipairs(existing_maps) do
-					if map.lhs == " ca" then
-						has_leader_ca = true
-						break
-					end
-				end
+    cmp.setup({
+      snippet = {
+        expand = function(args)
+          require("luasnip").lsp_expand(args.body)
+        end,
+      },
+      sources = {
+        { name = "nvim_lsp", keyword_length = 0 },
+        { name = "luasnip",  keyword_length = 2 },
+        { name = "buffer",   keyword_length = 3 },
+        { name = "path",     keyword_length = 3 },
+      },
+      formatting = {
+        format = require("lspkind").cmp_format({
+          before = require("tailwind-tools.cmp").lspkind_format,
+        }),
+      },
+      mapping = cmp.mapping.preset.insert({
+        ["<Tab>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_next_item()
+          elseif require("luasnip").expand_or_jumpable() then
+            require("luasnip").expand_or_jump()
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+        ["<S-Tab>"] = cmp.mapping(function(fallback)
+          if cmp.visible() then
+            cmp.select_prev_item()
+          elseif require("luasnip").jumpable(-1) then
+            require("luasnip").jump(-1)
+          else
+            fallback()
+          end
+        end, { "i", "s" }),
+        ["<CR>"] = cmp.mapping.confirm({ select = false }),
+        ["<Esc>"] = cmp.mapping(function(fallback)
+          cmp.mapping.abort()
+          vim.cmd("stopinsert")
+        end, { "i", "s" }),
+      }),
+    })
 
-				-- If keymaps are missing, restore them
-				if not has_leader_ca then
-					setup_lsp_keymaps(bufnr)
-				end
-			end,
-		})
+    -- Add LspAttach autocmd to ensure keymaps are always restored after LSP restart
+    -- This is a safety net in case on_attach doesn't fire reliably during restart
+    vim.api.nvim_create_autocmd("LspAttach", {
+      group = vim.api.nvim_create_augroup("lsp_keymaps_restore", { clear = true }),
+      callback = function(args)
+        local bufnr = args.buf
+        -- Only set up keymaps if they don't already exist (avoid duplicates)
+        local existing_maps = vim.api.nvim_buf_get_keymap(bufnr, "n")
+        local has_leader_ca = false
+        for _, map in ipairs(existing_maps) do
+          if map.lhs == " ca" then
+            has_leader_ca = true
+            break
+          end
+        end
 
-		-- Auto-sort Tailwind classes on save
-		-- Uses tailwind-tools.nvim :TailwindSortSync command
-		vim.api.nvim_create_autocmd("BufWritePre", {
-			group = vim.api.nvim_create_augroup("tailwind_auto_sort", { clear = true }),
-			pattern = { "*.tsx", "*.jsx", "*.ts", "*.js", "*.html", "*.vue", "*.svelte", "*.astro" },
-			callback = function()
-				-- Only sort if tailwindcss LSP is attached to this buffer
-				local clients = vim.lsp.get_clients({ bufnr = 0 })
-				for _, client in ipairs(clients) do
-					if client.name == "tailwindcss" then
-						-- undojoin merges Tailwind's sort into the previous undo block,
-						-- same as ESLint above, preventing cursor jumps on undo.
-						pcall(vim.cmd, "undojoin")
-						pcall(vim.cmd, "TailwindSortSync")
-						break
-					end
-				end
-			end,
-		})
-	end,
+        -- If keymaps are missing, restore them
+        if not has_leader_ca then
+          setup_lsp_keymaps(bufnr)
+        end
+      end,
+    })
+
+    -- Auto-sort Tailwind classes on save
+    -- Uses tailwind-tools.nvim :TailwindSortSync command
+    vim.api.nvim_create_autocmd("BufWritePre", {
+      group = vim.api.nvim_create_augroup("tailwind_auto_sort", { clear = true }),
+      pattern = { "*.tsx", "*.jsx", "*.ts", "*.js", "*.html", "*.vue", "*.svelte", "*.astro" },
+      callback = function()
+        -- Only sort if tailwindcss LSP is attached to this buffer
+        local clients = vim.lsp.get_clients({ bufnr = 0 })
+        for _, client in ipairs(clients) do
+          if client.name == "tailwindcss" then
+            -- undojoin merges Tailwind's sort into the previous undo block,
+            -- same as ESLint above, preventing cursor jumps on undo.
+            pcall(vim.cmd, "undojoin")
+            pcall(vim.cmd, "TailwindSortSync")
+            break
+          end
+        end
+      end,
+    })
+  end,
 }

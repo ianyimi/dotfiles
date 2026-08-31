@@ -5,3 +5,4 @@
 - Record Hyprland config/*.lua per-topic conventions
 
 ## Recently Done
+- Pull mattpocock/skills Tier 1 techniques into harness skills

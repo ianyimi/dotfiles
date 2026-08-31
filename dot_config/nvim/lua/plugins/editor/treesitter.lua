@@ -81,49 +81,64 @@ return {
 			"yaml",
 		})
 
-		-- Per-buffer highlighting + indent. On main there is no global
-		-- `highlight.enable` — you start treesitter explicitly per buffer.
-		-- Catch-all FileType autocmd with pcall: tries to start the parser for
-		-- whatever the buffer's filetype is, silently does nothing if no parser
-		-- exists (e.g. for filetypes we never installed, or before background
-		-- install finishes on first run).
-		-- Filetypes whose injection count scales with document length, where the
-		-- highlighter becomes the dominant cost in every redraw.
-		--
-		-- A 3761-line spec carries 493 injected regions (428 markdown_inline +
-		-- 64 typescript fences). The highlighter re-resolves injections roughly
-		-- once per visible line, each pass walking every child tree, so a single
-		-- full-screen redraw measured 1129ms -- about 12x one full re-resolution
-		-- (93.7ms). Anything forcing a redraw while such a buffer is visible pays
-		-- it: opening an Oil float, a Telescope keystroke, a window switch.
-		--
-		-- Skipping `vim.treesitter.start` leaves the parser reachable via
-		-- get_parser, so render-markdown keeps working (verified: it re-renders
-		-- all 97 extmarks with the highlighter off). The cost is plain syntax
-		-- colouring inside the buffer, which the rendered view largely replaces.
-		local HEAVY_INJECTION_FT = { markdown = true, mdx = true, ["markdown.mdx"] = true }
-		-- Shared with after/ftplugin/markdown.lua, which is the override that
-		-- actually wins against Nvim's bundled ftplugin/markdown.lua.
-		local HEAVY_INJECTION_LINES = vim.g.markdown_ts_highlight_max_lines or 1500
+		-- Fence info-strings Nvim cannot resolve to a parser on its own. Core's
+		-- injection query captures the info-string text and resolves it through
+		-- vim.treesitter.language.get_lang, so an alias here is all that is
+		-- needed -- cheaper than a query pattern, which would inject a SECOND
+		-- region over the same fence that core already covered. (Measured: the
+		-- hand-written fenced_code_block patterns this replaces doubled the
+		-- bash/json/typescript/yaml region counts -- 288 -> 302 regions on a
+		-- 2179-line spec -- for zero added coverage.)
+		for lang, aliases in pairs({
+			bash = { "shell", "zsh" },
+			javascript = { "dataviewjs" },
+			tsx = { "datacoretsx" },
+			yaml = { "yml" },
+		}) do
+			vim.treesitter.language.register(lang, aliases)
+		end
 
-		---@param bufnr integer
-		---@return boolean
-		local function skip_highlighter(bufnr)
-			if not HEAVY_INJECTION_FT[vim.bo[bufnr].filetype] then
-				return false
-			end
-			return vim.api.nvim_buf_line_count(bufnr) > HEAVY_INJECTION_LINES
+		-- Markdown is the ONLY language in the runtime whose highlights query uses
+		-- `conceal_lines` -- Nvim 0.12 queries/markdown/highlights.scm:53,59, on
+		-- the fenced-code delimiter and the info-string language label. That
+		-- metadata sets `has_conceal_line`, which sets
+		-- `TSHighlighter._conceal_line` (highlighter.lua:108-112), which makes
+		-- Nvim invoke the `on_conceal_line` decoration callback ONCE PER SCREEN
+		-- ROW. Each call runs `tree:parse({row, row})` plus a full
+		-- `prepare_highlight_states` -- a walk of every injected child tree
+		-- (highlighter.lua:521-533) -- and the per-row memo is dropped on every
+		-- `on_bytes`, so the whole sweep is repaid after each keystroke. That is
+		-- why markdown alone went slow, and why the cost tracked document length.
+		--
+		-- Measured on a 2179-line spec (288 injected regions, 255 of them
+		-- markdown_inline) in a 38-row window:
+		--   conceal_lines present  ->  35.4 ms of conceal callbacks per redraw
+		--   conceal_lines stripped ->   0.01 ms
+		-- Everything a redraw actually needs is already cheap: 0.1-0.5 ms for the
+		-- warm ranged parse, 4.5 ms for one screen of highlight queries, ~40 ms
+		-- for the one-time cold parse. So this one directive was the entire
+		-- markdown redraw cost.
+		--
+		-- Nothing is lost. render-markdown conceals both of those lines itself
+		-- (render/markdown/code.lua sets conceal_lines on the delimiter node), and
+		-- LSP hover floats render identically either way -- verified by running
+		-- the same open_floating_preview against the pre-change config.
+		--
+		-- Patch the query TEXT rather than shadowing the .scm file, so upstream
+		-- query fixes keep flowing through on Nvim upgrades. Doing it globally
+		-- rather than per buffer is deliberate: it needs no ordering guarantee
+		-- against Nvim's own ftplugin/markdown.lua (or mdx.nvim's, which resolves
+		-- to the same markdown query), and it uses only public API.
+		local chunks = {}
+		for _, file in ipairs(vim.treesitter.query.get_files("markdown", "highlights")) do
+			table.insert(chunks, table.concat(vim.fn.readfile(file), "\n"))
+		end
+		local patched, stripped = table.concat(chunks, "\n"):gsub('%(#set!%s+conceal_lines%s+""%)%s*', "")
+		if stripped > 0 then
+			vim.treesitter.query.set("markdown", "highlights", patched)
 		end
 
 		local function start_treesitter(bufnr)
-			if skip_highlighter(bufnr) then
-				-- Ensure a parser exists for consumers that ask for one directly
-				-- (render-markdown, treesitter-context) without attaching the
-				-- per-line highlighter.
-				pcall(vim.treesitter.get_parser, bufnr)
-				vim.b[bufnr].ts_highlight_skipped = true
-				return
-			end
 			local ok = pcall(vim.treesitter.start, bufnr)
 			if ok then
 				-- Indentation (provided by nvim-treesitter; experimental but stable)
@@ -154,8 +169,17 @@ return {
 		-- Start treesitter on any buffers that are already open when this config
 		-- runs (happens on :Lazy sync of an existing session, or when the plugin
 		-- config function runs after the file has already been loaded).
+		--
+		-- An already-attached highlighter is torn down first: vim.treesitter.start
+		-- no-ops on an attached buffer, so a markdown highlighter built before the
+		-- conceal_lines patch above would keep its `_conceal_line = true` -- the
+		-- exact per-row sweep the patch exists to remove -- until the buffer was
+		-- reopened.
 		for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
 			if vim.api.nvim_buf_is_loaded(bufnr) and vim.bo[bufnr].buftype == "" then
+				if vim.b[bufnr].ts_highlight then
+					pcall(vim.treesitter.stop, bufnr)
+				end
 				start_treesitter(bufnr)
 				vim.b[bufnr].ts_started = true
 			end

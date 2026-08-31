@@ -19,13 +19,18 @@ Groups are declared in which-key.lua:10-27; owners below (ACTIVE plugins only).
 | `<leader>m` | format buffer (`mp`) | conform.lua:64 |
 | `<leader>r` | LSP restart `rr` / rename `rn` | keymaps.lua:200, lspconfig.lua:102 |
 | `<leader>s` | toggle harpoon file | harpoon.lua:76 |
-| `<leader>t` | theme/toggle (`to/tf/tl/te` huez:41-44, `tc` ts-context:7) | |
+| `<leader>t` | theme/toggle (`to/tf/tl/te` huez:41-44, `tc` ts-context:7, `tp` mini-pairs) | group declared which-key.lua:15 |
+| `<leader>T` | toggle markdown task checkbox (n/x, buffer-local) | after/ftplugin/markdown.lua:30 |
 | `<leader>u` | undotree | undotree.lua:5 |
 | `<leader>v`/`x` | split-right / close-split | keymaps.lua:31,36 |
 | `<leader>w` | write (group + direct save) | which-key.lua:14, keymaps.lua:8 |
 | `<leader>y` | harpoon quick menu | harpoon.lua:112 |
 | `<leader>1..9` | harpoon select N | harpoon.lua:160-170 |
 | `<leader>X`/`Z` | barbar close-right / close-left | barbar.lua:37-38 |
+
+`<leader>` capitals in use: `B` (force-close buf), `D` (void-delete + LSP type-def), `E`
+(mini-files, disabled), `T` (md task toggle), `X`/`Z` (barbar), `Y` (codesnap, disabled),
+`<S-w>` (write+close, visual). Everything else is free.
 
 Disabled specs still holding namespaces (do NOT assume free): opencode `<leader>o*`, avante
 `<leader>c{o,t,a,b,c}`, mini-files `<leader>e/E`, bufferline `<leader>b*`, codesnap `<leader>Y`.

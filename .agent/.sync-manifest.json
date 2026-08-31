@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generated_at_sha": "59382a5199bd055626537d995cb92dc1e4eda588",
+  "generated_at_sha": "e42aa49de5f77401727e58f31e1e35a41ec91cfd",
   "entries": [
     {
       "path": ".agent/context-rules.yaml",
@@ -17,7 +17,13 @@
     {
       "path": ".claude/commands/commit.md",
       "kind": "generated",
-      "target_or_hash": "187d5a6022579239c8918fbd7296d777c2109eb1006a19b2dce7be635f8ff58b",
+      "target_or_hash": "b0ea9a09d3c9c0d1683832a26a0a07885c521ec503311dc60f7994ddf706b24e",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/critique.md",
+      "kind": "generated",
+      "target_or_hash": "5ed4d4b310fcd912cd373c75bab2af8579892ba697f16ecef2995b5b90c82d84",
       "platform": "claude"
     },
     {
@@ -45,6 +51,12 @@
       "platform": "claude"
     },
     {
+      "path": ".claude/commands/harness-cherry-pick.md",
+      "kind": "generated",
+      "target_or_hash": "ade4d4e98218db74886baf92d236ed340164b7cebef55bb69445c3c616e91590",
+      "platform": "claude"
+    },
+    {
       "path": ".claude/commands/harness-config.md",
       "kind": "generated",
       "target_or_hash": "70187c5d75172f6db7a9647e60e53ccb834ee489b353649162f3569d8fed1428",
@@ -54,6 +66,12 @@
       "path": ".claude/commands/harness-init.md",
       "kind": "generated",
       "target_or_hash": "079f8639b4b38f226c7ef08063591d293e8b138c4e86d7d2e23dac187e2d2bca",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/harness-pull.md",
+      "kind": "generated",
+      "target_or_hash": "8ec83c8834eeecc77fdf1d82a19d84ea0fcffb728fa2ccc5a0feec25619bd10c",
       "platform": "claude"
     },
     {
@@ -78,6 +96,12 @@
       "path": ".claude/commands/research.md",
       "kind": "generated",
       "target_or_hash": "0c3db0936ab6101da39e16fbcb46ddae1ffda833ba97127dcdba83b5837471d8",
+      "platform": "claude"
+    },
+    {
+      "path": ".claude/commands/resume-session.md",
+      "kind": "generated",
+      "target_or_hash": "8b70dd63dba0bcf40410323be4713fc841d8304bf1dbaefdcb302f007b1cd34a",
       "platform": "claude"
     },
     {
@@ -137,7 +161,7 @@
     {
       "path": ".omp/agents/commit.md",
       "kind": "generated",
-      "target_or_hash": "0cb2dd6c415e623f6aa83752628913568b10c88de51836777553b8463271a082",
+      "target_or_hash": "905a6fc7d5cbc6ad2b409b0029b2aa1acdd8785b1751ead6f517fdbe4d5c7faa",
       "platform": "omp"
     },
     {
@@ -159,6 +183,12 @@
       "platform": "omp"
     },
     {
+      "path": ".omp/agents/harness-cherry-pick.md",
+      "kind": "generated",
+      "target_or_hash": "a05712e62632dc29400807ff96ff49c118293d46afbff373d4f3fe091164983d",
+      "platform": "omp"
+    },
+    {
       "path": ".omp/agents/harness-config.md",
       "kind": "generated",
       "target_or_hash": "ef027aa4c6c090f11c1ee2e528cd3f35d46ac7570d8762af0e4f34e3ea7b2181",
@@ -177,6 +207,12 @@
       "platform": "omp"
     },
     {
+      "path": ".omp/agents/resume-session.md",
+      "kind": "generated",
+      "target_or_hash": "6269c5480b6323755696c871cf1fa58c45486c05397c1e6e988ed4e6c8044558",
+      "platform": "omp"
+    },
+    {
       "path": ".omp/agents/summary-prompt.md",
       "kind": "generated",
       "target_or_hash": "bca46f31d5f64e04a129063b0fed2f70f8913bbfbce0ea4b4063c2d5d4548074",
@@ -191,7 +227,7 @@
     {
       "path": ".omp/config.yml",
       "kind": "generated",
-      "target_or_hash": "8bb4dd868d7a20b52cebda373b7dd566610c150e813a899271d3b997563aef19",
+      "target_or_hash": "80af76b7505c821d986a29cad39e753d5fb42c361f67fe9e9aa10546de3334c1",
       "platform": "omp"
     },
     {
@@ -347,7 +383,13 @@
     {
       "path": ".omp/prompts/commit.md",
       "kind": "generated",
-      "target_or_hash": "8fef23302631d28140402eabbc1315c39dc6c5c403ca8d3fb50b775f9e961f08",
+      "target_or_hash": "3d6e80836c6f43c09d079d52064f2126bdcac261607b7f74126dd0c7afa62025",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/critique.md",
+      "kind": "generated",
+      "target_or_hash": "053d88c3cabcb8b6a3c925109e0d8482f859f5e7e252b8e8e98d51ef2bb1abcc",
       "platform": "omp"
     },
     {
@@ -369,6 +411,12 @@
       "platform": "omp"
     },
     {
+      "path": ".omp/prompts/harness-cherry-pick.md",
+      "kind": "generated",
+      "target_or_hash": "a3c28fdad97217aaac9d4f1712162b71eefc9e9e6b05870661c7d64eae70c54f",
+      "platform": "omp"
+    },
+    {
       "path": ".omp/prompts/harness-config.md",
       "kind": "generated",
       "target_or_hash": "4af84748adca76de43d5bed3694b021f58c53dade27799d284c6d441ae1dffee",
@@ -378,6 +426,12 @@
       "path": ".omp/prompts/harness-init.md",
       "kind": "generated",
       "target_or_hash": "f7f77cd1246074c03c080c5c717443a4b1a8b6f9a647888da6984fc17a908f07",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/harness-pull.md",
+      "kind": "generated",
+      "target_or_hash": "db9d26de0bfd05f1c7c1b4b0174dc9b87c887b2119060823d96af5895ff0781d",
       "platform": "omp"
     },
     {
@@ -402,6 +456,12 @@
       "path": ".omp/prompts/research.md",
       "kind": "generated",
       "target_or_hash": "cd05c3f06e0e54e9b475d0ce8c72a1748229ae6b17508b8d9297f91fec765551",
+      "platform": "omp"
+    },
+    {
+      "path": ".omp/prompts/resume-session.md",
+      "kind": "generated",
+      "target_or_hash": "2d770f2b72e964d6151dd68de6e43eea5e1e47dd7cb631b6dde24e8882419d92",
       "platform": "omp"
     },
     {

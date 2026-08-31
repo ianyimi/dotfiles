@@ -58,3 +58,5 @@ compiles them into `context-rules.yaml`. Agents query it with
    `.agent/skills/shared-references/cascade-checks.md` and present the full change set first.
 4. The commit gate (`.agent/skills/commit/references/commit-checklist.md`) is the final check
    before anything goes upstream — keep it current as the project's definition of "ready".
+5. Writing or editing any skill, reference, or context pointer? Load
+   `.agent/skills/shared-references/writing-for-agents.md` first.

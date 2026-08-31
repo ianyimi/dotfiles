@@ -11,10 +11,8 @@ windows:
       layout: main-vertical
       panes:
         - nv
-        - claude
-        - ""
+        - neofetch
   - agents:
       layout: even-horizontal
       panes:
-        - pi
-        - pi
+        - omp

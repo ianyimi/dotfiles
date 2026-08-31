@@ -17,6 +17,32 @@ Sessions → session-log/.
 **Advisor active?** (OMP harness-keeper) Focus on the developer's problem; act on the
 advisor's harness change-sets instead of self-tracking requirement shifts mid-task.
 **Subagents:** honor `manifest.json#models` — dynamic selection = cheapest adequate tier.
+**Harness edits land in `harness/src/templates/`** — generalized for any project.
+Root `.agent/` is this repo's local clone, never the upstream.
+
+## Repo layout — where edits go
+
+This repo is three things at once. Confusing them puts changes where no project can
+ever receive them:
+
+- `harness/` — **the MAIN harness**: the `harness` CLI source and the generic templates
+  in `harness/src/templates/` (skills, agent docs, standards seeds). `harness fetch`
+  ships ONLY these files — this is the upstream every project pulls from. Harness
+  features, skill changes, and workflow updates go HERE, written generically
+  (`{{PROJECT}}`-style placeholders, no dotfiles specifics), verified with
+  `cd harness && bun test`.
+- `.agent/` — the dotfiles PROJECT's harness install: a local clone that manages this
+  repo's own dotfiles work, a consumer like any other project. It takes template updates
+  via `/harness-pull` and carries only dotfiles-specific hardening. A change made only
+  here reaches no other project.
+- Everything else — chezmoi-managed dotfiles (`dot_config/`, …), some containing their
+  own nested `.agent/` installs (e.g. `dot_config/nvim/.agent/`). Never edit those as
+  part of harness work.
+
+Routing rule: harness improvement → `harness/src/templates/` first, generalized; mirror
+into `.agent/` only when this repo should also use it immediately. Dotfiles-only
+preference → `.agent/` only. Main-repo-only skills (e.g. harness-cherry-pick) →
+`.agent/skills/` only, marked "not shipped" in their description.
 
 ## Pointers
 

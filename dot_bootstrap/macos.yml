@@ -199,6 +199,11 @@
         name: git
         state: present
 
+    - name: Check Install - mole
+      community.general.homebrew:
+        name: mole
+        state: latest
+
     - name: Check Install - k6
       community.general.homebrew:
         name: k6

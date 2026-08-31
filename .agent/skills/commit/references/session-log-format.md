@@ -2,8 +2,20 @@
 
 ## The file
 `.agent/docs/session-log/YYYY/MM/YYYY-MM-DD.log.md` — an append-only diary. One file per day,
-one `##` entry per work block. Created/extended only via `harness log append`. The single
-permitted in-place edit is `harness log backfill-sha` filling `**Commit:** (pending)`.
+one `##` entry per work block. Created/extended only via `harness log append`. Three permitted
+in-place edits, nothing else:
+- `harness log backfill-sha` filling `**Commit:** (pending)`.
+- The ledger link `harness log commit-msg` appends as the "committed up to here" marker.
+- Entry-title renames by the commit skill (its "Name sessions after their commit" step):
+  titles only, bodies never.
+
+## Retroactive entries
+A work block that ended without logging still gets a full entry — the commit skill writes it
+at commit time from the diff, the spec, and `git log`. It is a normal entry with one addition:
+a blockquote directly under the `**Commit:**` line saying it was logged retroactively and that
+the body is reconstructed rather than transcribed. A cold-start reader must never have to
+guess which entries are recollection and which are evidence. Reconstruct only what the
+artifacts support; everything else is `(not captured this session)`.
 
 ## Entry structure (`harness log append` emits this skeleton)
 
@@ -31,9 +43,20 @@ permitted in-place edit is `harness log backfill-sha` filling `**Commit:** (pend
   (automatic in agent-commits mode; message-only leaves it for the next session).
 - Bullets state *why*, not just what. Problems record the resolution, not only the pain.
 - "Where I left off" is for a cold-start reader: current state, next step, watch-outs.
+- **Entry title:** starts as a short work-block description ("session" when auto-created).
+  At commit time the commit skill renames it to the commit title; a session serving several
+  specs accumulates comma-separated commit titles. This maps sessions to commits, so work
+  can be resumed by name (`/resume-session <commit title>`). Never shorten or remove an
+  existing name. A bare name is version 1; only a developer-requested rework appends
+  ` v2`, ` v3`, … (resume-session handles the bump).
 
-## Commit message rules (`harness log commit-msg` output)
-- Title `type(scope): description`, ≤ 72 chars. Types: feat, fix, docs, refactor, test.
-  Scope = workspace package dir (omitted outside a workspace).
-- Body: the "What was built" bullets, then `Why:` + the "Decisions made" bullets.
-- Explain why, never list files — the diff already lists files.
+## Commit message + where it lands
+
+The full commit-message format (title types, body shapes, footer, storage) lives in
+`references/commit-format.md` — follow it. In short:
+
+- The FULL message goes in the day's ledger `.agent/docs/commits/MM-DD-YYYY.md` as plain
+  Markdown (no ``` code fence), plus the raw `.commit.md` for `git commit -F`.
+- The session-log entry is NOT a copy of the message. It holds the session's decisions; after
+  them, leave one link to the ledger as the "committed up to here" marker:
+  `_Committed → [<commit title>](../../commits/MM-DD-YYYY.md)_`.
